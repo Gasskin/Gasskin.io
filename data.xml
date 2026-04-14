@@ -1,0 +1,22 @@
+<Root>
+    <Country name="洛克王国">
+        <Member name="大川"/>
+        <Member name="EKX"/>
+        <Member name="CY"/>
+        <Member name="3"/>
+        <Member name="4"/>
+        <Member name="5"/>
+    </Country>
+    <Country name="农世界">
+        <Member name="老鬼怪"/>
+        <Member name="简C"/>
+        <Member name="3"/>
+    </Country>
+    <Country name="鸣潮">
+        <Member name="小满"/>
+        <Member name="夏夏"/>
+    </Country>
+    <Country name="终末地">
+        <Member name="江白"/>
+    </Country>
+</Root>
