@@ -44,8 +44,8 @@
         <label>
           模型（Model ID）
           <select id="modelId">
-            <option value="doubao-seedance-2-0-260128" selected>Seedance 2.0（doubao-seedance-2-0-260128）</option>
-            <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast（doubao-seedance-2-0-fast-260128）</option>
+            <option value="doubao-seedance-2-0-260128">Seedance 2.0（doubao-seedance-2-0-260128）</option>
+            <option value="doubao-seedance-2-0-fast-260128" selected>Seedance 2.0 Fast（doubao-seedance-2-0-fast-260128）</option>
           </select>
         </label>
         <label>
@@ -102,8 +102,8 @@
           含水印（watermark）
         </label>
         <label class="check">
-          <input type="checkbox" id="returnLastFrame" />
-          返回尾帧图（return_last_frame）
+          <input type="checkbox" id="returnLastFrame" checked />
+          返回尾帧图（return_last_frame，默认开启）
         </label>
         <label>
           随机种子（-1 随机）
@@ -120,15 +120,14 @@
       </label>
       <div class="actions">
         <button type="button" id="btnGenerate" class="primary">生成视频</button>
-        <button type="button" id="btnStop" class="ghost" disabled>停止轮询</button>
-        <button type="button" id="btnCancelTask" class="ghost" disabled title="排队中可取消；成功/失败/超时记录可删除（见文档）">取消/删除当前任务</button>
+        <button type="button" id="btnStop" class="ghost" disabled title="中断「创建任务」请求或停止轮询">停止轮询</button>
       </div>
       <p class="cors-note">说明：部署在 GitHub Pages 时，浏览器直连 <code>ark.cn-beijing.volces.com</code> 可能触发跨域（CORS）。本地完整联调请运行仓库里的 <code>dev_server.py</code>（同源反向代理）。</p>
     </section>
 
     <section class="card" aria-labelledby="status-heading">
       <h2 id="status-heading">状态与错误</h2>
-      <div id="statusLog" class="log" role="status" aria-live="polite"></div>
+      <div id="statusLog" class="log" role="log" aria-live="polite" aria-relevant="additions"></div>
     </section>
 
     <section class="card" aria-labelledby="result-heading">
@@ -159,7 +158,7 @@
               <th>创建时间</th>
               <th>total_tokens</th>
               <th>completion_tokens</th>
-              <th>预览 / 链接</th>
+              <th>视频与尾帧</th>
             </tr>
           </thead>
           <tbody id="historyTableBody"></tbody>

@@ -7,12 +7,10 @@ const API_BASE = (() => {
 const MAX_IMAGES_REF = 9;
 const MAX_VIDEOS = 3;
 const MAX_AUDIOS = 3;
-const POLL_MS = 2500;
+const POLL_MS = 500;
 /** 历史列表每页条数 */
 const HISTORY_PAGE_SIZE = 10;
 
-let currentTaskId = null;
-let lastAbortKind = null;
 let historyPageNum = 1;
 let historyTotal = 0;
 
@@ -36,7 +34,6 @@ const els = {
   apiKey: $("apiKey"),
   btnGenerate: $("btnGenerate"),
   btnStop: $("btnStop"),
-  btnCancelTask: $("btnCancelTask"),
   historyFilterModel: $("historyFilterModel"),
   btnHistoryRefresh: $("btnHistoryRefresh"),
   historySummary: $("historySummary"),
@@ -69,17 +66,18 @@ function setStatus(text, isError = false) {
   const elapsed = statusRunStart != null ? performance.now() - statusRunStart : null;
   const line =
     elapsed != null ? `${msg}　｜　总计用时：${fmtElapsed(elapsed)}` : msg;
-  els.statusLog.textContent = line;
-  els.statusLog.classList.toggle("stat-err", isError);
-  if (line.length > 180) els.statusLog.title = line;
-  else els.statusLog.removeAttribute("title");
+  const ts = new Date().toLocaleTimeString();
+  const full = `[${ts}] ${line}`;
+  const row = document.createElement("div");
+  row.className = isError ? "log-line log-line-err" : "log-line";
+  row.textContent = full;
+  els.statusLog.appendChild(row);
+  els.statusLog.scrollTop = els.statusLog.scrollHeight;
 }
 
 function clearStatus() {
   statusRunStart = null;
-  els.statusLog.textContent = "";
-  els.statusLog.classList.remove("stat-err");
-  els.statusLog.removeAttribute("title");
+  els.statusLog.replaceChildren();
 }
 
 function escapeHtml(s) {
@@ -171,11 +169,24 @@ function renderHistoryRows(items) {
       const ttCell = tt != null ? escapeHtml(String(tt)) : "—";
       const tcCell = tc != null ? escapeHtml(String(tc)) : "—";
       const vu = row.content?.video_url;
-      let previewCell = "—";
+      const lf = row.content?.last_frame_url;
+      const parts = [];
       if (vu) {
         const src = escapeAttr(vu);
-        previewCell = `<div class="history-preview-wrap"><video class="history-video" controls playsinline preload="metadata" src="${src}"></video><div class="history-video-actions"><a href="${src}" target="_blank" rel="noopener">新窗口打开</a></div></div>`;
+        parts.push(
+          `<div class="history-preview-block"><div class="history-preview-label">视频</div><video class="history-video" controls playsinline preload="metadata" src="${src}"></video><div class="history-video-actions"><a href="${src}" target="_blank" rel="noopener">新窗口打开</a></div></div>`
+        );
       }
+      if (lf) {
+        const lsrc = escapeAttr(lf);
+        parts.push(
+          `<div class="history-preview-block"><div class="history-preview-label">尾帧</div><a href="${lsrc}" target="_blank" rel="noopener"><img src="${lsrc}" alt="尾帧" class="history-lastframe-img" loading="lazy" /></a></div>`
+        );
+      }
+      const previewCell =
+        parts.length > 0
+          ? `<div class="history-preview-wrap">${parts.join("")}</div>`
+          : "—";
       return `<tr><td>${id}</td><td>${st}</td><td>${model}</td><td>${created}</td><td>${ttCell}</td><td>${tcCell}</td><td class="history-preview-cell">${previewCell}</td></tr>`;
     })
     .join("");
@@ -291,7 +302,7 @@ function buildRequestBody(content) {
     ratio: els.ratio.value,
     duration: Number.isFinite(durationVal) ? durationVal : 5,
   };
-  if (els.returnLastFrame.checked) body.return_last_frame = true;
+  body.return_last_frame = els.returnLastFrame.checked;
   if (Number.isFinite(seedVal)) body.seed = seedVal;
   return body;
 }
@@ -324,6 +335,7 @@ async function apiFetch(path, apiKey, opts = {}) {
 
 async function pollTask(taskId, apiKey, signal) {
   const path = `/contents/generations/tasks/${encodeURIComponent(taskId)}`;
+  let pollCount = 0;
   while (!signal.aborted) {
     const { res, text } = await apiFetch(path, apiKey, { method: "GET", signal });
     if (!res.ok) {
@@ -337,6 +349,13 @@ async function pollTask(taskId, apiKey, signal) {
     }
     const st = data.status ?? "";
     setStatus(`当前状态：${st || "（无 status）"}${taskId ? ` · 任务 ${taskId}` : ""}`);
+    pollCount += 1;
+    if (pollCount === 1 && st === "running") {
+      setStatus(
+        "说明：首次查询已是 running，任务已被服务端立刻执行。长时间停在「正在创建」多为上传大请求体，可用「停止轮询」中断。",
+        false
+      );
+    }
 
     if (st === "succeeded") {
       const v =
@@ -385,8 +404,6 @@ async function onGenerate() {
 
   els.btnGenerate.disabled = true;
   els.btnStop.disabled = false;
-  els.btnCancelTask.disabled = true;
-  currentTaskId = null;
 
   try {
     statusRunStart = performance.now();
@@ -398,7 +415,10 @@ async function onGenerate() {
       setStatus("请求体过大，请减小素材或改用公网 URL / 素材库方式。", true);
       return;
     }
-    setStatus("正在创建生成任务…");
+    setStatus(
+      "正在创建生成任务（上传整包 JSON，素材多/大时会较慢；此时尚无任务 ID，无法「取消排队」，可点「停止轮询」中断上传）…",
+      false
+    );
     const { res, text } = await apiFetch("/contents/generations/tasks", apiKey, {
       method: "POST",
       body: json,
@@ -414,58 +434,24 @@ async function onGenerate() {
       setStatus(`创建响应异常: ${text.slice(0, 800)}`, true);
       return;
     }
-    currentTaskId = taskId;
-    els.btnCancelTask.disabled = false;
     setStatus(`任务已创建，正在轮询… · ${taskId}`);
     const { videoUrl } = await pollTask(taskId, apiKey, signal);
     setStatus("生成成功。");
     showResultVideo(videoUrl);
   } catch (e) {
     if (e.name === "AbortError") {
-      if (lastAbortKind === "api-cancel") {
-        lastAbortKind = null;
-      } else {
-        lastAbortKind = null;
-        setStatus("已停止轮询。", true);
-      }
+      setStatus("已停止轮询。", true);
     } else {
       setStatus(e.message || String(e), true);
     }
   } finally {
     els.btnGenerate.disabled = false;
     els.btnStop.disabled = true;
-    els.btnCancelTask.disabled = true;
-    currentTaskId = null;
   }
 }
 
 function onStop() {
-  lastAbortKind = "stop";
   pollAbort?.abort();
-}
-
-async function onCancelTask() {
-  const apiKey = els.apiKey.value.trim();
-  if (!apiKey) {
-    setStatus("请填写 ARK API Key。", true);
-    return;
-  }
-  const tid = currentTaskId;
-  if (!tid) return;
-  try {
-    setStatus("正在请求取消/删除（DELETE）…");
-    const delPath = `/contents/generations/tasks/${encodeURIComponent(tid)}`;
-    const { res, text } = await apiFetch(delPath, apiKey, { method: "DELETE" });
-    if (!res.ok) {
-      setStatus(await parseApiError(res, text), true);
-      return;
-    }
-    lastAbortKind = "api-cancel";
-    pollAbort?.abort();
-    setStatus(`取消/删除已受理 · ${tid}`);
-  } catch (e) {
-    setStatus(e.message || String(e), true);
-  }
 }
 
 els.images.addEventListener("change", updateFileList);
@@ -473,7 +459,6 @@ els.videoUrls.addEventListener("input", updateFileList);
 els.audios.addEventListener("change", updateFileList);
 els.btnGenerate.addEventListener("click", () => void onGenerate());
 els.btnStop.addEventListener("click", onStop);
-els.btnCancelTask.addEventListener("click", () => void onCancelTask());
 els.btnHistoryRefresh.addEventListener("click", () => void loadHistoryPage());
 els.historyPrev.addEventListener("click", () => {
   if (historyPageNum > 1) {
