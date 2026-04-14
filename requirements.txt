@@ -1,0 +1,3 @@
+# 与 Readme/安装以升级SDK.md 一致：本地用 Python 调用方舟 API 时使用。
+# build.py 仅使用 Python 标准库，无需额外安装依赖即可执行构建。
+volcengine-python-sdk[ark]>=5.0.0

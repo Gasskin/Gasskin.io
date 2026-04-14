@@ -3,52 +3,145 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>势力分布图</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,500;0,600;1,500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
+  <title>Seedance 2.0 视频生成</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="page-bg" aria-hidden="true"></div>
-
-  <header class="top">
-    <div class="top-inner">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <div>
-          <h1>势力分布图</h1>
-          <p class="hint">点击蜂窝格查看对应王国成员</p>
-        </div>
-      </div>
-    </div>
+  <header class="hero">
+    <h1>Seedance 2.0 视频生成</h1>
+    <p class="sub">静态页 + 方舟 <code>contents/generations/tasks</code>，Seedance 2.0 / 2.0 fast 可选</p>
   </header>
 
   <main class="layout">
-    <section class="map-card" aria-label="势力地图">
-      <div class="map-frame">
-        <div class="map-wrap">
-          <svg id="map" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" role="img" aria-label="蜂窝势力图"></svg>
-        </div>
+    <section class="card" aria-labelledby="media-heading">
+      <h2 id="media-heading">素材</h2>
+      <p class="hint">图片与音频可本地上传（Base64）。参考视频须为<strong>方舟云端能访问的 URL</strong>（公网 <code>https://</code> 或 <code>asset://</code>）：接口在火山侧拉取视频，不是你的浏览器。<code>localhost</code>、<code>127.0.0.1</code>、局域网 IP、<code>file://</code> 对方都访问不到。若只有本机文件，可先上传到对象存储，或用 ngrok / Cloudflare Tunnel 等把本机 HTTP 临时暴露成公网 HTTPS 再填该地址。音频不可单独使用，需至少一张图或一条参考视频 URL。</p>
+      <div class="upload-grid">
+        <label class="drop">
+          <span>图片（最多 9 张）</span>
+          <input type="file" id="images" accept="image/*" multiple />
+        </label>
+        <label class="drop block-urls">
+          <span>参考视频 URL（最多 3 条，每行一个）</span>
+          <textarea id="videoUrls" rows="3" class="inline-textarea" placeholder="https://...mp4&#10;或 asset://..."></textarea>
+        </label>
+        <label class="drop">
+          <span>参考音频（最多 3 段，本地文件）</span>
+          <input type="file" id="audios" accept="audio/mpeg,audio/wav,.mp3,.wav" multiple />
+        </label>
+      </div>
+      <ul id="fileList" class="file-list"></ul>
+    </section>
+
+    <section class="card" aria-labelledby="prompt-heading">
+      <h2 id="prompt-heading">提示词</h2>
+      <textarea id="prompt" rows="8" placeholder="描述期望生成的视频；多参考图建议用「[图1]…[图2]…」方式点名。"></textarea>
+    </section>
+
+    <section class="card" aria-labelledby="params-heading">
+      <h2 id="params-heading">生成参数（Seedance 2.0）</h2>
+      <div class="form-grid">
+        <label>
+          模型（Model ID）
+          <select id="modelId">
+            <option value="doubao-seedance-2-0-260128" selected>Seedance 2.0（doubao-seedance-2-0-260128）</option>
+            <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast（doubao-seedance-2-0-fast-260128）</option>
+          </select>
+        </label>
+        <label>
+          参考图模式
+          <select id="imageMode">
+            <option value="reference">多模态参考（1–9 张，role: reference_image）</option>
+            <option value="first">图生视频 · 首帧（1 张）</option>
+            <option value="first_last">图生视频 · 首尾帧（2 张）</option>
+          </select>
+        </label>
+        <label>
+          时长（秒）
+          <select id="duration">
+            <option value="-1">智能（-1，由模型在有效范围内选择）</option>
+            <option value="4">4</option>
+            <option value="5" selected>5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13">13</option>
+            <option value="14">14</option>
+            <option value="15">15</option>
+          </select>
+        </label>
+        <label>
+          分辨率
+          <select id="resolution">
+            <option value="480p">480p</option>
+            <option value="720p" selected>720p</option>
+          </select>
+        </label>
+        <label>
+          宽高比
+          <select id="ratio">
+            <option value="adaptive" selected>adaptive（推荐）</option>
+            <option value="16:9">16:9</option>
+            <option value="4:3">4:3</option>
+            <option value="1:1">1:1</option>
+            <option value="3:4">3:4</option>
+            <option value="9:16">9:16</option>
+            <option value="21:9">21:9</option>
+          </select>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="generateAudio" checked />
+          生成同步音频（generate_audio）
+        </label>
+        <label class="check">
+          <input type="checkbox" id="watermark" />
+          含水印（watermark）
+        </label>
+        <label class="check">
+          <input type="checkbox" id="returnLastFrame" />
+          返回尾帧图（return_last_frame）
+        </label>
+        <label>
+          随机种子（-1 随机）
+          <input type="number" id="seed" value="-1" min="-1" />
+        </label>
       </div>
     </section>
 
-    <aside class="panel" id="panel" hidden>
-      <div class="panel-ornament top" aria-hidden="true"></div>
-      <div class="panel-inner">
-        <div class="panel-head">
-          <h2 id="panel-title">—</h2>
-          <button type="button" id="close-panel" aria-label="关闭">×</button>
-        </div>
-        <p class="panel-sub">麾下成员</p>
-        <ul id="member-list" class="member-list"></ul>
+    <section class="card" aria-labelledby="auth-heading">
+      <h2 id="auth-heading">鉴权与生成</h2>
+      <label class="block">
+        ARK API Key（Bearer，仅保存在本页内存，不会写入服务器）
+        <input type="password" id="apiKey" autocomplete="off" placeholder="从火山方舟控制台获取" />
+      </label>
+      <div class="actions">
+        <button type="button" id="btnGenerate" class="primary">生成视频</button>
+        <button type="button" id="btnStop" class="ghost" disabled>停止轮询</button>
       </div>
-      <div class="panel-ornament bottom" aria-hidden="true"></div>
-    </aside>
+      <p class="cors-note">说明：部署在 GitHub Pages 时，浏览器直连 <code>ark.cn-beijing.volces.com</code> 可能触发跨域（CORS）。本地完整联调请运行仓库里的 <code>dev_server.py</code>（同源反向代理）。</p>
+    </section>
+
+    <section class="card" aria-labelledby="status-heading">
+      <h2 id="status-heading">状态与错误</h2>
+      <div id="statusLog" class="log" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-labelledby="result-heading">
+      <h2 id="result-heading">生成结果</h2>
+      <div id="resultEmpty" class="muted">提交任务成功后，将在此展示输出视频。</div>
+      <video id="resultVideo" controls playsinline class="result-video hidden"></video>
+      <p id="resultLink" class="hidden"><a id="videoUrl" href="#" target="_blank" rel="noopener">打开视频地址</a></p>
+    </section>
   </main>
 
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <footer class="footer">
+    <span>API 文档见仓库 <code>Readme/创建视频生成任务API.md</code></span>
+  </footer>
 
-  <script src="app.js"></script>
+  <script src="app.js" type="module"></script>
 </body>
 </html>

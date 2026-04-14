@@ -1,222 +1,350 @@
-(function () {
-  "use strict";
+const API_BASE = (() => {
+  const g = typeof window !== "undefined" ? window : {};
+  const o = g.__SEEDANCE_API_BASE__;
+  if (o) return String(o).replace(/\/$/, "");
+  return "https://ark.cn-beijing.volces.com/api/v3";
+})();
+const MAX_IMAGES_REF = 9;
+const MAX_VIDEOS = 3;
+const MAX_AUDIOS = 3;
+const POLL_MS = 2500;
 
-  var mapEl = document.getElementById("map");
-  var panel = document.getElementById("panel");
-  var panelTitle = document.getElementById("panel-title");
-  var memberList = document.getElementById("member-list");
-  var closePanel = document.getElementById("close-panel");
-  var toast = document.getElementById("toast");
+const $ = (id) => document.getElementById(id);
 
-  var SQRT3 = Math.sqrt(3);
-  var selectedKingdom = -1;
+const els = {
+  images: $("images"),
+  videoUrls: $("videoUrls"),
+  audios: $("audios"),
+  fileList: $("fileList"),
+  prompt: $("prompt"),
+  modelId: $("modelId"),
+  imageMode: $("imageMode"),
+  duration: $("duration"),
+  resolution: $("resolution"),
+  ratio: $("ratio"),
+  generateAudio: $("generateAudio"),
+  watermark: $("watermark"),
+  returnLastFrame: $("returnLastFrame"),
+  seed: $("seed"),
+  apiKey: $("apiKey"),
+  btnGenerate: $("btnGenerate"),
+  btnStop: $("btnStop"),
+  statusLog: $("statusLog"),
+  resultEmpty: $("resultEmpty"),
+  resultVideo: $("resultVideo"),
+  resultLink: $("resultLink"),
+  videoUrl: $("videoUrl"),
+};
 
-  function hsl(c) {
-    if (!c) return "#6b7a8c";
-    if (typeof c.hex === "string" && c.hex[0] === "#") return c.hex;
-    var h = Number(c.h);
-    var s = Number(c.s);
-    var l = Number(c.l);
-    return (
-      "hsl(" +
-      (isFinite(h) ? h.toFixed(2) : "210") +
-      "," +
-      (isFinite(s) ? s.toFixed(1) : "45") +
-      "%," +
-      (isFinite(l) ? l.toFixed(1) : "38") +
-      "%)"
-    );
-  }
+let pollAbort = null;
+/** 本次点击「生成」进入主流程后的起始时间（performance.now），用于「总计用时」 */
+let statusRunStart = null;
 
-  function showToast(msg) {
-    toast.textContent = msg;
-    toast.hidden = false;
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(function () {
-      toast.hidden = true;
-    }, 3200);
-  }
+function fmtElapsed(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return "0.0 秒";
+  const s = ms / 1000;
+  if (s < 60) return `${s.toFixed(1)} 秒`;
+  const m = Math.floor(s / 60);
+  const r = s - m * 60;
+  return `${m} 分 ${r < 10 ? r.toFixed(1) : Math.round(r)} 秒`;
+}
 
-  function fitFontSize(name, approxW, approxH) {
-    var base = Math.sqrt(Math.max(approxW * approxH, 1)) * 0.11;
-    base = Math.max(10, Math.min(22, base));
-    if (name.length > 6) base *= 0.9;
-    if (name.length > 10) base *= 0.88;
-    return Math.round(base);
-  }
+function setStatus(text, isError = false) {
+  const msg = String(text ?? "");
+  const elapsed = statusRunStart != null ? performance.now() - statusRunStart : null;
+  const line =
+    elapsed != null ? `${msg}　｜　总计用时：${fmtElapsed(elapsed)}` : msg;
+  els.statusLog.textContent = line;
+  els.statusLog.classList.toggle("stat-err", isError);
+  if (line.length > 180) els.statusLog.title = line;
+  else els.statusLog.removeAttribute("title");
+}
 
-  function axialToPixel(q, r, R, ox, oy) {
-    return {
-      x: R * SQRT3 * (q + r * 0.5) + ox,
-      y: R * 1.5 * r + oy,
-    };
-  }
+function clearStatus() {
+  statusRunStart = null;
+  els.statusLog.textContent = "";
+  els.statusLog.classList.remove("stat-err");
+  els.statusLog.removeAttribute("title");
+}
 
-  function hexPathD(cx, cy, R) {
-    var parts = [];
-    for (var i = 0; i < 6; i++) {
-      var ang = -Math.PI / 2 + i * (Math.PI / 3);
-      var px = cx + R * Math.cos(ang);
-      var py = cy + R * Math.sin(ang);
-      parts.push((i === 0 ? "M" : "L") + px.toFixed(2) + " " + py.toFixed(2));
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function readFiles(input) {
+  return Array.from(input?.files ?? []);
+}
+
+function parseVideoUrlLines() {
+  const raw = (els.videoUrls?.value ?? "")
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return raw.slice(0, MAX_VIDEOS);
+}
+
+function isAllowedReferenceVideoUrl(u) {
+  const s = String(u).trim();
+  if (!s) return false;
+  const lower = s.toLowerCase();
+  if (lower.startsWith("https://") || lower.startsWith("http://")) return true;
+  if (lower.startsWith("asset://")) return true;
+  return false;
+}
+
+function updateFileList() {
+  const parts = [];
+  for (const f of readFiles(els.images)) parts.push(`图: ${f.name} (${fmtSize(f.size)})`);
+  for (const u of parseVideoUrlLines()) parts.push(`视频 URL: ${u.slice(0, 120)}${u.length > 120 ? "…" : ""}`);
+  for (const f of readFiles(els.audios)) parts.push(`音频: ${f.name} (${fmtSize(f.size)})`);
+  els.fileList.innerHTML = parts.length ? parts.map((p) => `<li>${escapeHtml(p)}</li>`).join("") : "<li>未选择文件 / 未填写视频 URL</li>";
+}
+
+function fmtSize(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+}
+
+async function parseApiError(res, bodyText) {
+  let msg = `${res.status} ${res.statusText}`;
+  try {
+    const j = JSON.parse(bodyText);
+    if (j.error) {
+      const c = j.error.code ?? "";
+      const m = j.error.message ?? "";
+      msg = [msg, c && `code: ${c}`, m && `message: ${m}`].filter(Boolean).join(" | ");
     }
-    parts.push("Z");
-    return parts.join("");
+  } catch {
+    if (bodyText) msg += ` | ${bodyText.slice(0, 500)}`;
   }
+  return msg;
+}
 
-  function buildDefs(ns, w, h) {
-    var defs = document.createElementNS(ns, "defs");
-    var og = document.createElementNS(ns, "linearGradient");
-    og.setAttribute("id", "oceanGrad");
-    og.setAttribute("x1", "0%");
-    og.setAttribute("y1", "0%");
-    og.setAttribute("x2", "100%");
-    og.setAttribute("y2", "100%");
-    var s1 = document.createElementNS(ns, "stop");
-    s1.setAttribute("offset", "0%");
-    s1.setAttribute("stop-color", "#0e2436");
-    var s2 = document.createElementNS(ns, "stop");
-    s2.setAttribute("offset", "50%");
-    s2.setAttribute("stop-color", "#152a3d");
-    var s3 = document.createElementNS(ns, "stop");
-    s3.setAttribute("offset", "100%");
-    s3.setAttribute("stop-color", "#0a1824");
-    og.appendChild(s1);
-    og.appendChild(s2);
-    og.appendChild(s3);
-    defs.appendChild(og);
-    return defs;
+function validateInputs({ imageFiles, videoUrlList, audioFiles, mode }) {
+  if (audioFiles.length && !imageFiles.length && !videoUrlList.length) {
+    return "参考音频不可单独使用：请至少上传一张图片或填写一条参考视频 URL。";
   }
-
-  function setKingdomSelection(k, on) {
-    var sel = mapEl.querySelectorAll('.hex-cell[data-k="' + k + '"]');
-    for (var i = 0; i < sel.length; i++) {
-      if (on) sel[i].classList.add("selected");
-      else sel[i].classList.remove("selected");
+  if (audioFiles.length > MAX_AUDIOS) return `参考音频最多 ${MAX_AUDIOS} 段。`;
+  if (videoUrlList.length > MAX_VIDEOS) return `参考视频 URL 最多 ${MAX_VIDEOS} 条。`;
+  for (const u of videoUrlList) {
+    if (!isAllowedReferenceVideoUrl(u)) {
+      return `参考视频须为 http(s) 公网 URL 或 asset:// 素材 ID，当前行不合法：${u.slice(0, 80)}`;
     }
   }
 
-  function renderHexMap(data) {
-    var vb = data.mapSize || { w: 1000, h: 620 };
-    var w = vb.w;
-    var h = vb.h;
-    mapEl.setAttribute("viewBox", "0 0 " + w + " " + h);
+  if (mode === "first") {
+    if (imageFiles.length !== 1) return "「首帧」模式需要且仅需 1 张图片。";
+  } else if (mode === "first_last") {
+    if (imageFiles.length !== 2) return "「首尾帧」模式需要且仅需 2 张图片。";
+  } else {
+    if (imageFiles.length > MAX_IMAGES_REF) return `多模态参考图最多 ${MAX_IMAGES_REF} 张。`;
+  }
+  return null;
+}
 
-    while (mapEl.firstChild) mapEl.removeChild(mapEl.firstChild);
-
-    var ns = "http://www.w3.org/2000/svg";
-    var hex = data.hex || {};
-    var R = Number(hex.R) || 8;
-    var ox = (hex.origin && Number(hex.origin[0])) || 0;
-    var oy = (hex.origin && Number(hex.origin[1])) || 0;
-    var cells = data.hexCells || [];
-    var kdoms = data.kingdoms || [];
-
-    mapEl.appendChild(buildDefs(ns, w, h));
-
-    var ocean = document.createElementNS(ns, "rect");
-    ocean.setAttribute("class", "ocean-layer");
-    ocean.setAttribute("x", "0");
-    ocean.setAttribute("y", "0");
-    ocean.setAttribute("width", String(w));
-    ocean.setAttribute("height", String(h));
-    mapEl.appendChild(ocean);
-
-    var layer = document.createElementNS(ns, "g");
-    layer.setAttribute("class", "hex-layer");
-
-    function activate(idx) {
-      var k = kdoms[idx];
-      if (!k) return;
-      if (selectedKingdom >= 0) setKingdomSelection(selectedKingdom, false);
-      selectedKingdom = idx;
-      setKingdomSelection(idx, true);
-      panelTitle.textContent = k.name;
-      memberList.innerHTML = "";
-      if (!k.members || k.members.length === 0) {
-        var li0 = document.createElement("li");
-        li0.textContent = "（暂无成员）";
-        memberList.appendChild(li0);
-      } else {
-        k.members.forEach(function (m) {
-          var li = document.createElement("li");
-          li.textContent = m;
-          memberList.appendChild(li);
-        });
-      }
-      panel.hidden = false;
+async function buildContent(imageFiles, videoUrlList, audioFiles, mode, text) {
+  const content = [];
+  if (text.trim()) {
+    content.push({ type: "text", text: text.trim() });
+  }
+  if (mode === "first" && imageFiles.length === 1) {
+    const url = await fileToDataUrl(imageFiles[0]);
+    content.push({ type: "image_url", image_url: { url }, role: "first_frame" });
+  } else if (mode === "first_last" && imageFiles.length === 2) {
+    const u0 = await fileToDataUrl(imageFiles[0]);
+    const u1 = await fileToDataUrl(imageFiles[1]);
+    content.push({ type: "image_url", image_url: { url: u0 }, role: "first_frame" });
+    content.push({ type: "image_url", image_url: { url: u1 }, role: "last_frame" });
+  } else {
+    for (const f of imageFiles) {
+      const url = await fileToDataUrl(f);
+      content.push({ type: "image_url", image_url: { url }, role: "reference_image" });
     }
+  }
+  for (const url of videoUrlList) {
+    content.push({ type: "video_url", video_url: { url }, role: "reference_video" });
+  }
+  for (const f of audioFiles) {
+    const url = await fileToDataUrl(f);
+    content.push({ type: "audio_url", audio_url: { url }, role: "reference_audio" });
+  }
+  if (!content.length) {
+    throw new Error("请填写提示词或上传至少一类素材。");
+  }
+  return content;
+}
 
-    for (var i = 0; i < cells.length; i++) {
-      var row = cells[i];
-      var q = row[0];
-      var r = row[1];
-      var ki = row[2];
-      var p = axialToPixel(q, r, R, ox, oy);
-      var path = document.createElementNS(ns, "path");
-      path.setAttribute("d", hexPathD(p.x, p.y, R));
-      path.setAttribute("fill", hsl(kdoms[ki] && kdoms[ki].color));
-      path.setAttribute("fill-opacity", "0.88");
-      path.setAttribute("class", "hex-cell");
-      path.setAttribute("data-k", String(ki));
-      path.setAttribute("vector-effect", "non-scaling-stroke");
-      path.addEventListener("click", function (ev) {
-        ev.stopPropagation();
-        var kk = parseInt(ev.currentTarget.getAttribute("data-k"), 10);
-        if (!isNaN(kk)) activate(kk);
-      });
-      layer.appendChild(path);
+function buildRequestBody(content) {
+  const durationVal = parseInt(els.duration.value, 10);
+  const seedVal = parseInt(els.seed.value, 10);
+  const body = {
+    model: els.modelId.value,
+    content,
+    generate_audio: els.generateAudio.checked,
+    watermark: els.watermark.checked,
+    resolution: els.resolution.value,
+    ratio: els.ratio.value,
+    duration: Number.isFinite(durationVal) ? durationVal : 5,
+  };
+  if (els.returnLastFrame.checked) body.return_last_frame = true;
+  if (Number.isFinite(seedVal)) body.seed = seedVal;
+  return body;
+}
+
+function resetResult() {
+  els.resultEmpty.classList.remove("hidden");
+  els.resultVideo.classList.add("hidden");
+  els.resultLink.classList.add("hidden");
+  els.resultVideo.removeAttribute("src");
+}
+
+function showResultVideo(url) {
+  els.resultEmpty.classList.add("hidden");
+  els.resultVideo.classList.remove("hidden");
+  els.resultLink.classList.remove("hidden");
+  els.resultVideo.src = url;
+  els.videoUrl.href = url;
+}
+
+async function apiFetch(path, apiKey, opts = {}) {
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    ...opts.headers,
+  };
+  if (opts.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+  const text = await res.text();
+  return { res, text };
+}
+
+async function pollTask(taskId, apiKey, signal) {
+  const path = `/contents/generations/tasks/${encodeURIComponent(taskId)}`;
+  while (!signal.aborted) {
+    const { res, text } = await apiFetch(path, apiKey, { method: "GET", signal });
+    if (!res.ok) {
+      throw new Error(await parseApiError(res, text));
     }
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`查询任务返回非 JSON：${text.slice(0, 200)}`);
+    }
+    const st = data.status ?? "";
+    setStatus(`当前状态：${st || "（无 status）"}${taskId ? ` · 任务 ${taskId}` : ""}`);
 
-    mapEl.appendChild(layer);
+    if (st === "succeeded") {
+      const v =
+        data.content?.video_url ||
+        data.content?.file_url ||
+        (typeof data.content === "string" ? null : null);
+      if (v) return { data, videoUrl: v };
+      const snippet = JSON.stringify(data).slice(0, 400);
+      throw new Error(`任务成功但未解析到视频地址。响应片段：${snippet}`);
+    }
+    if (st === "failed" || st === "cancelled" || st === "expired") {
+      const code = data.error?.code ?? "";
+      const msg = data.error?.message ?? text;
+      throw new Error(`任务结束: ${st}${code ? ` | code: ${code}` : ""}${msg ? ` | ${msg}` : ""}`);
+    }
+    await new Promise((r) => setTimeout(r, POLL_MS));
+  }
+  throw new Error("已停止轮询。");
+}
 
-    var labelGroup = document.createElementNS(ns, "g");
-    labelGroup.setAttribute("class", "labels-root");
-    kdoms.forEach(function (k, idx) {
-      var lab = k.label || [w * 0.5, h * 0.5];
-      var t = document.createElementNS(ns, "text");
-      t.setAttribute("x", lab[0]);
-      t.setAttribute("y", lab[1]);
-      t.setAttribute("class", "tile-label");
-      var hc = k.hexCount || 1;
-      var approx = 2 * R * Math.sqrt(hc);
-      t.setAttribute("font-size", String(fitFontSize(k.name, approx, approx * 0.75)));
-      t.textContent = k.name;
-      labelGroup.appendChild(t);
-    });
-    mapEl.appendChild(labelGroup);
+async function onGenerate() {
+  const apiKey = els.apiKey.value.trim();
+  if (!apiKey) {
+    clearStatus();
+    setStatus("请填写 ARK API Key。", true);
+    return;
   }
 
-  function render(data) {
-    if (data.mapVersion === 2 && data.hexCells && data.hex) {
-      selectedKingdom = -1;
-      renderHexMap(data);
+  const imageFiles = readFiles(els.images);
+  const videoUrlList = parseVideoUrlLines();
+  const audioFiles = readFiles(els.audios);
+  const mode = els.imageMode.value;
+
+  const err = validateInputs({ imageFiles, videoUrlList, audioFiles, mode });
+  if (err) {
+    clearStatus();
+    setStatus(err, true);
+    return;
+  }
+
+  clearStatus();
+  resetResult();
+  pollAbort?.abort();
+  pollAbort = new AbortController();
+  const { signal } = pollAbort;
+
+  els.btnGenerate.disabled = true;
+  els.btnStop.disabled = false;
+
+  try {
+    statusRunStart = performance.now();
+    setStatus("正在读取本地文件并构造请求…");
+    const content = await buildContent(imageFiles, videoUrlList, audioFiles, mode, els.prompt.value);
+    const body = buildRequestBody(content);
+    const json = JSON.stringify(body);
+    if (json.length > 62 * 1024 * 1024) {
+      setStatus("请求体过大，请减小素材或改用公网 URL / 素材库方式。", true);
       return;
     }
-    showToast("数据格式已更新，请运行 python build.py 重新生成 data.json");
-  }
-
-  closePanel.addEventListener("click", function () {
-    panel.hidden = true;
-    if (selectedKingdom >= 0) {
-      setKingdomSelection(selectedKingdom, false);
-      selectedKingdom = -1;
-    }
-  });
-
-  document.addEventListener("click", function (e) {
-    if (!panel.hidden && !panel.contains(e.target) && !mapEl.contains(e.target)) {
-      closePanel.click();
-    }
-  });
-
-  fetch("data.json")
-    .then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then(render)
-    .catch(function () {
-      showToast("无法加载 data.json，请先运行 python build.py 并用本地服务器打开");
+    setStatus("正在创建生成任务…");
+    const { res, text } = await apiFetch("/contents/generations/tasks", apiKey, {
+      method: "POST",
+      body: json,
+      signal,
     });
-})();
+    if (!res.ok) {
+      setStatus(await parseApiError(res, text), true);
+      return;
+    }
+    const created = JSON.parse(text);
+    const taskId = created.id;
+    if (!taskId) {
+      setStatus(`创建响应异常: ${text.slice(0, 800)}`, true);
+      return;
+    }
+    setStatus(`任务已创建，正在轮询… · ${taskId}`);
+    const { videoUrl } = await pollTask(taskId, apiKey, signal);
+    setStatus("生成成功。");
+    showResultVideo(videoUrl);
+  } catch (e) {
+    if (e.name === "AbortError") {
+      setStatus("请求已中断。", true);
+    } else {
+      setStatus(e.message || String(e), true);
+    }
+  } finally {
+    els.btnGenerate.disabled = false;
+    els.btnStop.disabled = true;
+  }
+}
+
+function onStop() {
+  pollAbort?.abort();
+}
+
+els.images.addEventListener("change", updateFileList);
+els.videoUrls.addEventListener("input", updateFileList);
+els.audios.addEventListener("change", updateFileList);
+els.btnGenerate.addEventListener("click", () => void onGenerate());
+els.btnStop.addEventListener("click", onStop);
+
+updateFileList();
