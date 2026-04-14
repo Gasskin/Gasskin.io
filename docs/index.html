@@ -121,6 +121,7 @@
       <div class="actions">
         <button type="button" id="btnGenerate" class="primary">生成视频</button>
         <button type="button" id="btnStop" class="ghost" disabled>停止轮询</button>
+        <button type="button" id="btnCancelTask" class="ghost" disabled title="排队中可取消；成功/失败/超时记录可删除（见文档）">取消/删除当前任务</button>
       </div>
       <p class="cors-note">说明：部署在 GitHub Pages 时，浏览器直连 <code>ark.cn-beijing.volces.com</code> 可能触发跨域（CORS）。本地完整联调请运行仓库里的 <code>dev_server.py</code>（同源反向代理）。</p>
     </section>
@@ -135,6 +136,40 @@
       <div id="resultEmpty" class="muted">提交任务成功后，将在此展示输出视频。</div>
       <video id="resultVideo" controls playsinline class="result-video hidden"></video>
       <p id="resultLink" class="hidden"><a id="videoUrl" href="#" target="_blank" rel="noopener">打开视频地址</a></p>
+    </section>
+
+    <section class="card" aria-labelledby="history-heading">
+      <h2 id="history-heading">历史生成任务（近 7 天）</h2>
+      <p class="hint">列出<strong>全部状态</strong>（含失败、取消等），每页 <strong>10</strong> 条；有视频地址时在表格内<strong>在线预览</strong>（若无法播放可点「新窗口打开」）。<code>filter.model</code> 为推理接入点 ID。</p>
+      <div class="history-toolbar">
+        <label class="check">
+          <input type="checkbox" id="historyFilterModel" />
+          按当前所选模型筛选（filter.model）
+        </label>
+        <button type="button" id="btnHistoryRefresh" class="primary">刷新本页</button>
+      </div>
+      <p id="historySummary" class="muted history-summary"></p>
+      <div class="table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>任务 ID</th>
+              <th>状态</th>
+              <th>模型</th>
+              <th>创建时间</th>
+              <th>total_tokens</th>
+              <th>completion_tokens</th>
+              <th>预览 / 链接</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+      <div class="history-pagination">
+        <button type="button" id="historyPrev" class="ghost" disabled>上一页</button>
+        <span id="historyPageInfo" class="history-page-info">第 1 页</span>
+        <button type="button" id="historyNext" class="ghost" disabled>下一页</button>
+      </div>
     </section>
   </main>
 

@@ -8,6 +8,13 @@ const MAX_IMAGES_REF = 9;
 const MAX_VIDEOS = 3;
 const MAX_AUDIOS = 3;
 const POLL_MS = 2500;
+/** 历史列表每页条数 */
+const HISTORY_PAGE_SIZE = 10;
+
+let currentTaskId = null;
+let lastAbortKind = null;
+let historyPageNum = 1;
+let historyTotal = 0;
 
 const $ = (id) => document.getElementById(id);
 
@@ -29,6 +36,14 @@ const els = {
   apiKey: $("apiKey"),
   btnGenerate: $("btnGenerate"),
   btnStop: $("btnStop"),
+  btnCancelTask: $("btnCancelTask"),
+  historyFilterModel: $("historyFilterModel"),
+  btnHistoryRefresh: $("btnHistoryRefresh"),
+  historySummary: $("historySummary"),
+  historyTableBody: $("historyTableBody"),
+  historyPrev: $("historyPrev"),
+  historyNext: $("historyNext"),
+  historyPageInfo: $("historyPageInfo"),
   statusLog: $("statusLog"),
   resultEmpty: $("resultEmpty"),
   resultVideo: $("resultVideo"),
@@ -132,6 +147,82 @@ async function parseApiError(res, bodyText) {
     if (bodyText) msg += ` | ${bodyText.slice(0, 500)}`;
   }
   return msg;
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function renderHistoryRows(items) {
+  if (!items.length) {
+    els.historyTableBody.innerHTML = `<tr><td colspan="7" class="muted">暂无数据</td></tr>`;
+    return;
+  }
+  els.historyTableBody.innerHTML = items
+    .map((row) => {
+      const id = escapeHtml(row.id ?? "");
+      const st = escapeHtml(row.status ?? "");
+      const model = escapeHtml(row.model ?? "");
+      const created = row.created_at
+        ? escapeHtml(new Date(row.created_at * 1000).toLocaleString())
+        : "—";
+      const tt = row.usage?.total_tokens;
+      const tc = row.usage?.completion_tokens;
+      const ttCell = tt != null ? escapeHtml(String(tt)) : "—";
+      const tcCell = tc != null ? escapeHtml(String(tc)) : "—";
+      const vu = row.content?.video_url;
+      let previewCell = "—";
+      if (vu) {
+        const src = escapeAttr(vu);
+        previewCell = `<div class="history-preview-wrap"><video class="history-video" controls playsinline preload="metadata" src="${src}"></video><div class="history-video-actions"><a href="${src}" target="_blank" rel="noopener">新窗口打开</a></div></div>`;
+      }
+      return `<tr><td>${id}</td><td>${st}</td><td>${model}</td><td>${created}</td><td>${ttCell}</td><td>${tcCell}</td><td class="history-preview-cell">${previewCell}</td></tr>`;
+    })
+    .join("");
+}
+
+async function loadHistoryPage() {
+  const apiKey = els.apiKey.value.trim();
+  if (!apiKey) {
+    els.historySummary.textContent = "请先填写 ARK API Key。";
+    els.historyTableBody.innerHTML = "";
+    return;
+  }
+  els.historySummary.textContent = "正在加载…";
+  els.btnHistoryRefresh.disabled = true;
+  els.historyPrev.disabled = true;
+  els.historyNext.disabled = true;
+  try {
+    const q = new URLSearchParams();
+    q.set("page_num", String(historyPageNum));
+    q.set("page_size", String(HISTORY_PAGE_SIZE));
+    if (els.historyFilterModel.checked) q.set("filter.model", els.modelId.value);
+    const path = `/contents/generations/tasks?${q.toString()}`;
+    const { res, text } = await apiFetch(path, apiKey, { method: "GET" });
+    if (!res.ok) {
+      els.historySummary.textContent = await parseApiError(res, text);
+      els.historyTableBody.innerHTML = "";
+      els.historyPrev.disabled = historyPageNum <= 1;
+      els.historyNext.disabled = true;
+      return;
+    }
+    const j = JSON.parse(text);
+    historyTotal = typeof j.total === "number" ? j.total : 0;
+    const items = Array.isArray(j.items) ? j.items : [];
+    const maxPage = Math.max(1, Math.ceil(historyTotal / HISTORY_PAGE_SIZE) || 1);
+    els.historySummary.textContent = `共 ${historyTotal} 条（全部状态）· 每页 ${HISTORY_PAGE_SIZE} 条 · 含失败/取消等；无视频地址则无法预览。`;
+    renderHistoryRows(items);
+    els.historyPrev.disabled = historyPageNum <= 1;
+    els.historyNext.disabled = historyPageNum >= maxPage || historyTotal === 0;
+    els.historyPageInfo.textContent = `第 ${historyPageNum} / ${maxPage} 页`;
+  } catch (e) {
+    els.historySummary.textContent = e.message || String(e);
+    els.historyTableBody.innerHTML = "";
+    els.historyPrev.disabled = true;
+    els.historyNext.disabled = true;
+  } finally {
+    els.btnHistoryRefresh.disabled = false;
+  }
 }
 
 function validateInputs({ imageFiles, videoUrlList, audioFiles, mode }) {
@@ -294,6 +385,8 @@ async function onGenerate() {
 
   els.btnGenerate.disabled = true;
   els.btnStop.disabled = false;
+  els.btnCancelTask.disabled = true;
+  currentTaskId = null;
 
   try {
     statusRunStart = performance.now();
@@ -321,24 +414,58 @@ async function onGenerate() {
       setStatus(`创建响应异常: ${text.slice(0, 800)}`, true);
       return;
     }
+    currentTaskId = taskId;
+    els.btnCancelTask.disabled = false;
     setStatus(`任务已创建，正在轮询… · ${taskId}`);
     const { videoUrl } = await pollTask(taskId, apiKey, signal);
     setStatus("生成成功。");
     showResultVideo(videoUrl);
   } catch (e) {
     if (e.name === "AbortError") {
-      setStatus("请求已中断。", true);
+      if (lastAbortKind === "api-cancel") {
+        lastAbortKind = null;
+      } else {
+        lastAbortKind = null;
+        setStatus("已停止轮询。", true);
+      }
     } else {
       setStatus(e.message || String(e), true);
     }
   } finally {
     els.btnGenerate.disabled = false;
     els.btnStop.disabled = true;
+    els.btnCancelTask.disabled = true;
+    currentTaskId = null;
   }
 }
 
 function onStop() {
+  lastAbortKind = "stop";
   pollAbort?.abort();
+}
+
+async function onCancelTask() {
+  const apiKey = els.apiKey.value.trim();
+  if (!apiKey) {
+    setStatus("请填写 ARK API Key。", true);
+    return;
+  }
+  const tid = currentTaskId;
+  if (!tid) return;
+  try {
+    setStatus("正在请求取消/删除（DELETE）…");
+    const delPath = `/contents/generations/tasks/${encodeURIComponent(tid)}`;
+    const { res, text } = await apiFetch(delPath, apiKey, { method: "DELETE" });
+    if (!res.ok) {
+      setStatus(await parseApiError(res, text), true);
+      return;
+    }
+    lastAbortKind = "api-cancel";
+    pollAbort?.abort();
+    setStatus(`取消/删除已受理 · ${tid}`);
+  } catch (e) {
+    setStatus(e.message || String(e), true);
+  }
 }
 
 els.images.addEventListener("change", updateFileList);
@@ -346,5 +473,20 @@ els.videoUrls.addEventListener("input", updateFileList);
 els.audios.addEventListener("change", updateFileList);
 els.btnGenerate.addEventListener("click", () => void onGenerate());
 els.btnStop.addEventListener("click", onStop);
+els.btnCancelTask.addEventListener("click", () => void onCancelTask());
+els.btnHistoryRefresh.addEventListener("click", () => void loadHistoryPage());
+els.historyPrev.addEventListener("click", () => {
+  if (historyPageNum > 1) {
+    historyPageNum -= 1;
+    void loadHistoryPage();
+  }
+});
+els.historyNext.addEventListener("click", () => {
+  const maxPage = Math.max(1, Math.ceil(historyTotal / HISTORY_PAGE_SIZE));
+  if (historyPageNum < maxPage) {
+    historyPageNum += 1;
+    void loadHistoryPage();
+  }
+});
 
 updateFileList();

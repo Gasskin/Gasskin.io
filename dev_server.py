@@ -55,6 +55,12 @@ class DevHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(404, "Not Found")
 
+    def do_DELETE(self):
+        if self.path.split("?", 1)[0].startswith("/api/v3"):
+            self._proxy()
+            return
+        self.send_error(404, "Not Found")
+
     def _serve_index(self, head=False):
         index = DOCS / "index.html"
         raw = index.read_text(encoding="utf-8")
@@ -80,7 +86,8 @@ class DevHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             data = self.rfile.read(length) if length else b""
 
-        req = urllib.request.Request(url, data=data, method="HEAD" if head else self.command)
+        method = "HEAD" if head else self.command
+        req = urllib.request.Request(url, data=data, method=method)
         for name in ("Authorization", "Content-Type"):
             val = self.headers.get(name)
             if val:
