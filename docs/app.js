@@ -1,3 +1,4 @@
+/* ── 配置常量 ── */
 const API_BASE = (() => {
   const g = typeof window !== "undefined" ? window : {};
   const o = g.__SEEDANCE_API_BASE__;
@@ -8,12 +9,12 @@ const MAX_IMAGES_REF = 9;
 const MAX_VIDEOS = 3;
 const MAX_AUDIOS = 3;
 const POLL_MS = 500;
-/** 历史列表每页条数 */
 const HISTORY_PAGE_SIZE = 10;
 
 let historyPageNum = 1;
 let historyTotal = 0;
 
+/* ── DOM 引用 ── */
 const $ = (id) => document.getElementById(id);
 
 const els = {
@@ -49,9 +50,10 @@ const els = {
 };
 
 let pollAbort = null;
-/** 本次点击「生成」进入主流程后的起始时间（performance.now），用于「总计用时」 */
+/** 主流程起始时间，用于计算总耗时 */
 let statusRunStart = null;
 
+/* ── 工具函数 ── */
 function fmtElapsed(ms) {
   if (!Number.isFinite(ms) || ms < 0) return "0.0 秒";
   const s = ms / 1000;
@@ -61,6 +63,7 @@ function fmtElapsed(ms) {
   return `${m} 分 ${r < 10 ? r.toFixed(1) : Math.round(r)} 秒`;
 }
 
+/* ── 状态日志 ── */
 function setStatus(text, isError = false) {
   const msg = String(text ?? "");
   const elapsed = statusRunStart != null ? performance.now() - statusRunStart : null;
@@ -88,6 +91,7 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+/* ── 文件与素材处理 ── */
 function readFiles(input) {
   return Array.from(input?.files ?? []);
 }
@@ -151,6 +155,7 @@ function escapeAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
+/* ── 历史任务列表 ── */
 function renderHistoryRows(items) {
   if (!items.length) {
     els.historyTableBody.innerHTML = `<tr><td colspan="7" class="muted">暂无数据</td></tr>`;
@@ -159,7 +164,8 @@ function renderHistoryRows(items) {
   els.historyTableBody.innerHTML = items
     .map((row) => {
       const id = escapeHtml(row.id ?? "");
-      const st = escapeHtml(row.status ?? "");
+      const rawStatus = row.status ?? "";
+      const st = `<span class="status-badge" data-status="${escapeAttr(rawStatus)}">${escapeHtml(rawStatus)}</span>`;
       const model = escapeHtml(row.model ?? "");
       const created = row.created_at
         ? escapeHtml(new Date(row.created_at * 1000).toLocaleString())
@@ -236,6 +242,7 @@ async function loadHistoryPage() {
   }
 }
 
+/* ── 输入校验与请求构造 ── */
 function validateInputs({ imageFiles, videoUrlList, audioFiles, mode }) {
   if (audioFiles.length && !imageFiles.length && !videoUrlList.length) {
     return "参考音频不可单独使用：请至少上传一张图片或填写一条参考视频 URL。";
@@ -322,6 +329,7 @@ function showResultVideo(url) {
   els.videoUrl.href = url;
 }
 
+/* ── API 通信 ── */
 async function apiFetch(path, apiKey, opts = {}) {
   const headers = {
     Authorization: `Bearer ${apiKey}`,
@@ -376,6 +384,7 @@ async function pollTask(taskId, apiKey, signal) {
   throw new Error("已停止轮询。");
 }
 
+/* ── 主流程：生成视频 ── */
 async function onGenerate() {
   const apiKey = els.apiKey.value.trim();
   if (!apiKey) {
@@ -454,6 +463,7 @@ function onStop() {
   pollAbort?.abort();
 }
 
+/* ── 事件绑定 ── */
 els.images.addEventListener("change", updateFileList);
 els.videoUrls.addEventListener("input", updateFileList);
 els.audios.addEventListener("change", updateFileList);
