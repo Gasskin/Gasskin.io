@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-本地联调：托管 docs/，并把 /api/v3/* 反向代理到火山方舟。
-页面与接口同源，可避免浏览器对 ark.cn-beijing.volces.com 的跨域限制。
+本地开发服务器：托管 docs/ 目录，并把 /api/v3/* 反向代理到火山方舟。
+页面与接口同源，可避免浏览器跨域限制。
 
 用法：
   python build.py
@@ -17,7 +17,8 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 ARK_ORIGIN = "https://ark.cn-beijing.volces.com"
-DOCS = Path(__file__).resolve().parent / "docs"
+ROOT = Path(__file__).resolve().parent
+DOCS = ROOT / "docs"
 HOST = "127.0.0.1"
 PORT = 8765
 
@@ -34,8 +35,9 @@ class DevHandler(SimpleHTTPRequestHandler):
         if path.startswith("/api/v3"):
             self._proxy()
             return
-        if path in ("/", "/index.html"):
-            self._serve_index()
+        # 对所有 index.html 注入 API base（插件页面可能需要）
+        if path in ("/", "/index.html") or path.endswith("/index.html") or path.endswith("/"):
+            self._serve_html_with_inject(path)
             return
         super().do_GET()
 
@@ -44,8 +46,8 @@ class DevHandler(SimpleHTTPRequestHandler):
         if path.startswith("/api/v3"):
             self._proxy(head=True)
             return
-        if path in ("/", "/index.html"):
-            self._serve_index(head=True)
+        if path in ("/", "/index.html") or path.endswith("/index.html") or path.endswith("/"):
+            self._serve_html_with_inject(path, head=True)
             return
         super().do_HEAD()
 
@@ -61,16 +63,14 @@ class DevHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(404, "Not Found")
 
-    def _serve_index(self, head=False):
-        index = DOCS / "index.html"
-        raw = index.read_text(encoding="utf-8")
-        inject = (
-            "<script>window.__SEEDANCE_API_BASE__=location.origin+\"/api/v3\";</script>\n"
-        )
-        if "</head>" in raw:
-            raw = raw.replace("</head>", inject + "</head>", 1)
-        else:
-            raw = inject + raw
+    def _serve_html(self, filepath, head=False, inject_api=False):
+        raw = filepath.read_text(encoding="utf-8")
+        if inject_api:
+            snippet = "<script>window.__SEEDANCE_API_BASE__=location.origin+\"/api/v3\";</script>\n"
+            if "</head>" in raw:
+                raw = raw.replace("</head>", snippet + "</head>", 1)
+            else:
+                raw = snippet + raw
         body = raw.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -78,6 +78,18 @@ class DevHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         if not head:
             self.wfile.write(body)
+
+    def _serve_html_with_inject(self, path, head=False):
+        """为 index.html 注入 API base 脚本（供需要代理的插件使用）。"""
+        if path.endswith("/"):
+            path += "index.html"
+        filepath = DOCS / path.lstrip("/")
+        if not filepath.is_file():
+            self.send_error(404, "Not Found")
+            return
+        # 非根页面才注入 API base
+        inject_api = path != "/index.html"
+        self._serve_html(filepath, head=head, inject_api=inject_api)
 
     def _proxy(self, head=False):
         url = f"{ARK_ORIGIN}{self.path}"
