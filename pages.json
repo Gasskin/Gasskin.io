@@ -5,13 +5,6 @@
     "icon": "🎬",
     "description": "基于火山方舟 Seedance 2.0 的视频生成工具",
     "path": "seedance/index.html"
-  },
-  {
-    "id": "answer",
-    "title": "问卷测评",
-    "icon": "📋",
-    "description": "按题目回答问卷，最终统计各分类得分并给出所属类型",
-    "path": "answer/index.html"
   }
 ]
 
