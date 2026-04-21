@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gasskin.io</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d11;
+      --sidebar-bg: #10131a;
+      --sidebar-w: 260px;
+      --border: #252d3d;
+      --text: #e4e7ec;
+      --muted: #8b95a8;
+      --accent: #5b8def;
+      --accent-dim: #3a5faa;
+      --accent-glow: rgba(91,141,239,.12);
+      --radius-sm: 8px;
+      --font: "Segoe UI", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --transition: .2s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; height: 100vh; overflow: hidden; font-family: var(--font); background: var(--bg); color: var(--text); display: flex; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      height: 100vh;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      transition: transform var(--transition);
+      z-index: 10;
+    }
+    .sidebar-header {
+      padding: 1.3rem 1.2rem .8rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      background: linear-gradient(135deg, #e4e7ec 30%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      white-space: nowrap;
+    }
+    .sidebar-nav { flex: 1; padding: .4rem .6rem; display: flex; flex-direction: column; gap: .2rem; }
+    .nav-item {
+      display: flex; align-items: center; gap: .65rem;
+      padding: .65rem .85rem; border-radius: var(--radius-sm);
+      cursor: pointer; color: var(--muted); font-size: .88rem; font-weight: 500;
+      transition: background var(--transition), color var(--transition);
+      text-decoration: none; border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.04); color: var(--text); }
+    .nav-item.active { background: var(--accent-glow); color: var(--accent); }
+    .nav-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nav-item .nav-desc {
+      display: none;
+    }
+
+    /* ── Toggle button (mobile) ── */
+    .sidebar-toggle {
+      display: none; position: fixed; top: .6rem; left: .6rem; z-index: 20;
+      background: var(--sidebar-bg); border: 1px solid var(--border); color: var(--text);
+      border-radius: var(--radius-sm); padding: .45rem .6rem; font-size: 1.1rem; cursor: pointer;
+    }
+
+    /* ── Main content ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .welcome {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem; text-align: center; color: var(--muted);
+    }
+    .welcome h2 { margin: 0 0 .5rem; font-size: 1.6rem; color: var(--text); }
+    .welcome p { margin: 0; font-size: .95rem; }
+    .page-frame { width: 100%; height: 100%; border: none; display: none; }
+    .page-frame.active { display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-toggle { display: block; }
+      .main { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">Gasskin.io</div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+  <div class="main" id="main">
+    <div class="welcome" id="welcome">
+      <h2>👋 欢迎使用 Gasskin.io</h2>
+      <p>从左侧菜单选择一个功能页面开始。</p>
+    </div>
+  </div>
+
+  <script>
+    const nav = document.getElementById('sidebarNav');
+    const main = document.getElementById('main');
+    const welcome = document.getElementById('welcome');
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    let activeId = null;
+
+    toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    fetch('pages.json')
+      .then(r => r.json())
+      .then(pages => {
+        pages.forEach(p => {
+          const btn = document.createElement('button');
+          btn.className = 'nav-item';
+          btn.dataset.id = p.id;
+          btn.innerHTML = `<span class="nav-icon">${p.icon || '📄'}</span><span class="nav-label">${p.title}</span>`;
+          btn.title = p.description || p.title;
+          btn.addEventListener('click', () => loadPage(p));
+          nav.appendChild(btn);
+
+          // Create iframe
+          const frame = document.createElement('iframe');
+          frame.className = 'page-frame';
+          frame.id = `frame-${p.id}`;
+          frame.setAttribute('loading', 'lazy');
+          main.appendChild(frame);
+        });
+
+        // Auto-select from hash
+        const hash = location.hash.slice(1);
+        const target = pages.find(p => p.id === hash);
+        if (target) loadPage(target);
+      });
+
+    function loadPage(page) {
+      // Update active nav
+      nav.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.id === page.id));
+      // Hide welcome
+      welcome.style.display = 'none';
+      // Show correct frame
+      main.querySelectorAll('.page-frame').forEach(f => f.classList.toggle('active', f.id === `frame-${page.id}`));
+      const frame = document.getElementById(`frame-${page.id}`);
+      if (!frame.src || !frame.src.includes(page.path)) {
+        frame.src = page.path;
+      }
+      activeId = page.id;
+      location.hash = page.id;
+      // Close mobile sidebar
+      sidebar.classList.remove('open');
+    }
+  </script>
+</body>
+</html>
+
