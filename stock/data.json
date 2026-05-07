@@ -1,5 +1,5 @@
 {
-  "update_time": "2026-05-07 14:21:12",
+  "update_time": "2026-05-07 14:31:21",
   "index": {
     "code": "000001.SH",
     "name": "上证指数",
@@ -113,6 +113,62 @@
       "change_pct": 0.68,
       "ma120": 77.61,
       "water_level": 82.1,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "000333",
+      "ts_code": "000333.SZ",
+      "name": "美的集团",
+      "note": "成本75",
+      "latest_price": 79.81,
+      "prev_close": 80.44,
+      "change": -0.63,
+      "change_pct": -0.78,
+      "ma120": 78.2,
+      "water_level": 102.06,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "000921",
+      "ts_code": "000921.SZ",
+      "name": "海信家电",
+      "note": "成本21",
+      "latest_price": 24.24,
+      "prev_close": 24.26,
+      "change": -0.02,
+      "change_pct": -0.08,
+      "ma120": 24.26,
+      "water_level": 99.91,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "603005",
+      "ts_code": "603005.SH",
+      "name": "晶方科技",
+      "note": "成本30",
+      "latest_price": 32.41,
+      "prev_close": 31.57,
+      "change": 0.84,
+      "change_pct": 2.66,
+      "ma120": 29.28,
+      "water_level": 110.69,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "600030",
+      "ts_code": "600030.SH",
+      "name": "中信证券",
+      "note": "成本25",
+      "latest_price": 27.23,
+      "prev_close": 27.49,
+      "change": -0.26,
+      "change_pct": -0.95,
+      "ma120": 27.34,
+      "water_level": 99.61,
       "trade_date": "20260507",
       "buys": []
     }
