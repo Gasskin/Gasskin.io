@@ -1,6 +1,8 @@
 ﻿name: Update Stock Data & Deploy
 
 on:
+  push:
+    branches: [main]
   schedule:
     # 收盘（北京时间 15:30 = UTC 07:30），之后每小时直到 23:30（UTC 15:30）
     - cron: '30 7  * * 1-5'   # 15:30 BJ 收盘

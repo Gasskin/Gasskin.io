@@ -1,5 +1,5 @@
 {
-  "update_time": "2026-05-07 19:42:27",
+  "update_time": "2026-05-07 22:13:51",
   "index": {
     "code": "000001.SH",
     "name": "上证指数",
@@ -17,7 +17,7 @@
       "code": "601689",
       "ts_code": "601689.SH",
       "name": "拓普集团",
-      "note": "备注2312312323",
+      "note": "60基准线，上下波动12%，始终保留舱底",
       "latest_price": 64.47,
       "prev_close": 62.04,
       "change": 2.43,
@@ -31,6 +31,90 @@
           "pct": 13.14
         }
       ]
+    },
+    {
+      "code": "000661",
+      "ts_code": "000661.SZ",
+      "name": "长春高新",
+      "note": "86/96 130/200",
+      "latest_price": 87.43,
+      "prev_close": 85.39,
+      "change": 2.04,
+      "change_pct": 2.39,
+      "ma120": 93.55,
+      "water_level": 93.46,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "603799",
+      "ts_code": "603799.SH",
+      "name": "华友钴业",
+      "note": "48/54/60 77",
+      "latest_price": 68.2,
+      "prev_close": 67.97,
+      "change": 0.23,
+      "change_pct": 0.34,
+      "ma120": 66.63,
+      "water_level": 102.36,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "600645",
+      "ts_code": "600645.SH",
+      "name": "中源协和",
+      "note": "35/85",
+      "latest_price": 24.98,
+      "prev_close": 24.87,
+      "change": 0.11,
+      "change_pct": 0.44,
+      "ma120": 27.57,
+      "water_level": 90.61,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "600023",
+      "ts_code": "600023.SH",
+      "name": "浙能电力",
+      "note": "5.5/6.5",
+      "latest_price": 5.84,
+      "prev_close": 5.76,
+      "change": 0.08,
+      "change_pct": 1.39,
+      "ma120": 5.26,
+      "water_level": 111.13,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "601958",
+      "ts_code": "601958.SH",
+      "name": "金钼股份",
+      "note": "20/30",
+      "latest_price": 20.89,
+      "prev_close": 20.57,
+      "change": 0.32,
+      "change_pct": 1.56,
+      "ma120": 18.24,
+      "water_level": 114.52,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "603325",
+      "ts_code": "603325.SH",
+      "name": "博隆技术",
+      "note": "92/114",
+      "latest_price": 63.72,
+      "prev_close": 63.29,
+      "change": 0.43,
+      "change_pct": 0.68,
+      "ma120": 77.61,
+      "water_level": 82.1,
+      "trade_date": "20260507",
+      "buys": []
     }
   ]
 }
