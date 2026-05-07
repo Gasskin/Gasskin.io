@@ -5,10 +5,10 @@
 
 // ── 水位区间着色 ──────────────────────────────────────────────
 const ZONES = [
-  { max: 115,       color: '#ef4444' },
   // { max: 100,      color: '#f97316' },
   // { max: 105,      color: '#eab308' },
   { max: 100,      color: '#22c55e' },
+  { max: 999,       color: '#ef4444' },
   { max: Infinity, color: '#06b6d4' },
 ];
 const getZone  = pct => ZONES.find(z => pct < z.max) ?? ZONES[ZONES.length - 1];
