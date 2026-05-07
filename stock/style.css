@@ -89,6 +89,7 @@ body {
   gap: .5rem;
 }
 .stock-name  { font-size: .95rem; font-weight: 700; }
+.stock-name.has-buys { color: #f97316; }
 .stock-code  { font-size: .75rem; color: var(--muted); font-weight: 400; margin-left: .3rem; }
 .stock-note  { font-size: .75rem; color: var(--muted); white-space: nowrap; }
 .stock-err   { font-size: .82rem; color: #f87171; }
@@ -111,8 +112,9 @@ body {
 /* ── 买入记录 ── */
 .buys {
   display: flex;
-  flex-wrap: wrap;
-  gap: .4rem .8rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .4rem;
   padding-top: .2rem;
   border-top: 1px solid var(--border);
 }
@@ -121,6 +123,7 @@ body {
   align-items: baseline;
   gap: .25rem;
   font-size: .82rem;
+  width: 100%;
 }
 .buy-label { color: var(--muted); }
 .buy-price { font-variant-numeric: tabular-nums; }

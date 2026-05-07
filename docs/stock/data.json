@@ -1,5 +1,5 @@
 {
-  "update_time": "2026-05-07 22:13:51",
+  "update_time": "2026-05-07 23:24:34",
   "index": {
     "code": "000001.SH",
     "name": "上证指数",
@@ -115,6 +115,99 @@
       "water_level": 82.1,
       "trade_date": "20260507",
       "buys": []
+    },
+    {
+      "code": "000333",
+      "ts_code": "000333.SZ",
+      "name": "美的集团",
+      "note": "成本75",
+      "latest_price": 79.81,
+      "prev_close": 80.44,
+      "change": -0.63,
+      "change_pct": -0.78,
+      "ma120": 78.2,
+      "water_level": 102.06,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "000921",
+      "ts_code": "000921.SZ",
+      "name": "海信家电",
+      "note": "成本21",
+      "latest_price": 24.24,
+      "prev_close": 24.26,
+      "change": -0.02,
+      "change_pct": -0.08,
+      "ma120": 24.26,
+      "water_level": 99.91,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "603005",
+      "ts_code": "603005.SH",
+      "name": "晶方科技",
+      "note": "成本30",
+      "latest_price": 32.41,
+      "prev_close": 31.57,
+      "change": 0.84,
+      "change_pct": 2.66,
+      "ma120": 29.28,
+      "water_level": 110.69,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "600030",
+      "ts_code": "600030.SH",
+      "name": "中信证券",
+      "note": "成本25",
+      "latest_price": 27.23,
+      "prev_close": 27.49,
+      "change": -0.26,
+      "change_pct": -0.95,
+      "ma120": 27.34,
+      "water_level": 99.61,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "600989",
+      "ts_code": "600989.SH",
+      "name": "宝丰能源",
+      "note": "？",
+      "latest_price": 28.1,
+      "prev_close": 30.16,
+      "change": -2.06,
+      "change_pct": -6.83,
+      "ma120": 23.82,
+      "water_level": 117.98,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "600660",
+      "ts_code": "600660.SH",
+      "name": "福耀玻璃",
+      "note": "福耀玻璃",
+      "latest_price": 59.42,
+      "prev_close": 59.31,
+      "change": 0.11,
+      "change_pct": 0.19,
+      "ma120": 61.33,
+      "water_level": 96.88,
+      "trade_date": "20260507",
+      "buys": [
+        {
+          "price": 55.13,
+          "pct": 7.78
+        },
+        {
+          "price": 57.79,
+          "pct": 2.82
+        }
+      ]
     }
   ]
 }

@@ -18,7 +18,7 @@ const pctColor = v   => v > 0 ? '#ef4444' : v < 0 ? '#22c55e' : '#94a3b8'; // �
 const sign     = v   => v >= 0 ? '+' : '';
 
 // ── 渲染大盘水位 ──────────────────────────────────────────────
-function renderIndex(d) {
+function renderIndex(d, updateTime = d?.update_time) {
   const priceEl = $('idx-price');
   priceEl.textContent = fmt(d.latest_price);
   priceEl.style.color = pctColor(d.change);
@@ -29,7 +29,7 @@ function renderIndex(d) {
   waterEl.textContent = `${d.water_level.toFixed(2)}%`;
   waterEl.style.color = getZone(d.water_level).color;
 
-  $('updateTime').textContent = d.update_time ?? '—';
+  $('updateTime').textContent = updateTime ?? '—';
 }
 
 // ── 渲染单只自选股卡片 ────────────────────────────────────────
@@ -47,6 +47,7 @@ function renderStock(s) {
   const priceColor = pctColor(s.change);
   const waterColor = getZone(s.water_level).color;
   const chgStr = `${sign(s.change_pct)}${s.change_pct.toFixed(2)}%`;
+  const hasBuys = (s.buys || []).length > 0;
 
   const buysHtml = (s.buys || []).map(b => `
     <div class="buy-row">
@@ -58,7 +59,7 @@ function renderStock(s) {
 
   return `<div class="stock-card">
     <div class="stock-header">
-      <span class="stock-name">${s.name} <span class="stock-code">${s.ts_code}</span></span>
+      <span class="stock-name${hasBuys ? ' has-buys' : ''}">${s.name} <span class="stock-code">${s.ts_code}</span></span>
       <span class="stock-note">${s.note}</span>
     </div>
     <div class="stock-metrics">
@@ -87,7 +88,7 @@ async function main() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    renderIndex(data.index);
+    renderIndex(data.index, data.update_time);
 
     const wl = data.watchlist ?? [];
     $('watchlist').innerHTML = wl.length
