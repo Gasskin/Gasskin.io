@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>股票信息</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="layout">
+
+    <!-- 大盘水位 -->
+    <h1 class="page-title">大盘水位</h1>
+    <section class="card" id="indexCard">
+      <div class="row">
+        <span class="lbl">当前价格</span>
+        <span class="val" id="idx-price">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">MA120</span>
+        <span class="val secondary" id="idx-ma120">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">水位</span>
+        <span class="val" id="idx-water">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">数据时间</span>
+        <span class="update-time" id="updateTime">—</span>
+      </div>
+    </section>
+
+    <!-- 自选股 -->
+    <h2 class="section-title">自选股</h2>
+    <div id="watchlist"></div>
+
+    <div class="error-banner hidden" id="errorBanner"></div>
+
+  </main>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
+

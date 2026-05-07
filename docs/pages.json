@@ -7,11 +7,11 @@
     "path": "seedance/index.html"
   },
   {
-    "id": "answer",
-    "title": "问卷测评",
-    "icon": "📋",
-    "description": "按题目回答问卷，最终统计各分类得分并给出所属类型",
-    "path": "answer/index.html"
+    "id": "stock",
+    "title": "股票",
+    "icon": "📈",
+    "description": "上证指数最新价格、MA120 及价格水位（最新价÷MA120）",
+    "path": "stock/index.html"
   }
 ]
 

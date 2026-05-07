@@ -5,6 +5,13 @@
     "icon": "🎬",
     "description": "基于火山方舟 Seedance 2.0 的视频生成工具",
     "path": "seedance/index.html"
+  },
+  {
+    "id": "stock",
+    "title": "股票",
+    "icon": "📈",
+    "description": "上证指数最新价格、MA120 及价格水位（最新价÷MA120）",
+    "path": "stock/index.html"
   }
 ]
 

@@ -1,0 +1,36 @@
+{
+  "update_time": "2026-05-07 19:42:27",
+  "index": {
+    "code": "000001.SH",
+    "name": "上证指数",
+    "latest_price": 4180.09,
+    "prev_close": 4160.17,
+    "change": 19.92,
+    "change_pct": 0.48,
+    "ma120": 4018.55,
+    "water_level": 104.02,
+    "trade_date": "20260507",
+    "buys": []
+  },
+  "watchlist": [
+    {
+      "code": "601689",
+      "ts_code": "601689.SH",
+      "name": "拓普集团",
+      "note": "备注2312312323",
+      "latest_price": 64.47,
+      "prev_close": 62.04,
+      "change": 2.43,
+      "change_pct": 3.92,
+      "ma120": 66.36,
+      "water_level": 97.15,
+      "trade_date": "20260507",
+      "buys": [
+        {
+          "price": 56.98,
+          "pct": 13.14
+        }
+      ]
+    }
+  ]
+}

@@ -25,6 +25,7 @@ HOME_FILES = ("index.html", "pages.json")
 EXCLUDE_DIRS = {"docs", ".git", "__pycache__", "node_modules"}
 
 
+
 def discover_plugins() -> list[Path]:
     """扫描根目录下所有含 index.html 的文件夹作为插件。"""
     plugins = []
@@ -52,13 +53,19 @@ def main() -> None:
         shutil.copy2(ROOT / name, DST / name)
 
     # 2. 复制各插件目录到 docs/<plugin_name>/（排除非前端文件）
-    SKIP_NAMES = {"Readme", "__pycache__"}
+    # 跳过目录名
+    SKIP_NAMES = {"Readme", "__pycache__", "tushare-data", "scripts", "references"}
+    # 跳过文件扩展名（脚本、文档等不需要发布到 GitHub Pages）
+    SKIP_SUFFIXES = {".py", ".md", ".txt"}
+
     plugins = discover_plugins()
     for plugin_dir in plugins:
         dst = DST / plugin_dir.name
         dst.mkdir(parents=True, exist_ok=True)
         for item in plugin_dir.iterdir():
             if item.name in SKIP_NAMES or item.name.startswith("."):
+                continue
+            if item.is_file() and item.suffix.lower() in SKIP_SUFFIXES:
                 continue
             dest = dst / item.name
             if item.is_dir():

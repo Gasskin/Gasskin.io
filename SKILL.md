@@ -1,6 +1,11 @@
-﻿# Gasskin.io
+﻿---
+name: create-page
+description: 基于 GitHub Pages 的静态工具集合站，采用插件化架构，每个功能模块独立开发、统一导航。
+---
 
-基于 GitHub Pages 的静态工具集合站，采用插件化架构，每个功能模块独立开发、统一导航。
+
+
+
 
 ## 项目结构
 
