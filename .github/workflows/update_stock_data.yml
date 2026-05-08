@@ -37,6 +37,7 @@ jobs:
         run: pip install tushare pandas
 
       - name: Update stock data
+        continue-on-error: true   # 数据拉取失败时仍继续构建部署（使用上次 data.json）
         run: python stock/update_data.py
 
       - name: Build docs

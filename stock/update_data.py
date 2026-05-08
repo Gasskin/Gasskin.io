@@ -31,7 +31,8 @@ OUTPUT_FILE = SCRIPT_DIR / "data.json"
 INDEX_CODE  = "000001.SH"
 INDEX_NAME  = "上证指数"
 MA_WINDOW   = 120
-today       = datetime.datetime.now()
+_CST = datetime.timezone(datetime.timedelta(hours=8))
+today       = datetime.datetime.now(_CST)
 END_DATE    = today.strftime("%Y%m%d")
 START_DATE  = (today - datetime.timedelta(days=730)).strftime("%Y%m%d")
 
@@ -190,8 +191,9 @@ def main() -> None:
                 "buys": [{"price": p, "pct": None} for p in item["buys"]],
             })
 
+    tz_cst = datetime.timezone(datetime.timedelta(hours=8))
     output = {
-        "update_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "update_time": datetime.datetime.now(tz_cst).strftime("%Y-%m-%d %H:%M:%S"),
         "index":       idx,
         "watchlist":   watchlist,
     }
@@ -201,5 +203,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"[ERROR] update_data.py 运行失败: {e}")
+        import traceback; traceback.print_exc()
+        # 即使出错也以 0 退出，让构建 / 部署流程继续（使用上次的 data.json）
+        raise SystemExit(0)
 
