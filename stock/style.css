@@ -136,10 +136,6 @@ body {
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: .1rem .55rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
   flex-shrink: 0;
 }
 
