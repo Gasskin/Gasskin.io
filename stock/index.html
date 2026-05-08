@@ -33,7 +33,16 @@
 
     <!-- 自选股 -->
     <section class="section">
-      <div class="section-title">自选股</div>
+      <div class="section-title-row">
+        <div class="section-title">自选股</div>
+        <div class="toolbar">
+          <label class="toggle-label">
+            <input type="checkbox" id="onlyHolding" />
+            <span class="toggle-text">仅持仓</span>
+          </label>
+          <button class="sort-btn" id="sortBtn" data-dir="asc">水位 ↑</button>
+        </div>
+      </div>
       <div id="watchlist"></div>
     </section>
 

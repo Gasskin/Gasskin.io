@@ -87,18 +87,47 @@ function renderStock(s) {
 }
 
 // ── 入口 ────────────────────────────────────────────────────
+let _watchlist = [];
+
+function applyFilters() {
+  const onlyHolding = document.getElementById('onlyHolding').checked;
+  const dir = document.getElementById('sortBtn').dataset.dir; // 'asc' | 'desc'
+
+  let list = [..._watchlist];
+  if (onlyHolding) list = list.filter(s => s.buys && s.buys.length > 0);
+  list.sort((a, b) => {
+    const wa = a.water_level ?? 0, wb = b.water_level ?? 0;
+    return dir === 'asc' ? wa - wb : wb - wa;
+  });
+
+  const el = document.getElementById('watchlist');
+  el.innerHTML = list.length
+    ? list.map(renderStock).join('')
+    : '<p class="empty-tip">暂无数据</p>';
+}
+
 async function main() {
   try {
     const res = await fetch('data.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderIndex(data.index, data.update_time);
-    const wl = data.watchlist ?? [];
-    $('watchlist').innerHTML = wl.length
-      ? wl.map(renderStock).join('')
-      : '<p class="empty-tip">watch.txt 中暂无自选股</p>';
+    _watchlist = data.watchlist ?? [];
+    applyFilters();
+
+    // 勾选"仅持仓"
+    document.getElementById('onlyHolding').addEventListener('change', applyFilters);
+
+    // 水位排序按钮
+    const sortBtn = document.getElementById('sortBtn');
+    sortBtn.addEventListener('click', () => {
+      const next = sortBtn.dataset.dir === 'asc' ? 'desc' : 'asc';
+      sortBtn.dataset.dir = next;
+      sortBtn.textContent = next === 'asc' ? '水位 ↑' : '水位 ↓';
+      applyFilters();
+    });
   } catch (err) {
-    const el = $('errorBanner');
+    const el = document.getElementById('errorBanner');
     el.textContent = `⚠️ 数据加载失败：${err.message}`;
     el.classList.remove('hidden');
   }

@@ -38,12 +38,60 @@ body {
   gap: .6rem;
 }
 
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+}
+
 .section-title {
   font-size: .68rem;
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--dim);
+}
+
+/* 工具栏（仅持仓 + 排序） */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-label input[type="checkbox"] {
+  accent-color: #f97316;
+  width: 13px;
+  height: 13px;
+  cursor: pointer;
+}
+.toggle-text {
+  font-size: .68rem;
+  color: var(--dim);
+}
+
+.sort-btn {
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--dim);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .15rem .55rem;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.sort-btn:hover {
+  color: var(--text);
+  border-color: #3a4a62;
 }
 
 /* ── 卡片 ────────────────────────────────────────────── */
