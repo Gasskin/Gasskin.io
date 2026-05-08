@@ -1,5 +1,5 @@
 {
-  "update_time": "2026-05-08 14:29:37",
+  "update_time": "2026-05-08 15:49:53",
   "index": {
     "code": "000001.SH",
     "name": "上证指数",
@@ -213,6 +213,34 @@
           "pct": 2.82
         }
       ]
+    },
+    {
+      "code": "003021",
+      "ts_code": "003021.SZ",
+      "name": "兆威机电",
+      "note": "成本112 波动30%",
+      "latest_price": 100.6,
+      "prev_close": 97.53,
+      "change": 3.07,
+      "change_pct": 3.15,
+      "ma120": 110.92,
+      "water_level": 90.7,
+      "trade_date": "20260507",
+      "buys": []
+    },
+    {
+      "code": "603728",
+      "ts_code": "603728.SH",
+      "name": "鸣志电器",
+      "note": "40/50/58/70 波动20%",
+      "latest_price": 61.34,
+      "prev_close": 60.03,
+      "change": 1.31,
+      "change_pct": 2.18,
+      "ma120": 65.29,
+      "water_level": 93.94,
+      "trade_date": "20260507",
+      "buys": []
     }
   ]
 }
