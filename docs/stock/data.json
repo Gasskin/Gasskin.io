@@ -1,5 +1,5 @@
 {
-  "update_time": "2026-05-07 23:24:34",
+  "update_time": "2026-05-08 11:59:14",
   "index": {
     "code": "000001.SH",
     "name": "上证指数",
@@ -25,12 +25,7 @@
       "ma120": 66.36,
       "water_level": 97.15,
       "trade_date": "20260507",
-      "buys": [
-        {
-          "price": 56.98,
-          "pct": 13.14
-        }
-      ]
+      "buys": []
     },
     {
       "code": "000661",
@@ -176,7 +171,7 @@
       "code": "600989",
       "ts_code": "600989.SH",
       "name": "宝丰能源",
-      "note": "？",
+      "note": "/",
       "latest_price": 28.1,
       "prev_close": 30.16,
       "change": -2.06,
@@ -190,7 +185,7 @@
       "code": "600660",
       "ts_code": "600660.SH",
       "name": "福耀玻璃",
-      "note": "福耀玻璃",
+      "note": "/",
       "latest_price": 59.42,
       "prev_close": 59.31,
       "change": 0.11,

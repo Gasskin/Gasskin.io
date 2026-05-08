@@ -10,29 +10,32 @@
   <main class="layout">
 
     <!-- 大盘水位 -->
-    <h1 class="page-title">大盘水位</h1>
-    <section class="card" id="indexCard">
-      <div class="row">
-        <span class="lbl">当前价格</span>
-        <span class="val" id="idx-price">—</span>
-      </div>
-      <div class="row">
-        <span class="lbl">MA120</span>
-        <span class="val secondary" id="idx-ma120">—</span>
-      </div>
-      <div class="row">
-        <span class="lbl">水位</span>
-        <span class="val" id="idx-water">—</span>
-      </div>
-      <div class="row">
-        <span class="lbl">数据时间</span>
-        <span class="update-time" id="updateTime">—</span>
+    <section class="section">
+      <div class="section-title">大盘水位</div>
+      <div class="card">
+        <div class="kv">
+          <span class="kv-label">上证指数</span>
+          <div class="kv-right">
+            <span class="kv-value" id="idx-price">—</span>
+          </div>
+        </div>
+        <div class="kv">
+          <span class="kv-label">MA120</span>
+          <span class="kv-value dim" id="idx-ma120">—</span>
+        </div>
+        <div class="kv">
+          <span class="kv-label">水位</span>
+          <span class="kv-value" id="idx-water">—</span>
+        </div>
+        <div class="update-time" id="updateTime">—</div>
       </div>
     </section>
 
     <!-- 自选股 -->
-    <h2 class="section-title">自选股</h2>
-    <div id="watchlist"></div>
+    <section class="section">
+      <div class="section-title">自选股</div>
+      <div id="watchlist"></div>
+    </section>
 
     <div class="error-banner hidden" id="errorBanner"></div>
 

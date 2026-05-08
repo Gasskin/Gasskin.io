@@ -112,26 +112,48 @@ def calc_metrics(df: pd.DataFrame, buys: list[float]) -> dict:
 
 # ── 解析 watch.txt ────────────────────────────────────────────────────────────
 def parse_watch_file() -> list[dict]:
+    """
+    格式：
+      ---股票名称   ← 块起始（名称供人阅读，解析时忽略）
+      股票代码
+      备注
+      买入价1       ← 第三行起，每行一个买入价（非数字行自动忽略）
+      ...
+    # 开头的行为注释，空行忽略。
+    """
     items = []
     if not WATCH_FILE.is_file():
         return items
-    for line in WATCH_FILE.read_text(encoding="utf-8-sig").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
+
+    blocks: list[list[str]] = []
+    current: list[str] = []
+
+    for raw in WATCH_FILE.read_text(encoding="utf-8-sig").splitlines():
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue                    # 空行 / 注释行，直接忽略
+        if stripped.startswith("---"):
+            if current:
+                blocks.append(current)
+            current = []
+        else:
+            current.append(stripped)
+    if current:
+        blocks.append(current)
+
+    for block in blocks:
+        if not block:
             continue
-        parts = [p.strip() for p in line.split("#")]
-        if len(parts) < 1 or not parts[0]:
-            continue
-        code = parts[0]
-        note = parts[-1] if len(parts) >= 2 else ""
-        buy_strs = parts[1:-1] if len(parts) >= 3 else []
+        code = block[0]
+        note = block[1] if len(block) >= 2 else ""
         buys = []
-        for s in buy_strs:
+        for s in block[2:]:
             try:
                 buys.append(float(s))
             except ValueError:
-                pass
+                pass                    # 非数字行跳过
         items.append({"code": code, "ts_code": to_ts_code(code), "buys": buys, "note": note})
+
     return items
 
 
