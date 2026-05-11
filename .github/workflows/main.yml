@@ -1,0 +1,97 @@
+﻿# =============================================================================
+# main.yml — 本项目唯一的 GitHub Actions workflow
+#
+# 规则：
+#   所有自动化任务都写在这一个文件里，不要新建其他 workflow 文件。
+#   需要新增任务时，在本文件的 steps 中追加即可。
+#
+# 触发条件：
+#   1. push 到 main 分支（用户手动推代码）
+#   2. 定时（北京时间每天 17:00~00:00 整点，共 8 次）
+#   3. 手动触发（GitHub 页面 → Actions → Run workflow）
+#
+# 定时说明（GitHub Actions 使用 UTC，北京时间 = UTC + 8）：
+#   UTC  09:00 = 北京时间 17:00
+#   UTC  10:00 = 北京时间 18:00
+#   UTC  11:00 = 北京时间 19:00
+#   UTC  12:00 = 北京时间 20:00
+#   UTC  13:00 = 北京时间 21:00
+#   UTC  14:00 = 北京时间 22:00
+#   UTC  15:00 = 北京时间 23:00
+#   UTC  16:00 = 北京时间 00:00（次日凌晨）
+#   cron '0 9-16 * * *' 即覆盖以上全部时间点
+#
+# 并发控制：
+#   同一时间只允许一个 job 部署 Pages，后触发的排队等待（不 cancel）。
+# =============================================================================
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # 北京时间 17:00~00:00 每小时整点（UTC 09~16）
+    - cron: '0 9-16 * * *'
+  workflow_dispatch:   # 支持在 GitHub 页面手动触发
+
+# 防止多个 job 同时部署 Pages，后触发的排队等待（不 cancel）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # 允许 bot 提交 data.json
+  pages: write      # 允许部署 GitHub Pages
+  id-token: write   # GitHub Pages 部署鉴权需要
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      # ── 1. 拉取代码 ──────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. 准备 Python 环境 ──────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install tushare pandas
+
+      # ── 3. 更新股票数据（失败时跳过，使用上次缓存的 data.json） ─────────
+      - name: Update stock data
+        continue-on-error: true
+        run: python stock/update_data.py
+
+      # ── 4. 构建（将源目录打包到 docs/） ──────────────────────────────────
+      - name: Build docs
+        run: python build.py
+
+      # ── 5. 提交更新后的 data.json 回仓库 ─────────────────────────────────
+      #   [skip ci] 防止 push 再次触发本 workflow 形成死循环
+      - name: Commit updated data.json
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add stock/data.json docs/stock/data.json
+          git diff --staged --quiet || git commit -m "chore: update stock data $(date -u +%Y-%m-%d) [skip ci]"
+          git push
+
+      # ── 6. 部署到 GitHub Pages ────────────────────────────────────────────
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+

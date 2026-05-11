@@ -21,11 +21,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── 页面容器 ─────────────────────────────────────────── */
+/* ── 页面容器 ─────────────────────────────────────── */
 .layout {
   max-width: 560px;
   margin: 0 auto;
-  padding: 1.8rem 1rem 3rem;
+  /* 底部留出手机 Home Bar 高度，防止内容被遮挡 */
+  padding: 1.8rem 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 1.8rem;

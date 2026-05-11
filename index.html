@@ -71,14 +71,19 @@
     }
 
     /* ── Main content ── */
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
     .welcome {
       flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 2rem; text-align: center; color: var(--muted);
     }
     .welcome h2 { margin: 0 0 .5rem; font-size: 1.6rem; color: var(--text); }
     .welcome p { margin: 0; font-size: .95rem; }
-    .page-frame { width: 100%; height: 100%; border: none; display: none; }
+    .page-frame {
+      width: 100%; height: 100%; border: none; display: none;
+      /* iOS Safari iframe 滚动修复 */
+      overflow-y: scroll;
+      -webkit-overflow-scrolling: touch;
+    }
     .page-frame.active { display: block; }
 
     /* ── Responsive ── */
