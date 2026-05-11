@@ -18,7 +18,7 @@ Gasskin.io/
 ├── requirements.txt
 ├── .gitignore
 ├── .github/workflows/
-│   └── main.yml            # GitHub Actions：唯一 workflow，所有自动化任务都在这里
+│   └── main.yml            # GitHub Actions：唯一 workflow，所有自动化任务都在这
 ├── seedance/               # ← 插件目录示例
 │   ├── index.html          #    插件入口页面
 │   ├── app.js              #    插件逻辑
