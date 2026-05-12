@@ -1,5 +1,5 @@
 {
-  "update_time": "2026-05-12 22:02:49",
+  "update_time": "2026-05-12 23:24:09",
   "index": {
     "code": "000001.SH",
     "name": "上证指数",
@@ -14,118 +14,10 @@
   },
   "watchlist": [
     {
-      "code": "601689",
-      "ts_code": "601689.SH",
-      "name": "拓普集团",
-      "note": "60基准线，上下波动12%，始终保留舱底",
-      "latest_price": 67.05,
-      "prev_close": 66.96,
-      "change": 0.09,
-      "change_pct": 0.13,
-      "ma120": 66.29,
-      "water_level": 101.15,
-      "trade_date": "20260512",
-      "buys": []
-    },
-    {
-      "code": "000661",
-      "ts_code": "000661.SZ",
-      "name": "长春高新",
-      "note": "86/96 130/200",
-      "latest_price": 88.85,
-      "prev_close": 90.0,
-      "change": -1.15,
-      "change_pct": -1.28,
-      "ma120": 93.13,
-      "water_level": 95.4,
-      "trade_date": "20260512",
-      "buys": [
-        {
-          "price": 87.31,
-          "pct": 1.76
-        }
-      ]
-    },
-    {
-      "code": "603799",
-      "ts_code": "603799.SH",
-      "name": "华友钴业",
-      "note": "48/54/60 77",
-      "latest_price": 62.87,
-      "prev_close": 64.84,
-      "change": -1.97,
-      "change_pct": -3.04,
-      "ma120": 66.69,
-      "water_level": 94.28,
-      "trade_date": "20260512",
-      "buys": []
-    },
-    {
-      "code": "600645",
-      "ts_code": "600645.SH",
-      "name": "中源协和",
-      "note": "35/85",
-      "latest_price": 24.32,
-      "prev_close": 25.16,
-      "change": -0.84,
-      "change_pct": -3.34,
-      "ma120": 27.57,
-      "water_level": 88.21,
-      "trade_date": "20260512",
-      "buys": []
-    },
-    {
-      "code": "600023",
-      "ts_code": "600023.SH",
-      "name": "浙能电力",
-      "note": "5.5/6.5",
-      "latest_price": 5.97,
-      "prev_close": 5.92,
-      "change": 0.05,
-      "change_pct": 0.84,
-      "ma120": 5.27,
-      "water_level": 113.29,
-      "trade_date": "20260512",
-      "buys": []
-    },
-    {
-      "code": "601958",
-      "ts_code": "601958.SH",
-      "name": "金钼股份",
-      "note": "20/30",
-      "latest_price": 22.65,
-      "prev_close": 21.24,
-      "change": 1.41,
-      "change_pct": 6.64,
-      "ma120": 18.42,
-      "water_level": 122.99,
-      "trade_date": "20260512",
-      "buys": []
-    },
-    {
-      "code": "603325",
-      "ts_code": "603325.SH",
-      "name": "博隆技术",
-      "note": "92/114",
-      "latest_price": 61.45,
-      "prev_close": 62.5,
-      "change": -1.05,
-      "change_pct": -1.68,
-      "ma120": 77.21,
-      "water_level": 79.59,
-      "trade_date": "20260512",
-      "buys": [
-        {
-          "price": 63.36,
-          "pct": -3.01
-        }
-      ]
-    },
-    {
       "code": "000333",
       "ts_code": "000333.SZ",
       "name": "美的集团",
-      "note": "成本75",
+      "note": "成本75，波动20%",
       "latest_price": 80.09,
       "prev_close": 80.67,
       "change": -0.58,
@@ -136,16 +28,16 @@
       "buys": []
     },
     {
-      "code": "000921",
-      "ts_code": "000921.SZ",
-      "name": "海信家电",
-      "note": "成本21",
-      "latest_price": 24.5,
-      "prev_close": 24.74,
-      "change": -0.24,
-      "change_pct": -0.97,
-      "ma120": 24.23,
-      "water_level": 101.12,
+      "code": "603799",
+      "ts_code": "603799.SH",
+      "name": "华友钴业",
+      "note": "格子60/54/48，77全清",
+      "latest_price": 62.87,
+      "prev_close": 64.84,
+      "change": -1.97,
+      "change_pct": -3.04,
+      "ma120": 66.69,
+      "water_level": 94.28,
       "trade_date": "20260512",
       "buys": []
     },
@@ -178,16 +70,166 @@
       "buys": []
     },
     {
+      "code": "000661",
+      "ts_code": "000661.SZ",
+      "name": "长春高新",
+      "note": "成本92，格子96/86，130减半，200清仓",
+      "latest_price": 88.85,
+      "prev_close": 90.0,
+      "change": -1.15,
+      "change_pct": -1.28,
+      "ma120": 93.13,
+      "water_level": 95.4,
+      "trade_date": "20260512",
+      "buys": [
+        {
+          "price": 87.31,
+          "pct": 1.76
+        }
+      ]
+    },
+    {
       "code": "600989",
       "ts_code": "600989.SH",
       "name": "宝丰能源",
-      "note": "/",
+      "note": "成本27",
       "latest_price": 28.13,
       "prev_close": 28.34,
       "change": -0.21,
       "change_pct": -0.74,
       "ma120": 24.05,
       "water_level": 116.97,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "600132",
+      "ts_code": "600132.SH",
+      "name": "重庆啤酒",
+      "note": "成本52，波动20%",
+      "latest_price": 52.99,
+      "prev_close": 53.77,
+      "change": -0.78,
+      "change_pct": -1.45,
+      "ma120": 54.45,
+      "water_level": 97.32,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "002050",
+      "ts_code": "002050.SZ",
+      "name": "三花智控",
+      "note": "成本40，波动18%",
+      "latest_price": 50.92,
+      "prev_close": 51.21,
+      "change": -0.29,
+      "change_pct": -0.57,
+      "ma120": 47.68,
+      "water_level": 106.8,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "601689",
+      "ts_code": "601689.SH",
+      "name": "拓普集团",
+      "note": "成本60，波动12%",
+      "latest_price": 67.05,
+      "prev_close": 66.96,
+      "change": 0.09,
+      "change_pct": 0.13,
+      "ma120": 66.29,
+      "water_level": 101.15,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "603728",
+      "ts_code": "603728.SH",
+      "name": "鸣志电器",
+      "note": "成本70，格子60/50/40，波动20%",
+      "latest_price": 63.43,
+      "prev_close": 63.91,
+      "change": -0.48,
+      "change_pct": -0.75,
+      "ma120": 65.14,
+      "water_level": 97.38,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "003021",
+      "ts_code": "003021.SZ",
+      "name": "兆威机电",
+      "note": "成本112，波动30%",
+      "latest_price": 101.23,
+      "prev_close": 102.45,
+      "change": -1.22,
+      "change_pct": -1.19,
+      "ma120": 110.62,
+      "water_level": 91.51,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "002472",
+      "ts_code": "002472.SZ",
+      "name": "双环传动",
+      "note": "成本81，波动30%",
+      "latest_price": 42.33,
+      "prev_close": 42.43,
+      "change": -0.1,
+      "change_pct": -0.24,
+      "ma120": 40.71,
+      "water_level": 103.98,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "600023",
+      "ts_code": "600023.SH",
+      "name": "浙能电力",
+      "note": "5.5/6.5",
+      "latest_price": 5.97,
+      "prev_close": 5.92,
+      "change": 0.05,
+      "change_pct": 0.84,
+      "ma120": 5.27,
+      "water_level": 113.29,
+      "trade_date": "20260512",
+      "buys": []
+    },
+    {
+      "code": "603325",
+      "ts_code": "603325.SH",
+      "name": "博隆技术",
+      "note": "92/114",
+      "latest_price": 61.45,
+      "prev_close": 62.5,
+      "change": -1.05,
+      "change_pct": -1.68,
+      "ma120": 77.21,
+      "water_level": 79.59,
+      "trade_date": "20260512",
+      "buys": [
+        {
+          "price": 63.36,
+          "pct": -3.01
+        }
+      ]
+    },
+    {
+      "code": "000921",
+      "ts_code": "000921.SZ",
+      "name": "海信家电",
+      "note": "成本21",
+      "latest_price": 24.5,
+      "prev_close": 24.74,
+      "change": -0.24,
+      "change_pct": -0.97,
+      "ma120": 24.23,
+      "water_level": 101.12,
       "trade_date": "20260512",
       "buys": []
     },
@@ -213,34 +255,6 @@
           "pct": 2.87
         }
       ]
-    },
-    {
-      "code": "003021",
-      "ts_code": "003021.SZ",
-      "name": "兆威机电",
-      "note": "成本112 波动30%",
-      "latest_price": 101.23,
-      "prev_close": 102.45,
-      "change": -1.22,
-      "change_pct": -1.19,
-      "ma120": 110.62,
-      "water_level": 91.51,
-      "trade_date": "20260512",
-      "buys": []
-    },
-    {
-      "code": "603728",
-      "ts_code": "603728.SH",
-      "name": "鸣志电器",
-      "note": "40/50/58/70 波动20%",
-      "latest_price": 63.43,
-      "prev_close": 63.91,
-      "change": -0.48,
-      "change_pct": -0.75,
-      "ma120": 65.14,
-      "water_level": 97.38,
-      "trade_date": "20260512",
-      "buys": []
     }
   ]
 }
