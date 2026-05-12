@@ -208,6 +208,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[ERROR] update_data.py 运行失败: {e}")
         import traceback; traceback.print_exc()
-        # 即使出错也以 0 退出，让构建 / 部署流程继续（使用上次的 data.json）
-        raise SystemExit(0)
+        # 让调用方感知失败；GitHub Actions 会决定是否继续后续步骤。
+        raise SystemExit(1)
 

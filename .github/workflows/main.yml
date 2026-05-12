@@ -7,20 +7,11 @@
 #
 # 触发条件：
 #   1. push 到 main 分支（用户手动推代码）
-#   2. 定时（北京时间每天 17:17~00:17，共 8 次）
+#   2. 定时（每 10 分钟一次）
 #   3. 手动触发（GitHub 页面 → Actions → Run workflow）
 #
-# 定时说明（GitHub Actions 使用 UTC，北京时间 = UTC + 8）：
-#   UTC  09:17 = 北京时间 17:17
-#   UTC  10:17 = 北京时间 18:17
-#   UTC  11:17 = 北京时间 19:17
-#   UTC  12:17 = 北京时间 20:17
-#   UTC  13:17 = 北京时间 21:17
-#   UTC  14:17 = 北京时间 22:17
-#   UTC  15:17 = 北京时间 23:17
-#   UTC  16:17 = 北京时间 00:17（次日凌晨）
-#   cron '17 9-16 * * *' 即覆盖以上全部时间点
-#   避开整点可以降低 GitHub Actions 高峰期延迟或丢弃 schedule 事件的概率。
+# 定时说明（GitHub Actions 使用 UTC）：
+#   cron '*/10 * * * *' 表示每 10 分钟触发一次。
 #
 # 并发控制：
 #   同一时间只允许一个 job 部署 Pages，后触发的排队等待（不 cancel）。
@@ -32,8 +23,8 @@ on:
   push:
     branches: [main]
   schedule:
-    # 北京时间 17:17~00:17 每小时一次（UTC 09:17~16:17）
-    - cron: '17 9-16 * * *'
+    # 每 10 分钟触发一次
+    - cron: '*/10 * * * *'
   workflow_dispatch:   # 支持在 GitHub 页面手动触发
 
 # 防止多个 job 同时部署 Pages，后触发的排队等待（不 cancel）
@@ -69,6 +60,7 @@ jobs:
 
       # ── 3. 更新股票数据（失败时跳过，使用上次缓存的 data.json） ─────────
       - name: Update stock data
+        id: update_stock
         continue-on-error: true
         run: python stock/update_data.py
 
@@ -95,4 +87,11 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # ── 7. 如果股票刷新失败，则将 workflow 标红，避免“页面没更新但流程显示成功” ──
+      - name: Fail workflow when stock refresh fails
+        if: steps.update_stock.outcome == 'failure'
+        run: |
+          echo "Stock data refresh failed. Pages was deployed with the previous cached data."
+          exit 1
 
