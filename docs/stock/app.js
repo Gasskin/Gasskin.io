@@ -102,6 +102,7 @@ let _activeMomentumItem = null;
 let _activeMomentumFile = '';
 let _activeMomentumRange = 'year';
 let _activeMomentumCustomRange = null;
+let _controlsBound = false;
 const _momentumItems = new Map();
 const RANGE_OPTIONS = {
   year: { label: '近一年', days: 365 },
@@ -133,6 +134,31 @@ function switchPage(page) {
   $('watchPage').classList.toggle('active', page === 'watch');
   $('momentumPage').classList.toggle('active', page === 'momentum');
   if (page === 'momentum' && !_momentumLoaded) loadMomentumCharts();
+}
+
+function bindControls() {
+  if (_controlsBound) return;
+  _controlsBound = true;
+
+  document.getElementById('onlyHolding').addEventListener('change', applyFilters);
+
+  const sortBtn = document.getElementById('sortBtn');
+  sortBtn.addEventListener('click', () => {
+    const next = sortBtn.dataset.dir === 'asc' ? 'desc' : 'asc';
+    sortBtn.dataset.dir = next;
+    sortBtn.textContent = next === 'asc' ? '水位 ↑' : '水位 ↓';
+    applyFilters();
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchPage(btn.dataset.page));
+  });
+
+  $('momentumDialogClose').addEventListener('click', closeMomentumDialog);
+  document.querySelector('[data-close-dialog]').addEventListener('click', closeMomentumDialog);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && _activeMomentumPayload) closeMomentumDialog();
+  });
 }
 
 async function fetchJson(path) {
@@ -232,6 +258,13 @@ function renderMomentumSummary(payload, file, manifestItem = {}) {
       <strong style="color:${scoreColor}">${fmt(score)}</strong>
     </span>
   </button>`;
+}
+
+function latestMomentumScore(payload) {
+  const records = (payload.records ?? []).filter(item => item.date);
+  const latest = records[records.length - 1];
+  const score = Number(latest?.total_score ?? Number.NEGATIVE_INFINITY);
+  return Number.isFinite(score) ? score : Number.NEGATIVE_INFINITY;
 }
 
 function renderMomentumChart(payload, manifestItem = {}, file = '', range = 'year', customRange = null) {
@@ -410,10 +443,16 @@ async function loadMomentumCharts() {
     listEl.innerHTML = '';
     _momentumItems.clear();
     countEl.textContent = `${manifest.length} 个`;
+    const entries = [];
     for (const item of manifest) {
       const file = item.file ?? item.path;
       if (!file) continue;
       const payload = await fetchJson(`momentum-output/${file}`);
+      entries.push({ file, item, payload, score: latestMomentumScore(payload) });
+    }
+
+    entries.sort((a, b) => b.score - a.score);
+    for (const { file, item, payload } of entries) {
       listEl.insertAdjacentHTML('beforeend', renderMomentumSummary(payload, file, item));
       const row = listEl.lastElementChild;
       if (row && !row.disabled) {
@@ -451,6 +490,8 @@ function closeMomentumDialog() {
 }
 
 async function main() {
+  bindControls();
+
   try {
     const res = await fetch('data.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -458,28 +499,6 @@ async function main() {
     renderIndex(data.index, data.update_time);
     _watchlist = data.watchlist ?? [];
     applyFilters();
-
-    // 勾选"仅持仓"
-    document.getElementById('onlyHolding').addEventListener('change', applyFilters);
-
-    // 水位排序按钮
-    const sortBtn = document.getElementById('sortBtn');
-    sortBtn.addEventListener('click', () => {
-      const next = sortBtn.dataset.dir === 'asc' ? 'desc' : 'asc';
-      sortBtn.dataset.dir = next;
-      sortBtn.textContent = next === 'asc' ? '水位 ↑' : '水位 ↓';
-      applyFilters();
-    });
-
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchPage(btn.dataset.page));
-    });
-
-    $('momentumDialogClose').addEventListener('click', closeMomentumDialog);
-    document.querySelector('[data-close-dialog]').addEventListener('click', closeMomentumDialog);
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && _activeMomentumPayload) closeMomentumDialog();
-    });
   } catch (err) {
     const el = document.getElementById('errorBanner');
     el.textContent = `⚠️ 数据加载失败：${err.message}`;

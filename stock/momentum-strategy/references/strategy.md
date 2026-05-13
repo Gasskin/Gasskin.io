@@ -1,67 +1,80 @@
-# 动量策略参考
+# 动量策略参数
 
-本策略来自 `stock/Test/gen_img.py`，这里将原来的图表输出整理为按交易日输出 JSON 的计算说明。
+本策略把趋势、价格动量、成交量确认三个原始指标先做滚动分位数标准化，再输出每天的 JSON 分数。
 
 ## 输入
 
 - 日收盘价。
 - 日成交量，来自 Tushare 的 `vol` 字段。
-- 滚动窗口，默认 `20` 个交易日。
+- 趋势滚动窗口：默认 `20` 个交易日。
+- 价格动量窗口：默认短窗口 `5` 个交易日，长窗口 `10` 个交易日。
+- 标准化窗口：默认 `252` 个交易日，最少 `60` 个有效样本后开始输出标准化分数。
 - 权重：趋势 `40`、动量 `35`、成交量 `25`。
 
-## 每日公式
-
-对每个交易日 `t`，使用截至当天的最近 `window` 个交易日收盘价和成交量。
+## 原始指标
 
 ### 趋势
 
-1. 在滚动窗口内令 `y = log(close)`。
-2. 令 `x = 0, 1, 2, ... window-1`。
-3. 对 `x` 和 `y` 做一元线性回归，取斜率 `b`。
+对最近 `window` 个交易日：
+
+1. 使用 `y = log(close)`。
+2. 使用 `x = 0, 1, 2, ... window-1`。
+3. 对 `x` 和 `y` 做一元线性回归，得到斜率 `b`。
 4. 计算 `R^2 = corr(x, y)^2`。如果价格不波动或相关系数无法定义，则取 `0`。
-5. `trend_score = (b * 250) * R^2`。
+5. `trend_raw_score = (b * 250) * R^2`。
 6. `b_times_r_squared = b * R^2`。
 
 ### 价格动量
 
-如果窗口内至少有 11 个收盘价：
+默认：
 
-- `roc_5 = (close_t / close_t-5 - 1) * 100`
-- `roc_10 = (close_t / close_t-10 - 1) * 100`
-- `momentum_score = 0.6 * roc_5 + 0.4 * roc_10`
+```text
+roc_short = (close_t / close_t-5 - 1) * 100
+roc_long  = (close_t / close_t-10 - 1) * 100
+momentum_raw_score = 0.6 * roc_short + 0.4 * roc_long
+```
 
-否则该值为 `null`。
+`5` 和 `10` 可以通过 `--momentum-short-window`、`--momentum-long-window` 配置。
 
-### 成交量
+### 成交量确认
 
-成交量分数用于衡量近期成交活跃度是否相对放大。它不直接判断价格方向，而是用“短期成交量均值相对长期成交量均值”的变化来确认市场参与度。
+```text
+vol_ma_short = 最近 5 个交易日成交量均值
+vol_ma_long  = 最近 20 个交易日成交量均值
+volume_raw_score = log(vol_ma_short / vol_ma_long)
+```
 
-如果窗口内至少有 20 个成交量：
+如果两个均值没有同时大于 `0`，则取 `0`。
 
-- `vol_ma_short = 最近 5 个交易日成交量均值`
-- `vol_ma_long = 最近 20 个交易日成交量均值`
-- 当两个均值都大于 0 时，`volume_score = log(vol_ma_short / vol_ma_long)`；否则取 `0`
+## 标准化
 
-逻辑解释：
+每个原始指标都会在最近 `normalization_window` 个有效样本内计算滚动分位数，并映射到 `0-200`：
 
-- 当最近 5 日均量大于最近 20 日均量时，比值大于 `1`，取对数后为正，表示近期成交活跃度放大。
-- 当最近 5 日均量小于最近 20 日均量时，比值小于 `1`，取对数后为负，表示近期成交活跃度萎缩。
-- 使用 `log` 可以让放大和萎缩更对称。例如放大到 2 倍约为 `+0.693`，缩小到 1/2 约为 `-0.693`。
+```text
+normalized_score = rolling_percentile(raw_score) * 200
+```
 
-如果窗口内不足 20 个成交量，则该值为 `null`。
+含义：
 
-### 总分
+- `100`：该指标处于自身最近窗口内的中位水平。
+- `>100`：强于自身历史常态。
+- `<100`：弱于自身历史常态。
+
+滚动分位数只使用当天及以前的数据，避免未来函数。
+
+## 总分
 
 ```text
 total_score_raw =
-  trend_weight * trend_score
-  + momentum_weight * momentum_score
-  + volume_weight * volume_score
+  (trend_weight * trend_score
+   + momentum_weight * momentum_score
+   + volume_weight * volume_score)
+  / (trend_weight + momentum_weight + volume_weight)
 
-total_score = max(0, total_score_raw)
+total_score = total_score_raw
 ```
 
-如果任一组件为 `null`，`total_score_raw` 为 `null`，`total_score` 为 `0`。
+如果任一标准化组件为 `null`，`total_score_raw` 为 `null`，`total_score` 为 `0`。
 
 ## JSON 每日字段
 
@@ -71,8 +84,12 @@ total_score = max(0, total_score_raw)
 - `b`：滚动窗口内 `log(close)` 的回归斜率。
 - `r_squared`：趋势拟合质量。
 - `b_times_r_squared`：`b * R^2`。
-- `trend_score`：年化斜率乘以 `R^2`。
-- `momentum_score`：5 日和 10 日收益率变化的加权结果。
-- `volume_score`：短期成交量均值与长期成交量均值比值的对数。
-- `total_score_raw`：未做下限处理前的加权总分。
-- `total_score`：经过 `max(0, raw)` 处理后的非负总分。
+- `trend_raw_score`：未标准化趋势原始值。
+- `momentum_raw_score`：未标准化价格动量原始值。
+- `volume_raw_score`：未标准化成交量原始值。
+- `legacy_total_score_raw`：旧算法的原始量纲加权值，仅用于对照。
+- `trend_score`：滚动分位数标准化后的趋势分，范围约 `0-200`。
+- `momentum_score`：滚动分位数标准化后的价格动量分，范围约 `0-200`。
+- `volume_score`：滚动分位数标准化后的成交量分，范围约 `0-200`。
+- `total_score_raw`：标准化后的加权平均总分。
+- `total_score`：前端展示使用的总分。

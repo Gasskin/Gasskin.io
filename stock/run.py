@@ -37,6 +37,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end-date", default=today_shanghai())
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument("--output-name", default="data588000.json")
+    parser.add_argument("--momentum-short-window", type=int, default=5)
+    parser.add_argument("--momentum-long-window", type=int, default=10)
+    parser.add_argument("--normalization-window", type=int, default=252)
+    parser.add_argument("--normalization-min-rows", type=int, default=60)
     parser.add_argument("--token", help="Optional Tushare token. Otherwise use TUSHARE_TOKEN or saved token.")
     parser.add_argument("--token-file", default=str(DEFAULT_TOKEN_FILE), help="Path to a file containing a Tushare token.")
     return parser.parse_args()
@@ -86,6 +90,14 @@ def main() -> int:
         args.end_date,
         "--asset-type",
         "fund",
+        "--momentum-short-window",
+        str(args.momentum_short_window),
+        "--momentum-long-window",
+        str(args.momentum_long_window),
+        "--normalization-window",
+        str(args.normalization_window),
+        "--normalization-min-rows",
+        str(args.normalization_min_rows),
         "--output",
         str(output_dir / output_name),
     ]

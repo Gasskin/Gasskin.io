@@ -12,6 +12,10 @@ from typing import Any
 
 
 DEFAULT_WINDOW = 20
+DEFAULT_MOMENTUM_SHORT_WINDOW = 5
+DEFAULT_MOMENTUM_LONG_WINDOW = 10
+DEFAULT_NORMALIZATION_WINDOW = 252
+DEFAULT_NORMALIZATION_MIN_ROWS = 60
 DEFAULT_TREND_WEIGHT = 40.0
 DEFAULT_MOMENTUM_WEIGHT = 35.0
 DEFAULT_VOLUME_WEIGHT = 25.0
@@ -24,7 +28,7 @@ def parse_date(value: str) -> dt.date:
             return dt.datetime.strptime(text, fmt).date()
         except ValueError:
             pass
-    raise ValueError(f"日期格式不正确：{value!r}；请使用 YYYY-MM-DD 或 YYYYMMDD。")
+    raise ValueError(f"Invalid date {value!r}; use YYYY-MM-DD or YYYYMMDD.")
 
 
 def today_shanghai() -> dt.date:
@@ -54,9 +58,9 @@ def parse_float(value: Any, field_name: str) -> float:
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"{field_name} 数值不正确：{value!r}") from exc
+        raise ValueError(f"Invalid numeric value for {field_name}: {value!r}") from exc
     if not math.isfinite(number):
-        raise ValueError(f"{field_name} 数值不正确：{value!r}")
+        raise ValueError(f"Invalid numeric value for {field_name}: {value!r}")
     return number
 
 
@@ -70,7 +74,7 @@ def get_pro_client(token_arg: str | None = None):
     try:
         import tushare as ts
     except ImportError as exc:
-        raise RuntimeError("请先安装 tushare，例如：pip install tushare") from exc
+        raise RuntimeError("Install tushare first, for example: pip install tushare") from exc
 
     token = (token_arg or "").strip()
     token_source = "argument" if token else ""
@@ -84,7 +88,7 @@ def get_pro_client(token_arg: str | None = None):
         except Exception:
             token = ""
     if not token:
-        raise RuntimeError("未提供 Tushare token。请传入 --token，或设置 TUSHARE_TOKEN，或先保存 Tushare token。")
+        raise RuntimeError("No Tushare token found. Pass --token, set TUSHARE_TOKEN, or save a Tushare token.")
     return ts.pro_api(token), token_source
 
 
@@ -128,13 +132,13 @@ def fetch_tushare_bars(
             errors.append(f"{api_name}: {exc}")
             continue
         if df is None or getattr(df, "empty", True):
-            errors.append(f"{api_name}: 空结果")
+            errors.append(f"{api_name}: empty result")
             continue
 
         required = {"trade_date", "close", "vol"}
         missing = required.difference(set(df.columns))
         if missing:
-            errors.append(f"{api_name}: 缺少字段 {sorted(missing)}")
+            errors.append(f"{api_name}: missing columns {sorted(missing)}")
             continue
 
         rows = [
@@ -147,8 +151,8 @@ def fetch_tushare_bars(
         ]
         return api_name, token_source, normalize_bars(rows)
 
-    detail = "; ".join(errors) if errors else "没有执行任何接口请求"
-    raise RuntimeError(f"{ts_code} 没有返回日线数据：{detail}")
+    detail = "; ".join(errors) if errors else "no API call was made"
+    raise RuntimeError(f"{ts_code} returned no daily bars: {detail}")
 
 
 def load_csv_bars(path: Path) -> list[dict[str, Any]]:
@@ -160,25 +164,24 @@ def load_csv_bars(path: Path) -> list[dict[str, Any]]:
         close_key = lower_to_real.get("close")
         volume_key = lower_to_real.get("volume") or lower_to_real.get("vol")
         if not date_key or not close_key or not volume_key:
-            raise RuntimeError("CSV 必须包含 date/trade_date、close、volume/vol 这些列。")
+            raise RuntimeError("CSV must include date/trade_date, close, and volume/vol columns.")
 
-        rows = []
-        for item in reader:
-            rows.append(
-                {
-                    "date": parse_date(str(item[date_key])),
-                    "close": item[close_key],
-                    "volume": item[volume_key],
-                }
-            )
+        rows = [
+            {
+                "date": parse_date(str(item[date_key])),
+                "close": item[close_key],
+                "volume": item[volume_key],
+            }
+            for item in reader
+        ]
     if not rows:
-        raise RuntimeError(f"CSV 中没有数据行：{path}")
+        raise RuntimeError(f"CSV has no data rows: {path}")
     return normalize_bars(rows)
 
 
 def calculate_b_and_r2(closes: list[float]) -> tuple[float, float]:
     if any(value <= 0 for value in closes):
-        raise RuntimeError("收盘价必须大于 0，才能计算 log(close)。")
+        raise RuntimeError("Close prices must be greater than 0 to calculate log(close).")
 
     y = [math.log(float(value)) for value in closes]
     n = len(y)
@@ -200,20 +203,45 @@ def mean(values: list[float]) -> float:
     return sum(values) / len(values)
 
 
+def rolling_percentile_score(
+    values: list[float | None],
+    idx: int,
+    window: int,
+    min_rows: int,
+) -> float | None:
+    value = values[idx]
+    if value is None or not math.isfinite(value):
+        return None
+
+    start = max(0, idx - window + 1)
+    history = [item for item in values[start : idx + 1] if item is not None and math.isfinite(item)]
+    if len(history) < min_rows:
+        return None
+
+    less = sum(1 for item in history if item < value)
+    equal = sum(1 for item in history if item == value)
+    percentile = (less + 0.5 * equal) / len(history)
+    return percentile * 200.0
+
+
 def build_metrics(
     bars: list[dict[str, Any]],
     start_date: dt.date,
     end_date: dt.date,
     window: int,
+    momentum_short_window: int,
+    momentum_long_window: int,
+    normalization_window: int,
+    normalization_min_rows: int,
     trend_weight: float,
     momentum_weight: float,
     volume_weight: float,
 ) -> list[dict[str, Any]]:
-    min_rows = max(window, 20, 11)
+    min_rows = max(window, 20, momentum_short_window + 1, momentum_long_window + 1)
     if len(bars) < min_rows:
-        raise RuntimeError(f"交易日数量不足，无法计算指标。至少需要 {min_rows} 行，当前只有 {len(bars)} 行。")
+        raise RuntimeError(f"Not enough trading days. Need at least {min_rows}, got {len(bars)}.")
 
-    records: list[dict[str, Any]] = []
+    raw_rows: list[dict[str, Any]] = []
     closes = [float(item["close"]) for item in bars]
     volumes = [float(item["volume"]) for item in bars]
 
@@ -223,22 +251,57 @@ def build_metrics(
         volume_window = volumes[idx - window + 1 : idx + 1]
         b, r_squared = calculate_b_and_r2(close_window)
 
-        if len(close_window) < 11:
-            momentum_score = None
+        trend_raw_score = (b * 250.0) * r_squared
+        if idx < momentum_short_window or idx < momentum_long_window:
+            momentum_raw_score = None
         else:
-            roc_5 = (close_window[-1] / close_window[-6] - 1.0) * 100.0
-            roc_10 = (close_window[-1] / close_window[-11] - 1.0) * 100.0
-            momentum_score = 0.6 * roc_5 + 0.4 * roc_10
+            roc_short = (closes[idx] / closes[idx - momentum_short_window] - 1.0) * 100.0
+            roc_long = (closes[idx] / closes[idx - momentum_long_window] - 1.0) * 100.0
+            momentum_raw_score = 0.6 * roc_short + 0.4 * roc_long
 
         if len(volume_window) < 20:
-            volume_score = None
+            volume_raw_score = None
         else:
             vol_ma_short = mean(volume_window[-5:])
             vol_ma_long = mean(volume_window[-20:])
-            volume_score = math.log(vol_ma_short / vol_ma_long) if vol_ma_short > 0 and vol_ma_long > 0 else 0.0
+            volume_raw_score = math.log(vol_ma_short / vol_ma_long) if vol_ma_short > 0 and vol_ma_long > 0 else 0.0
 
-        trend_score = (b * 250.0) * r_squared
-        if momentum_score is None or volume_score is None:
+        if momentum_raw_score is None or volume_raw_score is None:
+            legacy_total_score_raw = None
+        else:
+            legacy_total_score_raw = (
+                trend_weight * trend_raw_score
+                + momentum_weight * momentum_raw_score
+                + volume_weight * volume_raw_score
+            )
+
+        raw_rows.append(
+            {
+                "idx": idx,
+                "date": end_day,
+                "close": close_window[-1],
+                "volume": volume_window[-1],
+                "b": b,
+                "r_squared": r_squared,
+                "trend_raw_score": trend_raw_score,
+                "momentum_raw_score": momentum_raw_score,
+                "volume_raw_score": volume_raw_score,
+                "legacy_total_score_raw": legacy_total_score_raw,
+            }
+        )
+
+    trend_values = [row["trend_raw_score"] for row in raw_rows]
+    momentum_values = [row["momentum_raw_score"] for row in raw_rows]
+    volume_values = [row["volume_raw_score"] for row in raw_rows]
+    weight_sum = trend_weight + momentum_weight + volume_weight
+
+    records: list[dict[str, Any]] = []
+    for raw_idx, row in enumerate(raw_rows):
+        trend_score = rolling_percentile_score(trend_values, raw_idx, normalization_window, normalization_min_rows)
+        momentum_score = rolling_percentile_score(momentum_values, raw_idx, normalization_window, normalization_min_rows)
+        volume_score = rolling_percentile_score(volume_values, raw_idx, normalization_window, normalization_min_rows)
+
+        if trend_score is None or momentum_score is None or volume_score is None:
             total_score_raw = None
             total_score = 0.0
         else:
@@ -246,18 +309,23 @@ def build_metrics(
                 trend_weight * trend_score
                 + momentum_weight * momentum_score
                 + volume_weight * volume_score
-            )
-            total_score = max(0.0, float(total_score_raw))
+            ) / weight_sum
+            total_score = float(total_score_raw)
 
+        end_day = row["date"]
         if start_date <= end_day <= end_date:
             records.append(
                 {
                     "date": date_text(end_day),
-                    "close": clean_float(close_window[-1], 4),
-                    "volume": clean_float(volume_window[-1], 4),
-                    "b": clean_float(b),
-                    "r_squared": clean_float(r_squared),
-                    "b_times_r_squared": clean_float(b * r_squared),
+                    "close": clean_float(row["close"], 4),
+                    "volume": clean_float(row["volume"], 4),
+                    "b": clean_float(row["b"]),
+                    "r_squared": clean_float(row["r_squared"]),
+                    "b_times_r_squared": clean_float(row["b"] * row["r_squared"]),
+                    "trend_raw_score": clean_float(row["trend_raw_score"]),
+                    "momentum_raw_score": clean_float(row["momentum_raw_score"]),
+                    "volume_raw_score": clean_float(row["volume_raw_score"]),
+                    "legacy_total_score_raw": clean_float(row["legacy_total_score_raw"]),
                     "trend_score": clean_float(trend_score),
                     "momentum_score": clean_float(momentum_score),
                     "volume_score": clean_float(volume_score),
@@ -267,37 +335,58 @@ def build_metrics(
             )
 
     if not records:
-        raise RuntimeError("请求的日期范围内没有可输出的打分交易日。")
+        raise RuntimeError("No scoring trading days found in the requested date range.")
     return records
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="按交易日导出动量策略分数 JSON。")
-    parser.add_argument("--ts-code", required=True, help="股票、ETF 或基金代码，例如 600519.SH 或 159681.SZ。")
-    parser.add_argument("--start-date", required=True, help="请求开始日期，格式 YYYY-MM-DD 或 YYYYMMDD。")
-    parser.add_argument("--end-date", help="请求结束日期，格式 YYYY-MM-DD 或 YYYYMMDD。默认使用北京时间当天。")
-    parser.add_argument("--token", help="Tushare token。优先级高于 TUSHARE_TOKEN 环境变量和本地保存 token。")
-    parser.add_argument("--window", type=int, default=DEFAULT_WINDOW, help="滚动交易日窗口。")
+    parser = argparse.ArgumentParser(description="Export daily momentum strategy scores as JSON.")
+    parser.add_argument("--ts-code", required=True, help="Stock, ETF, or fund code, for example 600519.SH or 159681.SZ.")
+    parser.add_argument("--start-date", required=True, help="Requested start date: YYYY-MM-DD or YYYYMMDD.")
+    parser.add_argument("--end-date", help="Requested end date: YYYY-MM-DD or YYYYMMDD. Defaults to today's Shanghai date.")
+    parser.add_argument("--token", help="Tushare token. Overrides TUSHARE_TOKEN and saved tushare token.")
+    parser.add_argument("--window", type=int, default=DEFAULT_WINDOW, help="Trend regression rolling trading-day window.")
+    parser.add_argument("--momentum-short-window", type=int, default=DEFAULT_MOMENTUM_SHORT_WINDOW)
+    parser.add_argument("--momentum-long-window", type=int, default=DEFAULT_MOMENTUM_LONG_WINDOW)
+    parser.add_argument("--normalization-window", type=int, default=DEFAULT_NORMALIZATION_WINDOW)
+    parser.add_argument("--normalization-min-rows", type=int, default=DEFAULT_NORMALIZATION_MIN_ROWS)
     parser.add_argument("--trend-weight", type=float, default=DEFAULT_TREND_WEIGHT)
     parser.add_argument("--momentum-weight", type=float, default=DEFAULT_MOMENTUM_WEIGHT)
     parser.add_argument("--volume-weight", type=float, default=DEFAULT_VOLUME_WEIGHT)
     parser.add_argument("--asset-type", choices=["auto", "stock", "fund"], default="auto")
-    parser.add_argument("--warmup-days", type=int, help="开始日期前额外拉取的自然日数量。默认 max(window*4, 90)。")
-    parser.add_argument("--input-csv", help="可选的本地 CSV，需包含 date/trade_date、close、volume/vol。")
-    parser.add_argument("--output", help="输出 JSON 路径。")
+    parser.add_argument(
+        "--warmup-days",
+        type=int,
+        help="Calendar days fetched before start-date. Default keeps enough history for rolling normalization.",
+    )
+    parser.add_argument("--input-csv", help="Optional local CSV with date/trade_date, close, and volume/vol columns.")
+    parser.add_argument("--output", help="Output JSON path.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     if args.window <= 0:
-        raise RuntimeError("--window 必须大于 0。")
+        raise RuntimeError("--window must be greater than 0.")
+    if args.momentum_short_window <= 0:
+        raise RuntimeError("--momentum-short-window must be greater than 0.")
+    if args.momentum_long_window <= 0:
+        raise RuntimeError("--momentum-long-window must be greater than 0.")
+    if args.normalization_window <= 0:
+        raise RuntimeError("--normalization-window must be greater than 0.")
+    if args.normalization_min_rows <= 0:
+        raise RuntimeError("--normalization-min-rows must be greater than 0.")
+    if args.normalization_min_rows > args.normalization_window:
+        raise RuntimeError("--normalization-min-rows must be less than or equal to --normalization-window.")
+    weight_sum = args.trend_weight + args.momentum_weight + args.volume_weight
+    if weight_sum <= 0:
+        raise RuntimeError("Weight sum must be greater than 0.")
 
     ts_code = normalize_ts_code(args.ts_code)
     requested_start = parse_date(args.start_date)
     requested_end = parse_date(args.end_date) if args.end_date else today_shanghai()
     if requested_start > requested_end:
-        raise RuntimeError("start-date 必须早于或等于 end-date。")
+        raise RuntimeError("start-date must be earlier than or equal to end-date.")
 
     end_was_clipped = False
     effective_end = requested_end
@@ -307,9 +396,15 @@ def main() -> None:
             effective_end = today
             end_was_clipped = True
 
-    warmup_days = args.warmup_days if args.warmup_days is not None else max(args.window * 4, 90)
+    default_warmup_days = max(
+        args.window * 4,
+        args.momentum_long_window * 4,
+        args.normalization_window * 2,
+        90,
+    )
+    warmup_days = args.warmup_days if args.warmup_days is not None else default_warmup_days
     if warmup_days < 0:
-        raise RuntimeError("--warmup-days 不能为负数。")
+        raise RuntimeError("--warmup-days must not be negative.")
     fetch_start = requested_start - dt.timedelta(days=warmup_days)
 
     if args.input_csv:
@@ -327,6 +422,10 @@ def main() -> None:
         start_date=requested_start,
         end_date=effective_end,
         window=args.window,
+        momentum_short_window=args.momentum_short_window,
+        momentum_long_window=args.momentum_long_window,
+        normalization_window=args.normalization_window,
+        normalization_min_rows=args.normalization_min_rows,
         trend_weight=args.trend_weight,
         momentum_weight=args.momentum_weight,
         volume_weight=args.volume_weight,
@@ -352,11 +451,25 @@ def main() -> None:
             "end_date_clipped_to_today": end_was_clipped,
             "fetch_start_date": date_text(fetch_start),
             "window": args.window,
+            "momentum_windows": {
+                "short": args.momentum_short_window,
+                "long": args.momentum_long_window,
+            },
+            "normalization": {
+                "method": "rolling_percentile",
+                "window": args.normalization_window,
+                "min_rows": args.normalization_min_rows,
+                "score_min": 0,
+                "score_midpoint": 100,
+                "score_max": 200,
+                "includes_current_day": True,
+            },
             "weights": {
                 "trend": args.trend_weight,
                 "momentum": args.momentum_weight,
                 "volume": args.volume_weight,
             },
+            "score_version": "rolling_percentile_v1",
             "rows": len(records),
             "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         },
@@ -368,15 +481,15 @@ def main() -> None:
         handle.write("\n")
 
     print(f"ts_code: {ts_code}")
-    print(f"数据来源: {source}")
-    print(f"token来源: {token_source}")
-    print(f"行数: {len(records)}")
-    print(f"输出: {output_path.resolve()}")
+    print(f"source: {source}")
+    print(f"token_source: {token_source}")
+    print(f"rows: {len(records)}")
+    print(f"output: {output_path.resolve()}")
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        print(f"[ERROR] 导出动量策略分数失败：{exc}")
+        print(f"[ERROR] failed to export momentum strategy scores: {exc}")
         raise SystemExit(1)

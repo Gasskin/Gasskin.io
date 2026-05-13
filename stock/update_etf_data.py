@@ -55,6 +55,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--end-date", default=today_shanghai())
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument("--asset-type", choices=["auto", "stock", "fund"], default="auto")
+    parser.add_argument("--momentum-short-window", type=int, default=5)
+    parser.add_argument("--momentum-long-window", type=int, default=10)
+    parser.add_argument("--normalization-window", type=int, default=252)
+    parser.add_argument("--normalization-min-rows", type=int, default=60)
     parser.add_argument("--token", help="Optional Tushare token. Otherwise use token file, TUSHARE_TOKEN, or saved token.")
     parser.add_argument("--token-file", default=str(DEFAULT_TOKEN_FILE), help="Path to a file containing a Tushare token.")
     parser.add_argument("--stop-on-error", action="store_true", help="Stop immediately when one code fails.")
@@ -152,6 +156,14 @@ def run_export(args: argparse.Namespace, ts_code: str, output_path: Path, env: d
         args.end_date,
         "--asset-type",
         args.asset_type,
+        "--momentum-short-window",
+        str(args.momentum_short_window),
+        "--momentum-long-window",
+        str(args.momentum_long_window),
+        "--normalization-window",
+        str(args.normalization_window),
+        "--normalization-min-rows",
+        str(args.normalization_min_rows),
         "--output",
         str(output_path),
     ]
