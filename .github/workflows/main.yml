@@ -7,18 +7,14 @@
 #
 # 触发条件：
 #   1. push 到 main 分支（用户手动推代码）
-#   2. 定时（北京时间 17:00 开始，每 30 分钟一次，直到 00:00）
+#   2. 定时（北京时间 17:00、19:00、21:00、23:00）
 #   3. 手动触发（GitHub 页面 → Actions → Run workflow）
 #
 # 定时说明（GitHub Actions 使用 UTC，北京时间 = UTC + 8）：
 #   UTC  09:00 = 北京时间 17:00
-#   UTC  09:30 = 北京时间 17:30
-#   ...
-#   UTC  15:30 = 北京时间 23:30
-#   UTC  16:00 = 北京时间 00:00（次日凌晨）
-#   因为 00:30 不在目标时间范围内，所以拆成两条 cron：
-#   '0,30 9-15 * * *' 覆盖 17:00 ~ 23:30
-#   '0 16 * * *' 覆盖 00:00
+#   UTC  11:00 = 北京时间 19:00
+#   UTC  13:00 = 北京时间 21:00
+#   UTC  15:00 = 北京时间 23:00
 #
 # 并发控制：
 #   同一时间只允许一个 job 部署 Pages，后触发的排队等待（不 cancel）。
@@ -30,10 +26,8 @@ on:
   push:
     branches: [main]
   schedule:
-    # 北京时间 17:00 ~ 23:30，每 30 分钟一次（UTC 09:00 ~ 15:30）
-    - cron: '0,30 9-15 * * *'
-    # 北京时间 00:00（UTC 16:00）
-    - cron: '0 16 * * *'
+    # 北京时间 17:00、19:00、21:00、23:00（UTC 09:00、11:00、13:00、15:00）
+    - cron: '0 9,11,13,15 * * *'
   workflow_dispatch:   # 支持在 GitHub 页面手动触发
 
 # 防止多个 job 同时部署 Pages，后触发的排队等待（不 cancel）
@@ -71,23 +65,50 @@ jobs:
       - name: Update stock data
         id: update_stock
         continue-on-error: true
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
         run: python stock/update_data.py
 
-      # ── 4. 构建（将源目录打包到 docs/） ──────────────────────────────────
+      # ── 4. 更新 ETF 动量数据（失败时恢复上次缓存的 momentum-output） ───────
+      - name: Backup ETF momentum cache
+        run: |
+          rm -rf /tmp/momentum-output-backup
+          if [ -d stock/momentum-output ]; then
+            cp -a stock/momentum-output /tmp/momentum-output-backup
+          fi
+
+      - name: Update ETF momentum data
+        id: update_etf
+        continue-on-error: true
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
+        run: python stock/update_etf_data.py
+
+      - name: Restore ETF momentum cache when refresh fails
+        if: steps.update_etf.outcome == 'failure'
+        run: |
+          rm -rf stock/momentum-output
+          if [ -d /tmp/momentum-output-backup ]; then
+            cp -a /tmp/momentum-output-backup stock/momentum-output
+          else
+            mkdir -p stock/momentum-output
+          fi
+
+      # ── 5. 构建（将源目录打包到 docs/） ──────────────────────────────────
       - name: Build docs
         run: python build.py
 
-      # ── 5. 提交更新后的 data.json 回仓库 ─────────────────────────────────
+      # ── 6. 提交更新后的数据回仓库 ───────────────────────────────────────
       #   [skip ci] 防止 push 再次触发本 workflow 形成死循环
-      - name: Commit updated data.json
+      - name: Commit updated stock data
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add stock/data.json docs/stock/data.json
+          git add stock/data.json stock/momentum-output docs/stock/data.json docs/stock/momentum-output
           git diff --staged --quiet || git commit -m "chore: update stock data $(date -u +%Y-%m-%d) [skip ci]"
           git push
 
-      # ── 6. 部署到 GitHub Pages ────────────────────────────────────────────
+      # ── 7. 部署到 GitHub Pages ────────────────────────────────────────────
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -97,10 +118,12 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # ── 7. 如果股票刷新失败，则将 workflow 标红，避免“页面没更新但流程显示成功” ──
-      - name: Fail workflow when stock refresh fails
-        if: steps.update_stock.outcome == 'failure'
+      # ── 8. 如果刷新失败，则将 workflow 标红，避免“页面没更新但流程显示成功” ──
+      - name: Fail workflow when data refresh fails
+        if: steps.update_stock.outcome == 'failure' || steps.update_etf.outcome == 'failure'
         run: |
-          echo "Stock data refresh failed. Pages was deployed with the previous cached data."
+          echo "Data refresh failed. Pages was deployed with the previous cached data."
+          echo "update_stock: ${{ steps.update_stock.outcome }}"
+          echo "update_etf: ${{ steps.update_etf.outcome }}"
           exit 1
 

@@ -12,7 +12,9 @@
 """
 from __future__ import annotations
 
+import json
 import shutil
+import datetime as dt
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -20,6 +22,11 @@ DST = ROOT / "docs"
 
 # Home 页面文件（根目录下）
 HOME_FILES = ("index.html", "pages.json")
+FALLBACK_ETF_NAMES = {
+    "588000.SH": "??50ETF",
+    "159995.SZ": "??ETF",
+    "159915.SZ": "???ETF",
+}
 
 # 排除的目录
 EXCLUDE_DIRS = {"docs", ".git", "__pycache__", "node_modules"}
@@ -35,6 +42,43 @@ def discover_plugins() -> list[Path]:
         if (d / "index.html").is_file():
             plugins.append(d)
     return plugins
+
+
+def write_momentum_manifest(dst_plugin_dir: Path) -> None:
+    output_dir = dst_plugin_dir / "momentum-output"
+    if not output_dir.is_dir():
+        return
+
+    existing_names = {}
+    existing_manifest = output_dir / "index.json"
+    if existing_manifest.is_file():
+        try:
+            existing = json.loads(existing_manifest.read_text(encoding="utf-8"))
+            for item in existing.get("files", []):
+                if isinstance(item, dict) and item.get("name"):
+                    if item.get("ts_code"):
+                        existing_names[item["ts_code"]] = item["name"]
+                    if item.get("file"):
+                        existing_names[item["file"]] = item["name"]
+        except Exception:
+            existing_names = {}
+
+    items = []
+    for path in sorted(output_dir.glob("data*.json")):
+        ts_code = path.stem.removeprefix("data")
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            ts_code = payload.get("metadata", {}).get("ts_code") or ts_code
+        except Exception:
+            pass
+        name = existing_names.get(ts_code) or existing_names.get(path.name) or FALLBACK_ETF_NAMES.get(ts_code, ts_code)
+        items.append({"ts_code": ts_code, "name": name, "file": path.name})
+
+    manifest = {
+        "generated_at": dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).isoformat(),
+        "files": items,
+    }
+    (output_dir / "index.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -72,6 +116,7 @@ def main() -> None:
                 shutil.copytree(item, dest)
             else:
                 shutil.copy2(item, dest)
+        write_momentum_manifest(dst)
         print(f"  Plugin: {plugin_dir.name}/ -> docs/{plugin_dir.name}/")
 
     # 3. GitHub Pages 标记
