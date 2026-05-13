@@ -138,7 +138,7 @@ def build_metrics(
             + momentum_weight * momentum_score
             + volume_weight * volume_score
         )
-        total_score = max(0.0, min(100.0, float(total_score_raw)))
+        total_score = max(0.0, float(total_score_raw))
 
         records.append(
             {
@@ -166,14 +166,26 @@ def save_single_line_chart(
     output_path: Path,
     color: str,
     zero_line: bool = False,
+    threshold_line: float | None = None,
 ) -> None:
     fig, ax = plt.subplots(figsize=(14, 4.6), constrained_layout=True)
     ax.plot(series.index, series, color=color, linewidth=1.5)
     if zero_line:
         ax.axhline(0, color="#666666", linewidth=0.8, linestyle="--")
+    if threshold_line is not None:
+        ax.axhline(threshold_line, color="#c44e52", linewidth=1.0, linestyle="--")
+        ax.text(
+            series.index[-1],
+            threshold_line,
+            f"  {threshold_line:.0f}",
+            color="#c44e52",
+            va="bottom",
+            ha="left",
+        )
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     ax.set_xlabel("Date")
+    ax.set_ylim(bottom=0)
     ax.grid(alpha=0.25)
     fig.savefig(output_path, dpi=160)
     plt.close(fig)
@@ -260,6 +272,7 @@ def main() -> None:
         output_path=total_path,
         color="#9467bd",
         zero_line=True,
+        threshold_line=100.0,
     )
 
     print(f"ts_code: {ts_code}")
