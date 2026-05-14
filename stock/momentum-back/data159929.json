@@ -1,0 +1,456 @@
+{
+  "metadata": {
+    "ts_code": "159929.SZ",
+    "name": "医药ETF",
+    "source_file": "data159929.json",
+    "generated_at": "2026-05-14T11:33:45.335674+08:00",
+    "strategy": "buy at today's open when yesterday total_score >= threshold and yesterday close >= yesterday MA60; skip buy if MA60 is missing; sell at today's open when holding and yesterday total_score < threshold",
+    "threshold": 100.0,
+    "position_unit": 1.0
+  },
+  "summary": {
+    "total_return_pct": -14.6986
+  },
+  "record_count": 725,
+  "operation_count": 47,
+  "buy_count": 24,
+  "sell_count": 23,
+  "skipped_days": 0,
+  "realized_profit": -0.232,
+  "unrealized_profit": -0.015,
+  "total_profit": -0.247,
+  "has_open_position": true,
+  "operations": [
+    {
+      "action": "BUY",
+      "signal_date": "2023-07-28",
+      "trade_date": "2023-07-31",
+      "score_yesterday": 169.4444,
+      "price": 1.565,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2023-08-11",
+      "trade_date": "2023-08-14",
+      "score_yesterday": 88.4921,
+      "price": 1.465,
+      "buy_date": "2023-07-31",
+      "buy_price": 1.565,
+      "return_pct": -6.3898
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2023-09-25",
+      "trade_date": "2023-09-26",
+      "score_yesterday": 133.6508,
+      "price": 1.475,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2023-10-19",
+      "trade_date": "2023-10-20",
+      "score_yesterday": 73.254,
+      "price": 1.431,
+      "buy_date": "2023-09-26",
+      "buy_price": 1.475,
+      "return_pct": -2.9831
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2023-10-30",
+      "trade_date": "2023-10-31",
+      "score_yesterday": 129.2063,
+      "price": 1.504,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2023-11-22",
+      "trade_date": "2023-11-23",
+      "score_yesterday": 98.373,
+      "price": 1.506,
+      "buy_date": "2023-10-31",
+      "buy_price": 1.504,
+      "return_pct": 0.133
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2023-11-23",
+      "trade_date": "2023-11-24",
+      "score_yesterday": 114.5635,
+      "price": 1.514,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2023-11-27",
+      "trade_date": "2023-11-28",
+      "score_yesterday": 96.5873,
+      "price": 1.503,
+      "buy_date": "2023-11-24",
+      "buy_price": 1.514,
+      "return_pct": -0.7266
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2023-11-28",
+      "trade_date": "2023-11-29",
+      "score_yesterday": 127.7381,
+      "price": 1.522,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2023-12-05",
+      "trade_date": "2023-12-06",
+      "score_yesterday": 79.5635,
+      "price": 1.468,
+      "buy_date": "2023-11-29",
+      "buy_price": 1.522,
+      "return_pct": -3.548
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-03-12",
+      "trade_date": "2024-03-13",
+      "score_yesterday": 140.9127,
+      "price": 1.367,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-03-22",
+      "trade_date": "2024-03-25",
+      "score_yesterday": 86.3095,
+      "price": 1.31,
+      "buy_date": "2024-03-13",
+      "buy_price": 1.367,
+      "return_pct": -4.1697
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-04-29",
+      "trade_date": "2024-04-30",
+      "score_yesterday": 164.4444,
+      "price": 1.32,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-05-21",
+      "trade_date": "2024-05-22",
+      "score_yesterday": 88.373,
+      "price": 1.311,
+      "buy_date": "2024-04-30",
+      "buy_price": 1.32,
+      "return_pct": -0.6818
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-09-26",
+      "trade_date": "2024-09-27",
+      "score_yesterday": 166.9444,
+      "price": 1.199,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-10-30",
+      "trade_date": "2024-10-31",
+      "score_yesterday": 94.0079,
+      "price": 1.309,
+      "buy_date": "2024-09-27",
+      "buy_price": 1.199,
+      "return_pct": 9.1743
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-11-05",
+      "trade_date": "2024-11-06",
+      "score_yesterday": 102.6587,
+      "price": 1.35,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-11-19",
+      "trade_date": "2024-11-20",
+      "score_yesterday": 78.7302,
+      "price": 1.328,
+      "buy_date": "2024-11-06",
+      "buy_price": 1.35,
+      "return_pct": -1.6296
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-11-20",
+      "trade_date": "2024-11-21",
+      "score_yesterday": 106.0714,
+      "price": 1.36,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-11-21",
+      "trade_date": "2024-11-22",
+      "score_yesterday": 98.0952,
+      "price": 1.354,
+      "buy_date": "2024-11-21",
+      "buy_price": 1.36,
+      "return_pct": -0.4412
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-12-10",
+      "trade_date": "2024-12-11",
+      "score_yesterday": 115.2381,
+      "price": 1.343,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-12-16",
+      "trade_date": "2024-12-17",
+      "score_yesterday": 98.3333,
+      "price": 1.306,
+      "buy_date": "2024-12-11",
+      "buy_price": 1.343,
+      "return_pct": -2.755
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-02-14",
+      "trade_date": "2025-02-17",
+      "score_yesterday": 172.7381,
+      "price": 1.288,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-03-05",
+      "trade_date": "2025-03-06",
+      "score_yesterday": 99.9603,
+      "price": 1.268,
+      "buy_date": "2025-02-17",
+      "buy_price": 1.288,
+      "return_pct": -1.5528
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-03-06",
+      "trade_date": "2025-03-07",
+      "score_yesterday": 102.0238,
+      "price": 1.277,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-03-07",
+      "trade_date": "2025-03-10",
+      "score_yesterday": 95.4365,
+      "price": 1.275,
+      "buy_date": "2025-03-07",
+      "buy_price": 1.277,
+      "return_pct": -0.1566
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-03-14",
+      "trade_date": "2025-03-17",
+      "score_yesterday": 104.0476,
+      "price": 1.301,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-03-25",
+      "trade_date": "2025-03-26",
+      "score_yesterday": 92.6984,
+      "price": 1.272,
+      "buy_date": "2025-03-17",
+      "buy_price": 1.301,
+      "return_pct": -2.2291
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-03-27",
+      "trade_date": "2025-03-28",
+      "score_yesterday": 129.9603,
+      "price": 1.289,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-04-07",
+      "trade_date": "2025-04-08",
+      "score_yesterday": 91.6667,
+      "price": 1.205,
+      "buy_date": "2025-03-28",
+      "buy_price": 1.289,
+      "return_pct": -6.5167
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-05-13",
+      "trade_date": "2025-05-14",
+      "score_yesterday": 143.6111,
+      "price": 1.263,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-06-18",
+      "trade_date": "2025-06-19",
+      "score_yesterday": 97.4206,
+      "price": 1.29,
+      "buy_date": "2025-05-14",
+      "buy_price": 1.263,
+      "return_pct": 2.1378
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-07-03",
+      "trade_date": "2025-07-04",
+      "score_yesterday": 104.2063,
+      "price": 1.318,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-07-08",
+      "trade_date": "2025-07-09",
+      "score_yesterday": 96.1508,
+      "price": 1.312,
+      "buy_date": "2025-07-04",
+      "buy_price": 1.318,
+      "return_pct": -0.4552
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-07-09",
+      "trade_date": "2025-07-10",
+      "score_yesterday": 109.0476,
+      "price": 1.317,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-08-11",
+      "trade_date": "2025-08-12",
+      "score_yesterday": 95.5952,
+      "price": 1.439,
+      "buy_date": "2025-07-10",
+      "buy_price": 1.317,
+      "return_pct": 9.2635
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-08-13",
+      "trade_date": "2025-08-14",
+      "score_yesterday": 134.2857,
+      "price": 1.468,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-08-20",
+      "trade_date": "2025-08-21",
+      "score_yesterday": 87.0635,
+      "price": 1.468,
+      "buy_date": "2025-08-14",
+      "buy_price": 1.468,
+      "return_pct": 0.0
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-08-21",
+      "trade_date": "2025-08-22",
+      "score_yesterday": 110.5556,
+      "price": 1.48,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-09-18",
+      "trade_date": "2025-09-19",
+      "score_yesterday": 88.9683,
+      "price": 1.527,
+      "buy_date": "2025-08-22",
+      "buy_price": 1.48,
+      "return_pct": 3.1757
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-01-08",
+      "trade_date": "2026-01-09",
+      "score_yesterday": 164.7619,
+      "price": 1.403,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-01-21",
+      "trade_date": "2026-01-22",
+      "score_yesterday": 87.8968,
+      "price": 1.39,
+      "buy_date": "2026-01-09",
+      "buy_price": 1.403,
+      "return_pct": -0.9266
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-04-01",
+      "trade_date": "2026-04-02",
+      "score_yesterday": 150.0397,
+      "price": 1.352,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-04-17",
+      "trade_date": "2026-04-20",
+      "score_yesterday": 91.2698,
+      "price": 1.32,
+      "buy_date": "2026-04-02",
+      "buy_price": 1.352,
+      "return_pct": -2.3669
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-05-07",
+      "trade_date": "2026-05-08",
+      "score_yesterday": 105.5159,
+      "price": 1.328,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-05-08",
+      "trade_date": "2026-05-11",
+      "score_yesterday": 70.2381,
+      "price": 1.314,
+      "buy_date": "2026-05-08",
+      "buy_price": 1.328,
+      "return_pct": -1.0542
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-05-11",
+      "trade_date": "2026-05-12",
+      "score_yesterday": 110.5159,
+      "price": 1.337,
+      "return_pct": 0.0
+    }
+  ],
+  "open_position": {
+    "buy_signal_date": "2026-05-11",
+    "buy_date": "2026-05-12",
+    "buy_price": 1.337,
+    "latest_date": "2026-05-13",
+    "latest_close": 1.322,
+    "unrealized_profit": -0.015,
+    "unrealized_return_pct": -1.1219
+  }
+}

@@ -19,7 +19,6 @@ OUTPUT_DIR = STOCK_DIR / "momentum-output"
 MANIFEST_NAME = "index.json"
 DEFAULT_TOKEN_FILE = STOCK_DIR / "token.txt"
 FALLBACK_TOKEN_FILE = REPO_ROOT / "token.txt"
-DEFAULT_START_DATE = "2024-01-01"
 FALLBACK_NAMES = {
     "588000.SH": "??50ETF",
     "159995.SZ": "??ETF",
@@ -29,6 +28,16 @@ FALLBACK_NAMES = {
 
 def today_shanghai() -> str:
     return dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d")
+
+
+def default_start_date() -> str:
+    today = dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).date()
+    try:
+        start = today.replace(year=today.year - 3)
+    except ValueError:
+        # Handle Feb 29 -> Feb 28 on non-leap years.
+        start = today.replace(month=2, day=28, year=today.year - 3)
+    return start.strftime("%Y-%m-%d")
 
 
 def normalize_ts_code(code: str) -> str:
@@ -51,7 +60,7 @@ def output_name_for(ts_code: str) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Export momentum data for ETFs listed in watch_etf.txt.")
     parser.add_argument("--watch-file", default=str(WATCH_FILE))
-    parser.add_argument("--start-date", default=DEFAULT_START_DATE)
+    parser.add_argument("--start-date", default=default_start_date())
     parser.add_argument("--end-date", default=today_shanghai())
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument("--asset-type", choices=["auto", "stock", "fund"], default="auto")

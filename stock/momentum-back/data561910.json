@@ -1,0 +1,402 @@
+{
+  "metadata": {
+    "ts_code": "561910.SH",
+    "name": "电池ETF招商",
+    "source_file": "data561910.json",
+    "generated_at": "2026-05-14T11:33:45.343105+08:00",
+    "strategy": "buy at today's open when yesterday total_score >= threshold and yesterday close >= yesterday MA60; skip buy if MA60 is missing; sell at today's open when holding and yesterday total_score < threshold",
+    "threshold": 100.0,
+    "position_unit": 1.0
+  },
+  "summary": {
+    "total_return_pct": 41.3642
+  },
+  "record_count": 725,
+  "operation_count": 41,
+  "buy_count": 21,
+  "sell_count": 20,
+  "skipped_days": 0,
+  "realized_profit": 0.138,
+  "unrealized_profit": 0.062,
+  "total_profit": 0.2,
+  "has_open_position": true,
+  "operations": [
+    {
+      "action": "BUY",
+      "signal_date": "2023-06-30",
+      "trade_date": "2023-07-03",
+      "score_yesterday": 164.7619,
+      "price": 0.642,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2023-07-17",
+      "trade_date": "2023-07-18",
+      "score_yesterday": 86.8254,
+      "price": 0.626,
+      "buy_date": "2023-07-03",
+      "buy_price": 0.642,
+      "return_pct": -2.4922
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2023-08-10",
+      "trade_date": "2023-08-11",
+      "score_yesterday": 149.3651,
+      "price": 0.626,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2023-08-17",
+      "trade_date": "2023-08-18",
+      "score_yesterday": 58.8492,
+      "price": 0.59,
+      "buy_date": "2023-08-11",
+      "buy_price": 0.626,
+      "return_pct": -5.7508
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-03-11",
+      "trade_date": "2024-03-12",
+      "score_yesterday": 174.9206,
+      "price": 0.481,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-03-25",
+      "trade_date": "2024-03-26",
+      "score_yesterday": 81.5873,
+      "price": 0.448,
+      "buy_date": "2024-03-12",
+      "buy_price": 0.481,
+      "return_pct": -6.8607
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-03-26",
+      "trade_date": "2024-03-27",
+      "score_yesterday": 102.9365,
+      "price": 0.462,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-03-27",
+      "trade_date": "2024-03-28",
+      "score_yesterday": 81.9444,
+      "price": 0.442,
+      "buy_date": "2024-03-27",
+      "buy_price": 0.462,
+      "return_pct": -4.329
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-03-29",
+      "trade_date": "2024-04-01",
+      "score_yesterday": 102.2619,
+      "price": 0.455,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-04-16",
+      "trade_date": "2024-04-17",
+      "score_yesterday": 83.0952,
+      "price": 0.442,
+      "buy_date": "2024-04-01",
+      "buy_price": 0.455,
+      "return_pct": -2.8571
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-04-29",
+      "trade_date": "2024-04-30",
+      "score_yesterday": 107.7381,
+      "price": 0.467,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-05-28",
+      "trade_date": "2024-05-29",
+      "score_yesterday": 85.7143,
+      "price": 0.441,
+      "buy_date": "2024-04-30",
+      "buy_price": 0.467,
+      "return_pct": -5.5675
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-09-04",
+      "trade_date": "2024-09-05",
+      "score_yesterday": 171.4286,
+      "price": 0.398,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-09-23",
+      "trade_date": "2024-09-24",
+      "score_yesterday": 95.9921,
+      "price": 0.382,
+      "buy_date": "2024-09-05",
+      "buy_price": 0.398,
+      "return_pct": -4.0201
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2024-09-24",
+      "trade_date": "2024-09-25",
+      "score_yesterday": 134.9603,
+      "price": 0.398,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2024-11-22",
+      "trade_date": "2024-11-25",
+      "score_yesterday": 90.4365,
+      "price": 0.524,
+      "buy_date": "2024-09-25",
+      "buy_price": 0.398,
+      "return_pct": 31.6583
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-02-07",
+      "trade_date": "2025-02-10",
+      "score_yesterday": 159.9206,
+      "price": 0.508,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-03-12",
+      "trade_date": "2025-03-13",
+      "score_yesterday": 97.8175,
+      "price": 0.523,
+      "buy_date": "2025-02-10",
+      "buy_price": 0.508,
+      "return_pct": 2.9528
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-05-21",
+      "trade_date": "2025-05-22",
+      "score_yesterday": 146.3492,
+      "price": 0.488,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-05-27",
+      "trade_date": "2025-05-28",
+      "score_yesterday": 89.6032,
+      "price": 0.467,
+      "buy_date": "2025-05-22",
+      "buy_price": 0.488,
+      "return_pct": -4.3033
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-06-12",
+      "trade_date": "2025-06-13",
+      "score_yesterday": 126.9444,
+      "price": 0.475,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-07-31",
+      "trade_date": "2025-08-01",
+      "score_yesterday": 99.4048,
+      "price": 0.505,
+      "buy_date": "2025-06-13",
+      "buy_price": 0.475,
+      "return_pct": 6.3158
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-08-01",
+      "trade_date": "2025-08-04",
+      "score_yesterday": 100.9921,
+      "price": 0.506,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-08-04",
+      "trade_date": "2025-08-05",
+      "score_yesterday": 89.6429,
+      "price": 0.511,
+      "buy_date": "2025-08-04",
+      "buy_price": 0.506,
+      "return_pct": 0.9881
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-08-11",
+      "trade_date": "2025-08-12",
+      "score_yesterday": 112.1429,
+      "price": 0.534,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-10-16",
+      "trade_date": "2025-10-17",
+      "score_yesterday": 85.4762,
+      "price": 0.796,
+      "buy_date": "2025-08-12",
+      "buy_price": 0.534,
+      "return_pct": 49.0637
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-10-29",
+      "trade_date": "2025-10-30",
+      "score_yesterday": 105.3175,
+      "price": 0.875,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-11-12",
+      "trade_date": "2025-11-13",
+      "score_yesterday": 99.4841,
+      "price": 0.857,
+      "buy_date": "2025-10-30",
+      "buy_price": 0.875,
+      "return_pct": -2.0571
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-11-13",
+      "trade_date": "2025-11-14",
+      "score_yesterday": 129.3651,
+      "price": 0.896,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2025-11-18",
+      "trade_date": "2025-11-19",
+      "score_yesterday": 99.0873,
+      "price": 0.851,
+      "buy_date": "2025-11-14",
+      "buy_price": 0.896,
+      "return_pct": -5.0223
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2025-12-25",
+      "trade_date": "2025-12-26",
+      "score_yesterday": 110.7143,
+      "price": 0.839,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-01-20",
+      "trade_date": "2026-01-21",
+      "score_yesterday": 76.8651,
+      "price": 0.84,
+      "buy_date": "2025-12-26",
+      "buy_price": 0.839,
+      "return_pct": 0.1192
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-03-11",
+      "trade_date": "2026-03-12",
+      "score_yesterday": 132.8175,
+      "price": 0.88,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-03-19",
+      "trade_date": "2026-03-20",
+      "score_yesterday": 84.4444,
+      "price": 0.829,
+      "buy_date": "2026-03-12",
+      "buy_price": 0.88,
+      "return_pct": -5.7955
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-03-20",
+      "trade_date": "2026-03-23",
+      "score_yesterday": 104.4444,
+      "price": 0.847,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-03-23",
+      "trade_date": "2026-03-24",
+      "score_yesterday": 90.3571,
+      "price": 0.849,
+      "buy_date": "2026-03-23",
+      "buy_price": 0.847,
+      "return_pct": 0.2361
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-03-26",
+      "trade_date": "2026-03-27",
+      "score_yesterday": 110.0794,
+      "price": 0.847,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-03-27",
+      "trade_date": "2026-03-30",
+      "score_yesterday": 98.6111,
+      "price": 0.861,
+      "buy_date": "2026-03-27",
+      "buy_price": 0.847,
+      "return_pct": 1.6529
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-03-30",
+      "trade_date": "2026-03-31",
+      "score_yesterday": 101.5476,
+      "price": 0.857,
+      "return_pct": 0.0
+    },
+    {
+      "action": "SELL",
+      "signal_date": "2026-03-31",
+      "trade_date": "2026-04-01",
+      "score_yesterday": 77.619,
+      "price": 0.835,
+      "buy_date": "2026-03-31",
+      "buy_price": 0.857,
+      "return_pct": -2.5671
+    },
+    {
+      "action": "BUY",
+      "signal_date": "2026-04-14",
+      "trade_date": "2026-04-15",
+      "score_yesterday": 117.4603,
+      "price": 0.908,
+      "return_pct": 0.0
+    }
+  ],
+  "open_position": {
+    "buy_signal_date": "2026-04-14",
+    "buy_date": "2026-04-15",
+    "buy_price": 0.908,
+    "latest_date": "2026-05-13",
+    "latest_close": 0.97,
+    "unrealized_profit": 0.062,
+    "unrealized_return_pct": 6.8282
+  }
+}

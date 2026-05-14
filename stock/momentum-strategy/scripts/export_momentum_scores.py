@@ -19,6 +19,7 @@ DEFAULT_NORMALIZATION_MIN_ROWS = 60
 DEFAULT_TREND_WEIGHT = 40.0
 DEFAULT_MOMENTUM_WEIGHT = 35.0
 DEFAULT_VOLUME_WEIGHT = 25.0
+DEFAULT_MA_WINDOWS = (5, 10, 20, 60)
 
 
 def parse_date(value: str) -> dt.date:
@@ -64,6 +65,12 @@ def parse_float(value: Any, field_name: str) -> float:
     return number
 
 
+def parse_optional_float(value: Any, field_name: str) -> float | None:
+    if value in (None, ""):
+        return None
+    return parse_float(value, field_name)
+
+
 def clean_float(value: float | None, digits: int = 10) -> float | None:
     if value is None or not math.isfinite(value):
         return None
@@ -98,6 +105,7 @@ def normalize_bars(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         trade_date = row["date"]
         by_date[trade_date] = {
             "date": trade_date,
+            "open": parse_optional_float(row.get("open"), "open"),
             "close": parse_float(row["close"], "close"),
             "volume": parse_float(row["volume"], "volume"),
         }
@@ -135,7 +143,7 @@ def fetch_tushare_bars(
             errors.append(f"{api_name}: empty result")
             continue
 
-        required = {"trade_date", "close", "vol"}
+        required = {"trade_date", "open", "close", "vol"}
         missing = required.difference(set(df.columns))
         if missing:
             errors.append(f"{api_name}: missing columns {sorted(missing)}")
@@ -144,6 +152,7 @@ def fetch_tushare_bars(
         rows = [
             {
                 "date": parse_date(str(item["trade_date"])),
+                "open": item["open"],
                 "close": item["close"],
                 "volume": item["vol"],
             }
@@ -161,6 +170,7 @@ def load_csv_bars(path: Path) -> list[dict[str, Any]]:
         fieldnames = reader.fieldnames or []
         lower_to_real = {name.lower(): name for name in fieldnames}
         date_key = lower_to_real.get("date") or lower_to_real.get("trade_date")
+        open_key = lower_to_real.get("open")
         close_key = lower_to_real.get("close")
         volume_key = lower_to_real.get("volume") or lower_to_real.get("vol")
         if not date_key or not close_key or not volume_key:
@@ -169,6 +179,7 @@ def load_csv_bars(path: Path) -> list[dict[str, Any]]:
         rows = [
             {
                 "date": parse_date(str(item[date_key])),
+                "open": item[open_key] if open_key else None,
                 "close": item[close_key],
                 "volume": item[volume_key],
             }
@@ -201,6 +212,16 @@ def calculate_b_and_r2(closes: list[float]) -> tuple[float, float]:
 
 def mean(values: list[float]) -> float:
     return sum(values) / len(values)
+
+
+def moving_average_values(closes: list[float], idx: int, windows: tuple[int, ...] = DEFAULT_MA_WINDOWS) -> list[float]:
+    values: list[float] = []
+    for window in windows:
+        if idx + 1 < window:
+            values.append(-1.0)
+            continue
+        values.append(mean(closes[idx - window + 1 : idx + 1]))
+    return values
 
 
 def rolling_percentile_score(
@@ -279,8 +300,10 @@ def build_metrics(
             {
                 "idx": idx,
                 "date": end_day,
+                "open": bars[idx].get("open"),
                 "close": close_window[-1],
                 "volume": volume_window[-1],
+                "ma": moving_average_values(closes, idx),
                 "b": b,
                 "r_squared": r_squared,
                 "trend_raw_score": trend_raw_score,
@@ -317,8 +340,10 @@ def build_metrics(
             records.append(
                 {
                     "date": date_text(end_day),
+                    "open": clean_float(row["open"], 4),
                     "close": clean_float(row["close"], 4),
                     "volume": clean_float(row["volume"], 4),
+                    "ma": [clean_float(value, 4) if value >= 0 else -1 for value in row["ma"]],
                     "b": clean_float(row["b"]),
                     "r_squared": clean_float(row["r_squared"]),
                     "b_times_r_squared": clean_float(row["b"] * row["r_squared"]),
