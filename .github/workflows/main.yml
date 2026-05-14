@@ -36,7 +36,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write   # 允许 bot 提交 data.json
+  contents: write   # 允许 bot 提交 watch_data 和 Pages 构建产物
   pages: write      # 允许部署 GitHub Pages
   id-token: write   # GitHub Pages 部署鉴权需要
 
@@ -61,54 +61,29 @@ jobs:
       - name: Install Python dependencies
         run: pip install tushare pandas
 
-      # ── 3. 更新股票数据（失败时跳过，使用上次缓存的 data.json） ─────────
-      - name: Update stock data
-        id: update_stock
+      # ── 3. 更新自选股数据（失败时跳过，使用上次缓存的 watch_data） ────────
+      - name: Update watch data
+        id: update_watch
         continue-on-error: true
         env:
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
-        run: python stock/update_data.py
+        run: python stock/update_watch.py
 
-      # ── 4. 更新 ETF 动量数据（失败时恢复上次缓存的 momentum-output） ───────
-      - name: Backup ETF momentum cache
-        run: |
-          rm -rf /tmp/momentum-output-backup
-          if [ -d stock/momentum-output ]; then
-            cp -a stock/momentum-output /tmp/momentum-output-backup
-          fi
-
-      - name: Update ETF momentum data
-        id: update_etf
-        continue-on-error: true
-        env:
-          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
-        run: python stock/update_etf_data.py
-
-      - name: Restore ETF momentum cache when refresh fails
-        if: steps.update_etf.outcome == 'failure'
-        run: |
-          rm -rf stock/momentum-output
-          if [ -d /tmp/momentum-output-backup ]; then
-            cp -a /tmp/momentum-output-backup stock/momentum-output
-          else
-            mkdir -p stock/momentum-output
-          fi
-
-      # ── 5. 构建（将源目录打包到 docs/） ──────────────────────────────────
+      # ── 4. 构建（将源目录打包到 docs/） ──────────────────────────────────
       - name: Build docs
         run: python build.py
 
-      # ── 6. 提交更新后的数据回仓库 ───────────────────────────────────────
+      # ── 5. 提交更新后的数据回仓库 ───────────────────────────────────────
       #   [skip ci] 防止 push 再次触发本 workflow 形成死循环
-      - name: Commit updated stock data
+      - name: Commit updated watch data and docs
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add stock/data.json stock/momentum-output docs/stock/data.json docs/stock/momentum-output
-          git diff --staged --quiet || git commit -m "chore: update stock data $(date -u +%Y-%m-%d) [skip ci]"
+          git add pages.json docs/pages.json stock/index.html stock/app.js stock/style.css stock/update_watch.py stock/watch.json stock/watch_data docs/stock
+          git diff --staged --quiet || git commit -m "chore: update watch data $(date -u +%Y-%m-%d) [skip ci]"
           git push
 
-      # ── 7. 部署到 GitHub Pages ────────────────────────────────────────────
+      # ── 6. 部署到 GitHub Pages ────────────────────────────────────────────
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -118,12 +93,11 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # ── 8. 如果刷新失败，则将 workflow 标红，避免“页面没更新但流程显示成功” ──
+      # ── 7. 如果刷新失败，则将 workflow 标红，避免“页面没更新但流程显示成功” ──
       - name: Fail workflow when data refresh fails
-        if: steps.update_stock.outcome == 'failure' || steps.update_etf.outcome == 'failure'
+        if: steps.update_watch.outcome == 'failure'
         run: |
           echo "Data refresh failed. Pages was deployed with the previous cached data."
-          echo "update_stock: ${{ steps.update_stock.outcome }}"
-          echo "update_etf: ${{ steps.update_etf.outcome }}"
+          echo "update_watch: ${{ steps.update_watch.outcome }}"
           exit 1
 

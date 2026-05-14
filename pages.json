@@ -10,7 +10,7 @@
     "id": "stock",
     "title": "股票",
     "icon": "📈",
-    "description": "上证指数最新价格、MA120 及价格水位（最新价÷MA120）",
+    "description": "自选股收盘价、均线和交易量/额信号",
     "path": "stock/index.html"
   }
 ]

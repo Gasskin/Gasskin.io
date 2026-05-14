@@ -3,47 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>股票信息</title>
+  <title>自选股信号</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="layout">
-    <section class="section">
-      <div class="section-title">大盘水位</div>
-      <div class="card">
-        <div class="kv">
-          <span class="kv-label">上证指数</span>
-          <div class="kv-right">
-            <span class="kv-value" id="idx-price">—</span>
-          </div>
-        </div>
-        <div class="kv">
-          <span class="kv-label">MA120</span>
-          <span class="kv-value dim" id="idx-ma120">—</span>
-        </div>
-        <div class="kv">
-          <span class="kv-label">水位</span>
-          <span class="kv-value" id="idx-water">—</span>
-        </div>
-        <div class="update-time" id="updateTime">—</div>
-      </div>
-    </section>
+    <header class="page-head">
+      <h1>自选股信号</h1>
+      <div id="summary" class="summary">加载中</div>
+    </header>
 
-    <section class="section">
-      <div class="section-title-row">
-        <div class="section-title">自选股</div>
-        <div class="toolbar">
-          <label class="toggle-label">
-            <input type="checkbox" id="onlyHolding" />
-            <span class="toggle-text">仅持仓</span>
-          </label>
-          <button class="sort-btn" id="sortBtn" data-dir="asc">水位 ↑</button>
-        </div>
-      </div>
-      <div id="watchlist"></div>
-    </section>
-
-    <div class="error-banner hidden" id="errorBanner"></div>
+    <section id="watchlist" class="watchlist"></section>
+    <div id="errorBanner" class="error-banner hidden"></div>
   </main>
 
   <script src="app.js" type="module"></script>

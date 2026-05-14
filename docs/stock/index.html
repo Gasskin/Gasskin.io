@@ -1,81 +1,22 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>股票信息</title>
+  <title>自选股信号</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="layout">
+    <header class="page-head">
+      <h1>自选股信号</h1>
+      <div id="summary" class="summary">加载中</div>
+    </header>
 
-    <nav class="page-tabs" aria-label="页面">
-      <button class="tab-btn active" type="button" data-page="watch">自选股</button>
-      <button class="tab-btn" type="button" data-page="momentum">动量分数</button>
-    </nav>
-
-    <div class="page active" id="watchPage">
-      <!-- 大盘水位 -->
-      <section class="section">
-      <div class="section-title">大盘水位</div>
-      <div class="card">
-        <div class="kv">
-          <span class="kv-label">上证指数</span>
-          <div class="kv-right">
-            <span class="kv-value" id="idx-price">—</span>
-          </div>
-        </div>
-        <div class="kv">
-          <span class="kv-label">MA120</span>
-          <span class="kv-value dim" id="idx-ma120">—</span>
-        </div>
-        <div class="kv">
-          <span class="kv-label">水位</span>
-          <span class="kv-value" id="idx-water">—</span>
-        </div>
-        <div class="update-time" id="updateTime">—</div>
-      </div>
-      </section>
-
-      <!-- 自选股 -->
-      <section class="section">
-      <div class="section-title-row">
-        <div class="section-title">自选股</div>
-        <div class="toolbar">
-          <label class="toggle-label">
-            <input type="checkbox" id="onlyHolding" />
-            <span class="toggle-text">仅持仓</span>
-          </label>
-          <button class="sort-btn" id="sortBtn" data-dir="asc">水位 ↑</button>
-        </div>
-      </div>
-      <div id="watchlist"></div>
-      </section>
-    </div>
-
-    <div class="page" id="momentumPage">
-      <section class="section">
-        <div class="section-title-row">
-          <div class="section-title">动量分数</div>
-          <div class="muted-count" id="momentumCount">—</div>
-        </div>
-        <div id="momentumCharts"></div>
-      </section>
-    </div>
-
-    <div class="error-banner hidden" id="errorBanner"></div>
-
+    <section id="watchlist" class="watchlist"></section>
+    <div id="errorBanner" class="error-banner hidden"></div>
   </main>
-
-  <div class="modal hidden" id="momentumDialog" role="dialog" aria-modal="true" aria-label="动量分数详情">
-    <div class="modal-backdrop" data-close-dialog></div>
-    <div class="modal-panel">
-      <button class="modal-close" type="button" id="momentumDialogClose" aria-label="关闭">×</button>
-      <div id="momentumDialogBody"></div>
-    </div>
-  </div>
 
   <script src="app.js" type="module"></script>
 </body>
 </html>
-
