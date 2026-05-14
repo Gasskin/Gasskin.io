@@ -19,6 +19,7 @@ DEFAULT_NORMALIZATION_MIN_ROWS = 60
 DEFAULT_TREND_WEIGHT = 40.0
 DEFAULT_MOMENTUM_WEIGHT = 35.0
 DEFAULT_VOLUME_WEIGHT = 25.0
+DEFAULT_MA_WINDOWS = (5, 10, 20, 60)
 
 
 def parse_date(value: str) -> dt.date:
@@ -64,6 +65,12 @@ def parse_float(value: Any, field_name: str) -> float:
     return number
 
 
+def parse_optional_float(value: Any, field_name: str) -> float | None:
+    if value in (None, ""):
+        return None
+    return parse_float(value, field_name)
+
+
 def clean_float(value: float | None, digits: int = 10) -> float | None:
     if value is None or not math.isfinite(value):
         return None
@@ -98,6 +105,7 @@ def normalize_bars(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         trade_date = row["date"]
         by_date[trade_date] = {
             "date": trade_date,
+            "open": parse_optional_float(row.get("open"), "open"),
             "close": parse_float(row["close"], "close"),
             "volume": parse_float(row["volume"], "volume"),
         }
@@ -135,7 +143,7 @@ def fetch_tushare_bars(
             errors.append(f"{api_name}: empty result")
             continue
 
-        required = {"trade_date", "close", "vol"}
+        required = {"trade_date", "open", "close", "vol"}
         missing = required.difference(set(df.columns))
         if missing:
             errors.append(f"{api_name}: missing columns {sorted(missing)}")
@@ -144,6 +152,7 @@ def fetch_tushare_bars(
         rows = [
             {
                 "date": parse_date(str(item["trade_date"])),
+                "open": item["open"],
                 "close": item["close"],
                 "volume": item["vol"],
             }
@@ -161,6 +170,7 @@ def load_csv_bars(path: Path) -> list[dict[str, Any]]:
         fieldnames = reader.fieldnames or []
         lower_to_real = {name.lower(): name for name in fieldnames}
         date_key = lower_to_real.get("date") or lower_to_real.get("trade_date")
+        open_key = lower_to_real.get("open")
         close_key = lower_to_real.get("close")
         volume_key = lower_to_real.get("volume") or lower_to_real.get("vol")
         if not date_key or not close_key or not volume_key:
@@ -169,6 +179,7 @@ def load_csv_bars(path: Path) -> list[dict[str, Any]]:
         rows = [
             {
                 "date": parse_date(str(item[date_key])),
+                "open": item[open_key] if open_key else None,
                 "close": item[close_key],
                 "volume": item[volume_key],
             }
@@ -203,25 +214,24 @@ def mean(values: list[float]) -> float:
     return sum(values) / len(values)
 
 
-def rolling_percentile_score(
-    values: list[float | None],
-    idx: int,
-    window: int,
-    min_rows: int,
-) -> float | None:
-    value = values[idx]
-    if value is None or not math.isfinite(value):
+def moving_average_optional(values: list[float | None], idx: int, window: int) -> float | None:
+    if idx + 1 < window:
         return None
 
-    start = max(0, idx - window + 1)
-    history = [item for item in values[start : idx + 1] if item is not None and math.isfinite(item)]
-    if len(history) < min_rows:
+    window_values = values[idx - window + 1 : idx + 1]
+    if any(value is None or not math.isfinite(value) for value in window_values):
         return None
+    return mean([float(value) for value in window_values])
 
-    less = sum(1 for item in history if item < value)
-    equal = sum(1 for item in history if item == value)
-    percentile = (less + 0.5 * equal) / len(history)
-    return percentile * 200.0
+
+def moving_average_values(closes: list[float], idx: int, windows: tuple[int, ...] = DEFAULT_MA_WINDOWS) -> list[float]:
+    values: list[float] = []
+    for window in windows:
+        if idx + 1 < window:
+            values.append(-1.0)
+            continue
+        values.append(mean(closes[idx - window + 1 : idx + 1]))
+    return values
 
 
 def build_metrics(
@@ -279,8 +289,10 @@ def build_metrics(
             {
                 "idx": idx,
                 "date": end_day,
+                "open": bars[idx].get("open"),
                 "close": close_window[-1],
                 "volume": volume_window[-1],
+                "ma": moving_average_values(closes, idx),
                 "b": b,
                 "r_squared": r_squared,
                 "trend_raw_score": trend_raw_score,
@@ -290,16 +302,13 @@ def build_metrics(
             }
         )
 
-    trend_values = [row["trend_raw_score"] for row in raw_rows]
-    momentum_values = [row["momentum_raw_score"] for row in raw_rows]
-    volume_values = [row["volume_raw_score"] for row in raw_rows]
     weight_sum = trend_weight + momentum_weight + volume_weight
 
-    records: list[dict[str, Any]] = []
-    for raw_idx, row in enumerate(raw_rows):
-        trend_score = rolling_percentile_score(trend_values, raw_idx, normalization_window, normalization_min_rows)
-        momentum_score = rolling_percentile_score(momentum_values, raw_idx, normalization_window, normalization_min_rows)
-        volume_score = rolling_percentile_score(volume_values, raw_idx, normalization_window, normalization_min_rows)
+    scored_rows: list[dict[str, Any]] = []
+    for row in raw_rows:
+        trend_score = row["trend_raw_score"]
+        momentum_score = row["momentum_raw_score"]
+        volume_score = row["volume_raw_score"]
 
         if trend_score is None or momentum_score is None or volume_score is None:
             total_score_raw = None
@@ -309,16 +318,36 @@ def build_metrics(
                 trend_weight * trend_score
                 + momentum_weight * momentum_score
                 + volume_weight * volume_score
-            ) / weight_sum
+            )
             total_score = float(total_score_raw)
 
+        scored_rows.append(
+            {
+                **row,
+                "trend_score": trend_score,
+                "momentum_score": momentum_score,
+                "volume_score": volume_score,
+                "total_score_raw": total_score_raw,
+                "total_score": total_score,
+            }
+        )
+
+    total_scores = [row["total_score_raw"] for row in scored_rows]
+    for idx, row in enumerate(scored_rows):
+        row["score_ma20"] = moving_average_optional(total_scores, idx, 20)
+        row["score_ma60"] = moving_average_optional(total_scores, idx, 60)
+
+    records: list[dict[str, Any]] = []
+    for row in scored_rows:
         end_day = row["date"]
         if start_date <= end_day <= end_date:
             records.append(
                 {
                     "date": date_text(end_day),
+                    "open": clean_float(row["open"], 4),
                     "close": clean_float(row["close"], 4),
                     "volume": clean_float(row["volume"], 4),
+                    "ma": [clean_float(value, 4) if value >= 0 else -1 for value in row["ma"]],
                     "b": clean_float(row["b"]),
                     "r_squared": clean_float(row["r_squared"]),
                     "b_times_r_squared": clean_float(row["b"] * row["r_squared"]),
@@ -326,11 +355,13 @@ def build_metrics(
                     "momentum_raw_score": clean_float(row["momentum_raw_score"]),
                     "volume_raw_score": clean_float(row["volume_raw_score"]),
                     "legacy_total_score_raw": clean_float(row["legacy_total_score_raw"]),
-                    "trend_score": clean_float(trend_score),
-                    "momentum_score": clean_float(momentum_score),
-                    "volume_score": clean_float(volume_score),
-                    "total_score_raw": clean_float(total_score_raw),
-                    "total_score": clean_float(total_score),
+                    "trend_score": clean_float(row["trend_score"]),
+                    "momentum_score": clean_float(row["momentum_score"]),
+                    "volume_score": clean_float(row["volume_score"]),
+                    "total_score_raw": clean_float(row["total_score_raw"]),
+                    "total_score": clean_float(row["total_score"]),
+                    "score_ma20": clean_float(row["score_ma20"], 4),
+                    "score_ma60": clean_float(row["score_ma60"], 4),
                 }
             )
 
@@ -374,10 +405,6 @@ def main() -> None:
         raise RuntimeError("--momentum-long-window must be greater than 0.")
     if args.normalization_window <= 0:
         raise RuntimeError("--normalization-window must be greater than 0.")
-    if args.normalization_min_rows <= 0:
-        raise RuntimeError("--normalization-min-rows must be greater than 0.")
-    if args.normalization_min_rows > args.normalization_window:
-        raise RuntimeError("--normalization-min-rows must be less than or equal to --normalization-window.")
     weight_sum = args.trend_weight + args.momentum_weight + args.volume_weight
     if weight_sum <= 0:
         raise RuntimeError("Weight sum must be greater than 0.")
@@ -456,20 +483,18 @@ def main() -> None:
                 "long": args.momentum_long_window,
             },
             "normalization": {
-                "method": "rolling_percentile",
+                "method": "none",
+                "applied": False,
                 "window": args.normalization_window,
                 "min_rows": args.normalization_min_rows,
-                "score_min": 0,
-                "score_midpoint": 100,
-                "score_max": 200,
-                "includes_current_day": True,
+                "notes": "Legacy arguments retained for compatibility; component scores use raw values directly.",
             },
             "weights": {
                 "trend": args.trend_weight,
                 "momentum": args.momentum_weight,
                 "volume": args.volume_weight,
             },
-            "score_version": "rolling_percentile_v1",
+            "score_version": "absolute_weighted_sum_v1",
             "rows": len(records),
             "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         },

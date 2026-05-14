@@ -1,6 +1,6 @@
 # 动量策略参数
 
-本策略把趋势、价格动量、成交量确认三个原始指标先做滚动分位数标准化，再输出每天的 JSON 分数。
+本策略直接使用趋势、价格动量、成交量确认三个原始指标，并按权重加权求和计算每天的绝对得分，输出为 JSON。
 
 ## 输入
 
@@ -8,7 +8,6 @@
 - 日成交量，来自 Tushare 的 `vol` 字段。
 - 趋势滚动窗口：默认 `20` 个交易日。
 - 价格动量窗口：默认短窗口 `5` 个交易日，长窗口 `10` 个交易日。
-- 标准化窗口：默认 `252` 个交易日，最少 `60` 个有效样本后开始输出标准化分数。
 - 权重：趋势 `40`、动量 `35`、成交量 `25`。
 
 ## 原始指标
@@ -46,35 +45,28 @@ volume_raw_score = log(vol_ma_short / vol_ma_long)
 
 如果两个均值没有同时大于 `0`，则取 `0`。
 
-## 标准化
+## 直接计分
 
-每个原始指标都会在最近 `normalization_window` 个有效样本内计算滚动分位数，并映射到 `0-200`：
+本版本不再对三个原始指标做滚动分位数标准化：
 
-```text
-normalized_score = rolling_percentile(raw_score) * 200
-```
+- `trend_score = trend_raw_score`
+- `momentum_score = momentum_raw_score`
+- `volume_score = volume_raw_score`
 
-含义：
-
-- `100`：该指标处于自身最近窗口内的中位水平。
-- `>100`：强于自身历史常态。
-- `<100`：弱于自身历史常态。
-
-滚动分位数只使用当天及以前的数据，避免未来函数。
+也就是说，输出分数是原始量纲上的绝对值，而不是相对于过去一段历史窗口的位置分数。
 
 ## 总分
 
 ```text
 total_score_raw =
-  (trend_weight * trend_score
-   + momentum_weight * momentum_score
-   + volume_weight * volume_score)
-  / (trend_weight + momentum_weight + volume_weight)
+  trend_weight * trend_score
+  + momentum_weight * momentum_score
+  + volume_weight * volume_score
 
 total_score = total_score_raw
 ```
 
-如果任一标准化组件为 `null`，`total_score_raw` 为 `null`，`total_score` 为 `0`。
+如果任一组件为 `null`，`total_score_raw` 为 `null`，`total_score` 为 `0`。
 
 ## JSON 每日字段
 
@@ -88,8 +80,10 @@ total_score = total_score_raw
 - `momentum_raw_score`：未标准化价格动量原始值。
 - `volume_raw_score`：未标准化成交量原始值。
 - `legacy_total_score_raw`：旧算法的原始量纲加权值，仅用于对照。
-- `trend_score`：滚动分位数标准化后的趋势分，范围约 `0-200`。
-- `momentum_score`：滚动分位数标准化后的价格动量分，范围约 `0-200`。
-- `volume_score`：滚动分位数标准化后的成交量分，范围约 `0-200`。
-- `total_score_raw`：标准化后的加权平均总分。
+- `trend_score`：直接等于 `trend_raw_score`。
+- `momentum_score`：直接等于 `momentum_raw_score`。
+- `volume_score`：直接等于 `volume_raw_score`。
+- `total_score_raw`：三个原始分量按权重计算得到的加权求和总分。
 - `total_score`：前端展示使用的总分。
+- `score_ma20`：总分的 20 日移动平均，仅在样本足够时输出。
+- `score_ma60`：总分的 60 日移动平均，仅在样本足够时输出。

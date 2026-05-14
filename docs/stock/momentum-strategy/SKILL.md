@@ -1,6 +1,6 @@
 ---
 name: momentum-strategy
-description: 为单只 A 股、ETF 或基金按指定时间范围导出动量策略每日指标。适用于用户提供股票/基金代码、开始日期和结束日期，并希望复用 stock/Test/gen_img.py 的策略逻辑，输出收盘价、趋势分、动量分、成交量分、总加权分等每日 JSON 数据。
+description: 为单只 A 股、ETF 或基金按指定时间范围导出动量策略每日指标。适用于用户提供股票/基金代码、开始日期和结束日期，并希望复用 stock/Test/gen_img.py 的策略逻辑，输出收盘价、趋势分、动量分、成交量分，以及基于三者原始值直接加权求和得到的绝对总分等每日 JSON 数据。
 ---
 
 # 动量策略
@@ -37,6 +37,8 @@ py -3 scripts/export_momentum_scores.py --ts-code 159681.SZ --start-date 2025-01
 ## 策略细节
 
 需要公式和输出结构时，读取 `references/strategy.md`。
+
+当前实现不对三个分量做滚动标准化，而是直接使用原始值参与加权求和。
 
 默认参数与源脚本保持一致：
 

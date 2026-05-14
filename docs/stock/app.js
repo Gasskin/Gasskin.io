@@ -11,6 +11,7 @@ const fmt      = n   => n.toLocaleString('zh-CN', { minimumFractionDigits:2, max
 const fmt0     = n   => n.toLocaleString('zh-CN', { maximumFractionDigits:0 });
 const fmt4     = n   => n.toLocaleString('zh-CN', { minimumFractionDigits:4, maximumFractionDigits:4 });
 const pctColor = v   => v > 0 ? '#f04e4e' : v < 0 ? '#34c97a' : '#6b7a99';
+const momentumScoreColor = v => v > 100 ? '#f04e4e' : v > 0 ? '#f59e0b' : v < 0 ? '#38bdf8' : '#6b7a99';
 const sign     = v   => v >= 0 ? '+' : '';
 const esc      = v   => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
 const ETF_NAMES = {
@@ -209,21 +210,32 @@ function defaultCustomRange(records, range = 'year') {
 }
 
 function chartScales(records) {
-  const values = records.map(r => Number(r.total_score ?? 0)).filter(Number.isFinite);
+  const values = records.flatMap(r => [
+    Number(r.total_score ?? Number.NaN),
+    Number(r.score_ma20 ?? Number.NaN),
+    Number(r.score_ma60 ?? Number.NaN),
+  ]).filter(Number.isFinite);
   const minValue = Math.min(0, ...values);
   const maxValue = Math.max(100, ...values);
   const pad = Math.max(5, (maxValue - minValue) * 0.08);
-  return { minValue, maxValue: maxValue + pad };
+  return { minValue: minValue - pad, maxValue: maxValue + pad };
 }
 
-function pathFor(records, width, height, pad, minValue, maxValue) {
+function pathForField(records, width, height, pad, minValue, maxValue, field = 'total_score') {
   const span = maxValue - minValue || 1;
+  let started = false;
   return records.map((record, index) => {
     const x = pad.left + (records.length === 1 ? 0 : index / (records.length - 1)) * (width - pad.left - pad.right);
-    const score = Number(record.total_score ?? 0);
+    const score = Number(record[field] ?? Number.NaN);
+    if (!Number.isFinite(score)) {
+      started = false;
+      return '';
+    }
     const y = pad.top + (1 - (score - minValue) / span) * (height - pad.top - pad.bottom);
-    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
-  }).join(' ');
+    const command = started ? 'L' : 'M';
+    started = true;
+    return `${command} ${x.toFixed(2)} ${y.toFixed(2)}`;
+  }).filter(Boolean).join(' ');
 }
 
 function yForValue(value, height, pad, minValue, maxValue) {
@@ -247,7 +259,7 @@ function renderMomentumSummary(payload, file, manifestItem = {}) {
   }
 
   const score = Number(latest.total_score ?? 0);
-  const scoreColor = score > 100 ? '#f04e4e' : score > 0 ? '#f59e0b' : '#6b7a99';
+  const scoreColor = momentumScoreColor(score);
   return `<button class="momentum-row" type="button">
     <span class="momentum-title">
       <span class="momentum-name">${esc(name)}</span>
@@ -294,9 +306,11 @@ function renderMomentumChart(payload, manifestItem = {}, file = '', range = 'yea
   const height = 360;
   const pad = { top: 22, right: 22, bottom: 36, left: 46 };
   const { minValue, maxValue } = chartScales(records);
-  const path = pathFor(records, width, height, pad, minValue, maxValue);
+  const path = pathForField(records, width, height, pad, minValue, maxValue, 'total_score');
+  const ma20Path = pathForField(records, width, height, pad, minValue, maxValue, 'score_ma20');
+  const ma60Path = pathForField(records, width, height, pad, minValue, maxValue, 'score_ma60');
   const score = Number(latest.total_score ?? 0);
-  const scoreColor = score > 100 ? '#f04e4e' : score > 0 ? '#f59e0b' : '#6b7a99';
+  const scoreColor = momentumScoreColor(score);
   const y100 = yForValue(100, height, pad, minValue, maxValue);
 
   return `<div class="chart-card">
@@ -320,6 +334,8 @@ function renderMomentumChart(payload, manifestItem = {}, file = '', range = 'yea
         <text class="axis-label" x="${pad.left - 10}" y="${height - pad.bottom + 4}" text-anchor="end">${fmt0(minValue)}</text>
         <line class="threshold-line" x1="${pad.left}" y1="${y100}" x2="${width - pad.right}" y2="${y100}" />
         <text class="threshold-label" x="${width - pad.right - 4}" y="${y100 - 6}" text-anchor="end">100</text>
+        ${ma60Path ? `<path class="score-line ma60-line" d="${ma60Path}" />` : ''}
+        ${ma20Path ? `<path class="score-line ma20-line" d="${ma20Path}" />` : ''}
         <path class="score-line" d="${path}" />
         <line class="hover-line hidden" x1="0" y1="${pad.top}" x2="0" y2="${height - pad.bottom}" />
         <circle class="hover-dot hidden" cx="0" cy="0" r="4.5" />
@@ -348,6 +364,8 @@ function renderRangeControls(range, inputRange, customRange) {
 function renderDetail(record) {
   return `<span>${esc(record.date)}</span>
     <span>总分 ${fmt(record.total_score ?? 0)}</span>
+    ${record.score_ma20 != null ? `<span>MA20 ${fmt(record.score_ma20)}</span>` : ''}
+    ${record.score_ma60 != null ? `<span>MA60 ${fmt(record.score_ma60)}</span>` : ''}
     <span>收盘 ${fmt4(record.close ?? 0)}</span>
     <span>成交量 ${fmt0(record.volume ?? 0)}</span>
     <span>趋势 ${fmt(record.trend_score ?? 0)}</span>

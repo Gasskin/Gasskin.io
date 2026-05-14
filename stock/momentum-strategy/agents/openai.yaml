@@ -1,4 +1,0 @@
-interface:
-  display_name: "动量策略"
-  short_description: "按日导出动量策略 JSON 分数。"
-  default_prompt: "使用 $momentum-strategy 导出 159681.SZ 从 2025-01-01 到 2025-12-31 的每日动量策略 JSON 分数。"
