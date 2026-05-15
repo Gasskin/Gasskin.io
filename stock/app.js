@@ -14,6 +14,9 @@ const LABELS = {
   loaded: '\u5df2\u52a0\u8f7d',
   loadingFailed: '\u52a0\u8f7d\u5931\u8d25',
   missingRecords: '\u6ca1\u6709 records',
+  unclassified: '\u672a\u5206\u7c7b',
+  stockNav: '\u80a1\u7968',
+  category: '\u5206\u7c7b',
 };
 
 function toNumber(value) {
@@ -74,6 +77,12 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+function safeIdPart(value) {
+  const text = String(value ?? '').trim();
+  const safe = text.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  return safe || 'item';
+}
+
 async function fetchJson(path) {
   const response = await fetch(path, { cache: 'no-cache' });
   if (!response.ok) {
@@ -92,6 +101,9 @@ function calcRatio(left, right) {
 function metricTone(kind, value) {
   const number = toNumber(value);
   if (number == null) return 'tone-muted';
+  if (kind === 'short-ma-ratio') {
+    return number > 1 ? 'tone-positive' : 'tone-negative';
+  }
   if (kind === 'ma120-ratio') {
     return number >= 1 ? 'tone-positive' : 'tone-negative';
   }
@@ -118,13 +130,13 @@ function buildMetrics(row) {
       label: LABELS.priceToMa20,
       value: formatRatioPercent(priceToMa20),
       detail: `MA20 ${formatPrice(row.ma20)}`,
-      tone: 'tone-neutral',
+      tone: metricTone('short-ma-ratio', priceToMa20),
     },
     {
       label: LABELS.priceToMa60,
       value: formatRatioPercent(priceToMa60),
       detail: `MA60 ${formatPrice(row.ma60)}`,
-      tone: 'tone-neutral',
+      tone: metricTone('short-ma-ratio', priceToMa60),
     },
     {
       label: LABELS.priceToMa120,
@@ -155,6 +167,62 @@ function renderMetrics(metrics) {
       <span class="metric-detail">${escapeHtml(metric.detail)}</span>
     </div>`;
   }).join('');
+}
+
+function normalizeWatchGroups(watch) {
+  if (!Array.isArray(watch)) {
+    throw new Error('watch.json \u9876\u5c42\u7ed3\u6784\u5e94\u4e3a\u6570\u7ec4');
+  }
+
+  const groups = [];
+  const ungrouped = [];
+  let stockIndex = 0;
+
+  const normalizeStock = (stock, classify) => {
+    const code = String(stock?.code ?? '').trim();
+    const name = String(stock?.name ?? '').trim();
+    const normalized = {
+      ...stock,
+      code,
+      name,
+      classify,
+      navId: `stock-${safeIdPart(code || name)}-${stockIndex}`,
+    };
+    stockIndex += 1;
+    return normalized;
+  };
+
+  watch.forEach((entry, index) => {
+    if (!entry || typeof entry !== 'object') return;
+
+    if (Array.isArray(entry.stock)) {
+      const classify = String(entry.classify ?? LABELS.unclassified).trim() || LABELS.unclassified;
+      const stocks = entry.stock
+        .filter(stock => stock && typeof stock === 'object')
+        .map(stock => normalizeStock(stock, classify));
+
+      groups.push({
+        name: classify,
+        navId: `classify-${index}-${safeIdPart(classify)}`,
+        stocks,
+      });
+      return;
+    }
+
+    if (entry.code) {
+      ungrouped.push(normalizeStock(entry, LABELS.unclassified));
+    }
+  });
+
+  if (ungrouped.length) {
+    groups.push({
+      name: LABELS.unclassified,
+      navId: `classify-${groups.length}-${safeIdPart(LABELS.unclassified)}`,
+      stocks: ungrouped,
+    });
+  }
+
+  return groups.filter(group => group.stocks.length);
 }
 
 async function loadStock(item) {
@@ -208,7 +276,7 @@ function renderStock(stock) {
   const holding = Array.isArray(stock.buys) && stock.buys.length > 0;
   const metrics = buildMetrics(row);
 
-  return `<article class="stock-card ${holding ? 'holding' : ''}">
+  return `<article id="${escapeHtml(stock.navId)}" class="stock-card ${holding ? 'holding' : ''}">
     <div class="stock-head">
       <div class="identity">
         <h2>${escapeHtml(stock.name || stock.code)}</h2>
@@ -231,7 +299,7 @@ function renderStock(stock) {
 }
 
 function renderError(item, error) {
-  return `<article class="stock-card error">
+  return `<article id="${escapeHtml(item.navId)}" class="stock-card error">
     <div class="stock-head">
       <div class="identity">
         <h2>${escapeHtml(item.name || item.code)}</h2>
@@ -242,29 +310,62 @@ function renderError(item, error) {
   </article>`;
 }
 
+function renderGroup(group, cardsById) {
+  return `<section id="${escapeHtml(group.navId)}" class="classify-section">
+    <header class="classify-head">
+      <div>
+        <span class="classify-label">${escapeHtml(LABELS.category)}</span>
+        <h2>${escapeHtml(group.name)}</h2>
+      </div>
+      <span class="classify-count">${group.stocks.length}</span>
+    </header>
+    <div class="classify-list">
+      ${group.stocks.map(stock => cardsById.get(stock.navId) || '').join('')}
+    </div>
+  </section>`;
+}
+
+function renderStockNav(groups) {
+  if (!groups.length) return '';
+
+  return `<div class="stock-nav-title">${escapeHtml(LABELS.stockNav)}</div>
+    ${groups.map(group => `<div class="nav-group">
+      <a class="nav-group-link" href="#${escapeHtml(group.navId)}">
+        <span>${escapeHtml(group.name)}</span>
+        <strong>${group.stocks.length}</strong>
+      </a>
+      <div class="nav-links">
+        ${group.stocks.map(stock => `<a class="stock-nav-link" href="#${escapeHtml(stock.navId)}">
+          <span class="nav-stock-name">${escapeHtml(stock.name || stock.code)}</span>
+          <span class="nav-stock-code">${escapeHtml(stock.code)}</span>
+        </a>`).join('')}
+      </div>
+    </div>`).join('')}`;
+}
+
 async function main() {
   try {
     const watch = await fetchJson('watch.json');
-    const results = await Promise.allSettled(watch.map(loadStock));
+    const groups = normalizeWatchGroups(watch);
+    const stocks = groups.flatMap(group => group.stocks);
+    const results = await Promise.allSettled(stocks.map(loadStock));
 
-    const loadedStocks = [];
-    const errorCards = [];
+    const cardsById = new Map();
 
     results.forEach((result, index) => {
+      const stock = stocks[index];
       if (result.status === 'fulfilled') {
-        loadedStocks.push(result.value);
+        cardsById.set(stock.navId, renderStock(result.value));
       } else {
-        errorCards.push(renderError(watch[index], result.reason));
+        cardsById.set(stock.navId, renderError(stock, result.reason));
       }
     });
 
-    $('watchlist').innerHTML = [
-      ...loadedStocks.map(renderStock),
-      ...errorCards,
-    ].join('');
+    $('stockNav').innerHTML = renderStockNav(groups);
+    $('watchlist').innerHTML = groups.map(group => renderGroup(group, cardsById)).join('');
 
     const loaded = results.filter(result => result.status === 'fulfilled').length;
-    $('summary').textContent = `${loaded}/${watch.length} ${LABELS.loaded}`;
+    $('summary').textContent = `${loaded}/${stocks.length} ${LABELS.loaded}`;
   } catch (error) {
     $('summary').textContent = LABELS.loadingFailed;
     const banner = $('errorBanner');

@@ -87,6 +87,19 @@ def load_watchlist() -> list[dict[str, Any]]:
     for index, item in enumerate(data, start=1):
         if not isinstance(item, dict):
             raise ValueError(f"watch.json 第 {index} 项不是对象")
+
+        stocks = item.get("stock")
+        if isinstance(stocks, list):
+            classify = str(item.get("classify", "")).strip()
+            for stock_index, stock in enumerate(stocks, start=1):
+                if not isinstance(stock, dict):
+                    raise ValueError(f"watch.json 第 {index} 组第 {stock_index} 项不是对象")
+                code = str(stock.get("code", "")).strip()
+                if not code:
+                    raise ValueError(f"watch.json 第 {index} 组第 {stock_index} 项缺少 code")
+                items.append({**stock, "classify": classify})
+            continue
+
         code = str(item.get("code", "")).strip()
         if not code:
             raise ValueError(f"watch.json 第 {index} 项缺少 code")
