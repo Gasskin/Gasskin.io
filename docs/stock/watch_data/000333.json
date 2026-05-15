@@ -2,9 +2,9 @@
   "code": "000333",
   "ts_code": "000333.SZ",
   "name": "美的集团",
-  "start_date": "20251111",
-  "end_date": "20260514",
-  "fetch_start_date": "20251111",
+  "start_date": "20251112",
+  "end_date": "20260515",
+  "fetch_start_date": "20251112",
   "warmup_trading_days": 120,
   "fetched_rows": 121,
   "adjustment": "qfq",
@@ -14,7 +14,7 @@
     "volume": "hand",
     "amount": "thousand_yuan"
   },
-  "update_time": "2026-05-15 03:36:46",
+  "update_time": "2026-05-15 17:53:52",
   "fields": [
     "trade_date",
     "open",
@@ -30,20 +30,6 @@
     "amount_ma20"
   ],
   "records": [
-    {
-      "trade_date": "20251111",
-      "open": 76.85,
-      "close": 76.75,
-      "ma20": null,
-      "ma60": null,
-      "ma120": null,
-      "volume": 227707.54,
-      "volume_ma5": null,
-      "volume_ma20": null,
-      "amount": 1755331.384,
-      "amount_ma5": null,
-      "amount_ma20": null
-    },
     {
       "trade_date": "20251112",
       "open": 76.75,
@@ -94,10 +80,10 @@
       "ma60": null,
       "ma120": null,
       "volume": 261095.32,
-      "volume_ma5": 366629.504,
+      "volume_ma5": null,
       "volume_ma20": null,
       "amount": 2050426.784,
-      "amount_ma5": 2896861.014,
+      "amount_ma5": null,
       "amount_ma20": null
     },
     {
@@ -300,15 +286,15 @@
       "trade_date": "20251208",
       "open": 83.0,
       "close": 81.81,
-      "ma20": 79.469,
+      "ma20": null,
       "ma60": null,
       "ma120": null,
       "volume": 273365.29,
       "volume_ma5": 311083.884,
-      "volume_ma20": 316051.8,
+      "volume_ma20": null,
       "amount": 2235419.968,
       "amount_ma5": 2548828.0,
-      "amount_ma20": 2516350.942
+      "amount_ma20": null
     },
     {
       "trade_date": "20251209",
@@ -518,7 +504,7 @@
       "volume_ma20": 273815.033,
       "amount": 2026008.965,
       "amount_ma5": 1847944.263,
-      "amount_ma20": 2199646.663
+      "amount_ma20": 2199646.664
     },
     {
       "trade_date": "20251230",
@@ -861,7 +847,7 @@
       "open": 78.1,
       "close": 79.81,
       "ma20": 77.64,
-      "ma60": 78.809,
+      "ma60": null,
       "ma120": null,
       "volume": 389102.59,
       "volume_ma5": 447000.966,
@@ -1554,7 +1540,7 @@
       "volume_ma20": 279691.509,
       "amount": 2388456.633,
       "amount_ma5": 2056425.811,
-      "amount_ma20": 2147104.521
+      "amount_ma20": 2147104.52
     },
     {
       "trade_date": "20260424",
@@ -1702,7 +1688,7 @@
       "close": 80.38,
       "ma20": 79.421,
       "ma60": 77.795,
-      "ma120": 78.302,
+      "ma120": null,
       "volume": 328496.85,
       "volume_ma5": 355459.298,
       "volume_ma20": 291706.057,
@@ -1723,6 +1709,20 @@
       "amount": 3174393.395,
       "amount_ma5": 2900240.289,
       "amount_ma20": 2414345.867
+    },
+    {
+      "trade_date": "20260515",
+      "open": 81.45,
+      "close": 82.57,
+      "ma20": 80.023,
+      "ma60": 77.869,
+      "ma120": 78.374,
+      "volume": 426608.57,
+      "volume_ma5": 387714.44,
+      "volume_ma20": 313591.99,
+      "amount": 3525964.212,
+      "amount_ma5": 3150673.701,
+      "amount_ma20": 2516178.935
     }
   ]
 }

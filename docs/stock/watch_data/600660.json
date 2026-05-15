@@ -2,9 +2,9 @@
   "code": "600660",
   "ts_code": "600660.SH",
   "name": "福耀玻璃",
-  "start_date": "20251111",
-  "end_date": "20260514",
-  "fetch_start_date": "20251111",
+  "start_date": "20251112",
+  "end_date": "20260515",
+  "fetch_start_date": "20251112",
   "warmup_trading_days": 120,
   "fetched_rows": 121,
   "adjustment": "qfq",
@@ -14,7 +14,7 @@
     "volume": "hand",
     "amount": "thousand_yuan"
   },
-  "update_time": "2026-05-15 03:37:09",
+  "update_time": "2026-05-15 17:54:14",
   "fields": [
     "trade_date",
     "open",
@@ -30,20 +30,6 @@
     "amount_ma20"
   ],
   "records": [
-    {
-      "trade_date": "20251111",
-      "open": 65.94,
-      "close": 65.73,
-      "ma20": null,
-      "ma60": null,
-      "ma120": null,
-      "volume": 64784.08,
-      "volume_ma5": null,
-      "volume_ma20": null,
-      "amount": 433685.195,
-      "amount_ma5": null,
-      "amount_ma20": null
-    },
     {
       "trade_date": "20251112",
       "open": 65.82,
@@ -94,10 +80,10 @@
       "ma60": null,
       "ma120": null,
       "volume": 64663.89,
-      "volume_ma5": 71966.124,
+      "volume_ma5": null,
       "volume_ma20": null,
       "amount": 425979.039,
-      "amount_ma5": 477500.169,
+      "amount_ma5": null,
       "amount_ma20": null
     },
     {
@@ -300,15 +286,15 @@
       "trade_date": "20251208",
       "open": 62.82,
       "close": 62.17,
-      "ma20": 63.661,
+      "ma20": null,
       "ma60": null,
       "ma120": null,
       "volume": 89968.0,
       "volume_ma5": 96722.35,
-      "volume_ma20": 82209.999,
+      "volume_ma20": null,
       "amount": 572170.68,
       "amount_ma5": 619847.887,
-      "amount_ma20": 533708.107
+      "amount_ma20": null
     },
     {
       "trade_date": "20251209",
@@ -431,7 +417,7 @@
       "ma120": null,
       "volume": 84559.95,
       "volume_ma5": 85239.604,
-      "volume_ma20": 96857.718,
+      "volume_ma20": 96857.719,
       "amount": 528651.112,
       "amount_ma5": 529179.281,
       "amount_ma20": 612818.319
@@ -445,7 +431,7 @@
       "ma120": null,
       "volume": 176804.84,
       "volume_ma5": 101492.586,
-      "volume_ma20": 101579.717,
+      "volume_ma20": 101579.716,
       "amount": 1107972.717,
       "amount_ma5": 631900.59,
       "amount_ma20": 641873.234
@@ -482,7 +468,7 @@
       "trade_date": "20251225",
       "open": 61.79,
       "close": 62.24,
-      "ma20": 61.745,
+      "ma20": 61.744,
       "ma60": null,
       "ma120": null,
       "volume": 62562.7,
@@ -622,7 +608,7 @@
       "trade_date": "20260112",
       "open": 62.26,
       "close": 60.99,
-      "ma20": 61.848,
+      "ma20": 61.849,
       "ma60": null,
       "ma120": null,
       "volume": 170827.91,
@@ -692,7 +678,7 @@
       "trade_date": "20260119",
       "open": 59.93,
       "close": 59.89,
-      "ma20": 61.634,
+      "ma20": 61.635,
       "ma60": null,
       "ma120": null,
       "volume": 106574.89,
@@ -809,7 +795,7 @@
       "ma120": null,
       "volume": 182274.97,
       "volume_ma5": 255721.658,
-      "volume_ma20": 171494.573,
+      "volume_ma20": 171494.572,
       "amount": 1127354.598,
       "amount_ma5": 1582421.438,
       "amount_ma20": 1066210.488
@@ -861,7 +847,7 @@
       "open": 59.28,
       "close": 61.38,
       "ma20": 60.321,
-      "ma60": 61.886,
+      "ma60": null,
       "ma120": null,
       "volume": 275167.59,
       "volume_ma5": 184518.108,
@@ -874,12 +860,12 @@
       "trade_date": "20260205",
       "open": 61.4,
       "close": 61.39,
-      "ma20": 60.297,
+      "ma20": 60.296,
       "ma60": 61.814,
       "ma120": null,
       "volume": 147268.72,
       "volume_ma5": 177516.858,
-      "volume_ma20": 183407.053,
+      "volume_ma20": 183407.052,
       "amount": 924392.344,
       "amount_ma5": 1093566.269,
       "amount_ma20": 1131543.446
@@ -907,7 +893,7 @@
       "ma120": null,
       "volume": 219180.3,
       "volume_ma5": 203280.184,
-      "volume_ma20": 193092.901,
+      "volume_ma20": 193092.9,
       "amount": 1323476.002,
       "amount_ma5": 1245263.341,
       "amount_ma20": 1187385.683
@@ -935,7 +921,7 @@
       "ma120": null,
       "volume": 94141.67,
       "volume_ma5": 175331.682,
-      "volume_ma20": 186480.999,
+      "volume_ma20": 186480.998,
       "amount": 568345.232,
       "amount_ma5": 1068640.93,
       "amount_ma20": 1145537.605
@@ -944,12 +930,12 @@
       "trade_date": "20260212",
       "open": 59.03,
       "close": 58.22,
-      "ma20": 59.917,
+      "ma20": 59.918,
       "ma60": 61.346,
       "ma120": null,
       "volume": 279298.31,
       "volume_ma5": 201737.6,
-      "volume_ma20": 192972.222,
+      "volume_ma20": 192972.221,
       "amount": 1661693.815,
       "amount_ma5": 1216101.224,
       "amount_ma20": 1182937.009
@@ -972,7 +958,7 @@
       "trade_date": "20260224",
       "open": 59.67,
       "close": 60.25,
-      "ma20": 59.847,
+      "ma20": 59.846,
       "ma60": 61.195,
       "ma120": null,
       "volume": 269070.65,
@@ -1089,7 +1075,7 @@
       "ma120": null,
       "volume": 101441.91,
       "volume_ma5": 128393.318,
-      "volume_ma20": 168211.08,
+      "volume_ma20": 168211.081,
       "amount": 598023.673,
       "amount_ma5": 767489.419,
       "amount_ma20": 1020839.418
@@ -1173,7 +1159,7 @@
       "ma120": null,
       "volume": 148096.32,
       "volume_ma5": 119795.91,
-      "volume_ma20": 149535.006,
+      "volume_ma20": 149535.005,
       "amount": 868530.517,
       "amount_ma5": 709664.189,
       "amount_ma20": 896322.609
@@ -1224,7 +1210,7 @@
       "trade_date": "20260320",
       "open": 55.33,
       "close": 55.81,
-      "ma20": 58.169,
+      "ma20": 58.168,
       "ma60": 59.941,
       "ma120": null,
       "volume": 190807.39,
@@ -1308,7 +1294,7 @@
       "trade_date": "20260330",
       "open": 55.55,
       "close": 56.05,
-      "ma20": 56.889,
+      "ma20": 56.89,
       "ma60": 59.352,
       "ma120": null,
       "volume": 95604.3,
@@ -1327,7 +1313,7 @@
       "ma120": null,
       "volume": 104989.92,
       "volume_ma5": 119914.218,
-      "volume_ma20": 152078.161,
+      "volume_ma20": 152078.162,
       "amount": 604313.303,
       "amount_ma5": 684463.535,
       "amount_ma20": 877887.096
@@ -1372,7 +1358,7 @@
       "volume_ma20": 150279.187,
       "amount": 458728.736,
       "amount_ma5": 589617.699,
-      "amount_ma20": 865526.947
+      "amount_ma20": 865526.946
     },
     {
       "trade_date": "20260407",
@@ -1411,7 +1397,7 @@
       "ma120": null,
       "volume": 83880.34,
       "volume_ma5": 92865.954,
-      "volume_ma20": 144656.273,
+      "volume_ma20": 144656.274,
       "amount": 486122.616,
       "amount_ma5": 537043.529,
       "amount_ma20": 831420.043
@@ -1439,7 +1425,7 @@
       "ma120": null,
       "volume": 91659.54,
       "volume_ma5": 94340.018,
-      "volume_ma20": 143390.399,
+      "volume_ma20": 143390.398,
       "amount": 527391.122,
       "amount_ma5": 543698.495,
       "amount_ma20": 821821.544
@@ -1504,7 +1490,7 @@
       "trade_date": "20260420",
       "open": 57.8,
       "close": 58.95,
-      "ma20": 56.53,
+      "ma20": 56.531,
       "ma60": 58.206,
       "ma120": null,
       "volume": 184588.19,
@@ -1565,7 +1551,7 @@
       "ma120": null,
       "volume": 126130.11,
       "volume_ma5": 156555.542,
-      "volume_ma20": 117212.825,
+      "volume_ma20": 117212.824,
       "amount": 742991.974,
       "amount_ma5": 937707.267,
       "amount_ma20": 686721.73
@@ -1579,7 +1565,7 @@
       "ma120": null,
       "volume": 164322.71,
       "volume_ma5": 152502.446,
-      "volume_ma20": 117820.604,
+      "volume_ma20": 117820.603,
       "amount": 989049.109,
       "amount_ma5": 912794.439,
       "amount_ma20": 692600.052
@@ -1621,7 +1607,7 @@
       "ma120": null,
       "volume": 99656.45,
       "volume_ma5": 118668.416,
-      "volume_ma20": 116507.642,
+      "volume_ma20": 116507.643,
       "amount": 588540.302,
       "amount_ma5": 705240.132,
       "amount_ma20": 687522.355
@@ -1677,7 +1663,7 @@
       "ma120": null,
       "volume": 148784.78,
       "volume_ma5": 202573.912,
-      "volume_ma20": 143145.827,
+      "volume_ma20": 143145.826,
       "amount": 886155.043,
       "amount_ma5": 1209629.526,
       "amount_ma20": 850547.97
@@ -1702,7 +1688,7 @@
       "close": 57.14,
       "ma20": 58.086,
       "ma60": 57.77,
-      "ma120": 59.828,
+      "ma120": null,
       "volume": 179031.2,
       "volume_ma5": 172149.684,
       "volume_ma20": 149213.438,
@@ -1723,6 +1709,20 @@
       "amount": 650311.945,
       "amount_ma5": 871132.11,
       "amount_ma20": 892311.164
+    },
+    {
+      "trade_date": "20260515",
+      "open": 57.41,
+      "close": 56.0,
+      "ma20": 58.041,
+      "ma60": 57.636,
+      "ma120": 59.677,
+      "volume": 157416.2,
+      "volume_ma5": 144515.778,
+      "volume_ma20": 151521.352,
+      "amount": 887337.195,
+      "amount_ma5": 836105.706,
+      "amount_ma20": 897790.97
     }
   ]
 }
