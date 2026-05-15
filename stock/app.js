@@ -96,8 +96,8 @@ function metricTone(kind, value) {
     return number >= 1 ? 'tone-positive' : 'tone-negative';
   }
   if (kind === 'quantile') {
-    if (number <= 0.3) return 'tone-positive';
-    if (number >= 0.7) return 'tone-negative';
+    if (number <= 0.3) return 'tone-negative';
+    if (number >= 0.7) return 'tone-positive';
   }
   return 'tone-neutral';
 }
