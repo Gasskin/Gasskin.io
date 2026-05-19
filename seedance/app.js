@@ -52,6 +52,7 @@ const els = {
 let pollAbort = null;
 /** 主流程起始时间，用于计算总耗时 */
 let statusRunStart = null;
+let selectedImageFiles = [];
 
 /* ── 工具函数 ── */
 function fmtElapsed(ms) {
@@ -96,6 +97,10 @@ function readFiles(input) {
   return Array.from(input?.files ?? []);
 }
 
+function readImageFiles() {
+  return selectedImageFiles.slice();
+}
+
 function parseVideoUrlLines() {
   const raw = (els.videoUrls?.value ?? "")
     .split(/\r?\n/)
@@ -113,12 +118,26 @@ function isAllowedReferenceVideoUrl(u) {
   return false;
 }
 
+function renderFileListItem(text) {
+  return `<li class="file-list-item"><span class="file-list-name">${escapeHtml(text)}</span></li>`;
+}
+
+function renderImageFileItem(file, index) {
+  const label = `图 ${index + 1}: ${file.name} (${fmtSize(file.size)})`;
+  const removeLabel = `删除 ${file.name}`;
+  return `<li class="file-list-item file-list-image">
+    <span class="file-list-name">${escapeHtml(label)}</span>
+    <button type="button" class="file-remove" data-image-index="${index}" aria-label="${escapeAttr(removeLabel)}" title="删除这张图片">删除</button>
+  </li>`;
+}
+
 function updateFileList() {
-  const parts = [];
-  for (const f of readFiles(els.images)) parts.push(`图: ${f.name} (${fmtSize(f.size)})`);
-  for (const u of parseVideoUrlLines()) parts.push(`视频 URL: ${u.slice(0, 120)}${u.length > 120 ? "…" : ""}`);
-  for (const f of readFiles(els.audios)) parts.push(`音频: ${f.name} (${fmtSize(f.size)})`);
-  els.fileList.innerHTML = parts.length ? parts.map((p) => `<li>${escapeHtml(p)}</li>`).join("") : "<li>未选择文件 / 未填写视频 URL</li>";
+  const parts = selectedImageFiles.map(renderImageFileItem);
+  for (const u of parseVideoUrlLines()) {
+    parts.push(renderFileListItem(`视频 URL: ${u.slice(0, 120)}${u.length > 120 ? "…" : ""}`));
+  }
+  for (const f of readFiles(els.audios)) parts.push(renderFileListItem(`音频: ${f.name} (${fmtSize(f.size)})`));
+  els.fileList.innerHTML = parts.length ? parts.join("") : "<li>未选择文件 / 未填写视频 URL</li>";
 }
 
 function fmtSize(n) {
@@ -153,6 +172,21 @@ async function parseApiError(res, bodyText) {
 
 function escapeAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function onImagesChange() {
+  selectedImageFiles = selectedImageFiles.concat(readFiles(els.images));
+  els.images.value = "";
+  updateFileList();
+}
+
+function onFileListClick(e) {
+  const btn = e.target.closest("[data-image-index]");
+  if (!btn) return;
+  const index = Number.parseInt(btn.dataset.imageIndex, 10);
+  if (!Number.isInteger(index)) return;
+  selectedImageFiles.splice(index, 1);
+  updateFileList();
 }
 
 /* ── 历史任务列表 ── */
@@ -393,7 +427,7 @@ async function onGenerate() {
     return;
   }
 
-  const imageFiles = readFiles(els.images);
+  const imageFiles = readImageFiles();
   const videoUrlList = parseVideoUrlLines();
   const audioFiles = readFiles(els.audios);
   const mode = els.imageMode.value;
@@ -464,7 +498,8 @@ function onStop() {
 }
 
 /* ── 事件绑定 ── */
-els.images.addEventListener("change", updateFileList);
+els.images.addEventListener("change", onImagesChange);
+els.fileList.addEventListener("click", onFileListClick);
 els.videoUrls.addEventListener("input", updateFileList);
 els.audios.addEventListener("change", updateFileList);
 els.btnGenerate.addEventListener("click", () => void onGenerate());
