@@ -10,6 +10,7 @@ const MAX_VIDEOS = 3;
 const MAX_AUDIOS = 3;
 const POLL_MS = 500;
 const HISTORY_PAGE_SIZE = 10;
+const EXECUTION_EXPIRES_AFTER_MAX = 259200;
 
 let historyPageNum = 1;
 let historyTotal = 0;
@@ -308,6 +309,7 @@ function buildRequestBody(content) {
     resolution: els.resolution.value,
     ratio: els.ratio.value,
     duration: Number.isFinite(durationVal) ? durationVal : 5,
+    execution_expires_after: EXECUTION_EXPIRES_AFTER_MAX,
   };
   body.return_last_frame = els.returnLastFrame.checked;
   if (Number.isFinite(seedVal)) body.seed = seedVal;
