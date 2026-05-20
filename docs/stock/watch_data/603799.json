@@ -4,7 +4,7 @@
   "name": "华友钴业",
   "start_date": "20230522",
   "end_date": "20260520",
-  "fetch_start_date": "20230520",
+  "fetch_start_date": "20230521",
   "fetched_rows": 725,
   "adjustment": "qfq",
   "source": "tushare",
@@ -12,13 +12,13 @@
   "price_lookback_years": 3,
   "valuation_source_interface": "daily_basic",
   "valuation_lookback_years": 3,
-  "valuation_start_date": "20230520",
+  "valuation_start_date": "20230521",
   "valuation_rows": 725,
   "units": {
     "volume": "hand",
     "amount": "thousand_yuan"
   },
-  "update_time": "2026-05-20 21:52:39",
+  "update_time": "2026-05-21 00:14:05",
   "fields": [
     "trade_date",
     "open",
