@@ -4,7 +4,7 @@
   "name": "拓普集团",
   "start_date": "20230522",
   "end_date": "20260521",
-  "fetch_start_date": "20230521",
+  "fetch_start_date": "20230522",
   "fetched_rows": 726,
   "adjustment": "qfq",
   "source": "tushare",
@@ -12,13 +12,13 @@
   "price_lookback_years": 3,
   "valuation_source_interface": "daily_basic",
   "valuation_lookback_years": 3,
-  "valuation_start_date": "20230521",
+  "valuation_start_date": "20230522",
   "valuation_rows": 726,
   "units": {
     "volume": "hand",
     "amount": "thousand_yuan"
   },
-  "update_time": "2026-05-21 22:05:49",
+  "update_time": "2026-05-22 00:06:40",
   "fields": [
     "trade_date",
     "open",
