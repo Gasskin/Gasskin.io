@@ -96,29 +96,12 @@ GitHub 仓库设置：**Settings → Pages → Source** 选择 **"GitHub Actions
 |------|------|
 | Checkout | 拉取代码 |
 | Set up Python | 准备 Python 3.11 环境 |
-| Install dependencies | 安装 tushare、pandas |
-| Update stock data | 拉取股票数据，失败时跳过（保留上次缓存） |
 | Build docs | 运行 `build.py`，打包到 `docs/` |
-| Commit data.json | 将更新的数据提交回仓库（`[skip ci]` 防死循环） |
 | Deploy to GitHub Pages | 部署 `docs/` 到 GitHub Pages |
 
 **触发条件：**
 - `push` 到 `main` 分支
-- 定时：北京时间每天 17:00～00:00 整点（UTC `0 9-16 * * *`）
 - 手动：GitHub 页面 → Actions → Run workflow
-
-**时区换算（GitHub Actions 使用 UTC）：**
-
-| UTC cron | 北京时间 |
-|----------|----------|
-| `0 9 * * *` | 17:00 |
-| `0 10 * * *` | 18:00 |
-| `0 11 * * *` | 19:00 |
-| `0 12 * * *` | 20:00 |
-| `0 13 * * *` | 21:00 |
-| `0 14 * * *` | 22:00 |
-| `0 15 * * *` | 23:00 |
-| `0 16 * * *` | 00:00 |
 
 ### 6. 本地开发服务器
 

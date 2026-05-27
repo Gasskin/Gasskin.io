@@ -5,13 +5,6 @@
     "icon": "🎬",
     "description": "基于火山方舟 Seedance 2.0 的视频生成工具",
     "path": "seedance/index.html"
-  },
-  {
-    "id": "stock",
-    "title": "股票",
-    "icon": "📈",
-    "description": "自选股收盘价、均线和交易量/额信号",
-    "path": "stock/index.html"
   }
 ]
 

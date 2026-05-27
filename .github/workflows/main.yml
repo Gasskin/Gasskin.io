@@ -7,14 +7,7 @@
 #
 # 触发条件：
 #   1. push 到 main 分支（用户手动推代码）
-#   2. 定时（北京时间 17:00、19:00、21:00、23:00）
-#   3. 手动触发（GitHub 页面 → Actions → Run workflow）
-#
-# 定时说明（GitHub Actions 使用 UTC，北京时间 = UTC + 8）：
-#   UTC  09:00 = 北京时间 17:00
-#   UTC  11:00 = 北京时间 19:00
-#   UTC  13:00 = 北京时间 21:00
-#   UTC  15:00 = 北京时间 23:00
+#   2. 手动触发（GitHub 页面 → Actions → Run workflow）
 #
 # 并发控制：
 #   同一时间只允许一个 job 部署 Pages，后触发的排队等待（不 cancel）。
@@ -25,9 +18,6 @@ name: CI/CD
 on:
   push:
     branches: [main]
-  schedule:
-    # 北京时间 17:00、19:00、21:00、23:00（UTC 09:00、11:00、13:00、15:00）
-    - cron: '0 9,11,13,15 * * *'
   workflow_dispatch:   # 支持在 GitHub 页面手动触发
 
 # 防止多个 job 同时部署 Pages，后触发的排队等待（不 cancel）
@@ -36,7 +26,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write   # 允许 bot 提交 watch_data 和 Pages 构建产物
+  contents: read    # 允许读取仓库内容
   pages: write      # 允许部署 GitHub Pages
   id-token: write   # GitHub Pages 部署鉴权需要
 
@@ -58,32 +48,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Python dependencies
-        run: pip install tushare pandas
-
-      # ── 3. 更新自选股数据（失败时跳过，使用上次缓存的 watch_data） ────────
-      - name: Update watch data
-        id: update_watch
-        continue-on-error: true
-        env:
-          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
-        run: python stock/update_watch.py
-
-      # ── 4. 构建（将源目录打包到 docs/） ──────────────────────────────────
+      # ── 3. 构建（将源目录打包到 docs/） ──────────────────────────────────
       - name: Build docs
         run: python build.py
 
-      # ── 5. 提交更新后的数据回仓库 ───────────────────────────────────────
-      #   [skip ci] 防止 push 再次触发本 workflow 形成死循环
-      - name: Commit updated watch data and docs
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add pages.json docs/pages.json stock/index.html stock/app.js stock/style.css stock/update_watch.py stock/watch.json stock/watch_data docs/stock
-          git diff --staged --quiet || git commit -m "chore: update watch data $(date -u +%Y-%m-%d) [skip ci]"
-          git push
-
-      # ── 6. 部署到 GitHub Pages ────────────────────────────────────────────
+      # ── 4. 部署到 GitHub Pages ────────────────────────────────────────────
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -92,12 +61,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      # ── 7. 如果刷新失败，则将 workflow 标红，避免“页面没更新但流程显示成功” ──
-      - name: Fail workflow when data refresh fails
-        if: steps.update_watch.outcome == 'failure'
-        run: |
-          echo "Data refresh failed. Pages was deployed with the previous cached data."
-          echo "update_watch: ${{ steps.update_watch.outcome }}"
-          exit 1
 
