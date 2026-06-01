@@ -17,8 +17,8 @@ DST = ROOT / "docs"
 
 HOME_FILES = ("index.html", "pages.json")
 EXCLUDE_DIRS = {"docs", ".git", "__pycache__", "node_modules"}
-SKIP_NAMES = {"Readme", "__pycache__"}
-SKIP_SUFFIXES = {".py", ".pyc", ".md", ".txt"}
+SKIP_NAMES = {"Readme", "__pycache__", "tushare-data"}
+SKIP_SUFFIXES = {".py", ".pyc", ".md", ".txt", ".bat"}
 
 
 

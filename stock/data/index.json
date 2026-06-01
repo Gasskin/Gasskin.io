@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-06-01 19:19",
+  "timezone": "Asia/Shanghai (UTC+8)",
+  "count": 5,
+  "items": [
+    {
+      "code": "159278.SZ",
+      "name": "机器人ETF鹏华",
+      "buy_price": null,
+      "file": "159278.SZ.json"
+    },
+    {
+      "code": "159599.SZ",
+      "name": "芯片ETF东财",
+      "buy_price": null,
+      "file": "159599.SZ.json"
+    },
+    {
+      "code": "159611.SZ",
+      "name": "电力ETF广发",
+      "buy_price": 1.248,
+      "file": "159611.SZ.json"
+    },
+    {
+      "code": "159205.SZ",
+      "name": "创业板ETF东财",
+      "buy_price": null,
+      "file": "159205.SZ.json"
+    },
+    {
+      "code": "589850.SH",
+      "name": "科创50ETF东财",
+      "buy_price": null,
+      "file": "589850.SH.json"
+    }
+  ]
+}

@@ -5,6 +5,13 @@
     "icon": "🎬",
     "description": "基于火山方舟 Seedance 2.0 的视频生成工具",
     "path": "seedance/index.html"
+  },
+  {
+    "id": "stock",
+    "title": "股票行情图",
+    "icon": "📈",
+    "description": "读取 stock/data 数据，绘制收盘价折线与高低点参考线",
+    "path": "stock/index.html"
   }
 ]
 

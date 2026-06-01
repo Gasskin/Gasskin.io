@@ -1,0 +1,298 @@
+:root {
+  --bg: #0f1419;
+  --panel: #1a212b;
+  --panel-2: #222b37;
+  --border: #2c3744;
+  --text: #e6edf3;
+  --muted: #8b98a5;
+  --accent: #4c9aff;
+  --red: #ff5d5d;
+  --green: #3fd07f;
+  --gray: #8b98a5;
+  --orange: #ff9f40;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.updated-bar {
+  padding: 0.5rem 1.6rem;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.hero {
+  padding: 1.4rem 1.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #141b24, var(--bg));
+}
+
+.hero h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.5rem;
+}
+
+.hero .sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  max-width: 980px;
+}
+
+.hero code {
+  background: var(--panel-2);
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 0.2rem 0 0.5rem;
+  vertical-align: middle;
+}
+.legend-dot.red { background: var(--red); }
+.legend-dot.green { background: var(--green); }
+.legend-dot.gray { background: var(--gray); }
+
+.layout {
+  padding: 1.2rem 1.6rem 2rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.status {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+button.ghost {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+button.ghost:hover {
+  background: #2a3542;
+  border-color: var(--accent);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1rem 0.8rem;
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+/* 持仓标的：标题橙色 */
+.card-head h2.buy { color: var(--orange); }
+
+.card-head .code {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+
+.pnl {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.pnl.up { color: var(--red); }
+.pnl.down { color: var(--green); }
+
+.badge {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  min-width: 96px;
+}
+.badge .badge-price {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.badge .badge-state {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.badge.red { border-color: rgba(255, 93, 93, 0.5); }
+.badge.red .badge-price { color: var(--red); }
+.badge.green { border-color: rgba(63, 208, 127, 0.5); }
+.badge.green .badge-price { color: var(--green); }
+.badge.gray .badge-price { color: var(--text); }
+
+.card-body {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.chart {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.detail {
+  flex: 0 0 168px;
+  border-left: 1px solid var(--border);
+  padding-left: 0.9rem;
+}
+
+.detail-title {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.detail-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.6rem;
+}
+.detail-list dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.detail-list dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.detail-hint {
+  margin-top: 0.8rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 640px) {
+  .card-body { flex-direction: column; }
+  .detail {
+    flex: none;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-left: 0;
+    padding-top: 0.8rem;
+  }
+}
+
+.gridline { stroke: var(--border); stroke-width: 1; }
+
+.axis-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.axis-label.y { text-anchor: end; }
+.axis-label.x { text-anchor: middle; }
+
+/* 实心日 K：红涨绿跌（中国习惯） */
+.candle .wick { stroke-width: 1.2; }
+.candle.up .wick { stroke: var(--red); }
+.candle.up .body { fill: var(--red); stroke: var(--red); }
+.candle.down .wick { stroke: var(--green); }
+.candle.down .body { fill: var(--green); stroke: var(--green); }
+
+/* 前20日最高 / 前10日最低：数据点标识 */
+.mark-dot { stroke: var(--bg); stroke-width: 1.5; pointer-events: none; }
+.mark-dot.red { fill: var(--red); }
+.mark-dot.green { fill: var(--green); }
+
+/* 可点击的 K 线 */
+.clickable { cursor: pointer; }
+.candle .hit { fill: transparent; }
+.candle.selected .body { stroke: var(--text); stroke-width: 1.5; }
+.candle.selected .wick { stroke: var(--text); }
+.dot-last.clickable.selected { stroke: var(--text); stroke-width: 2; }
+
+/* 最新收盘价：水平虚线 */
+.ref-line { stroke-width: 1.6; stroke-dasharray: 6 4; }
+.ref-line.red { stroke: var(--red); }
+.ref-line.green { stroke: var(--green); }
+.ref-line.gray { stroke: var(--gray); }
+
+.dot { fill: var(--accent); }
+.dot-last.red { fill: var(--red); }
+.dot-last.green { fill: var(--green); }
+.dot-last.gray { fill: var(--text); }
+
+.card-foot {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.empty {
+  color: var(--muted);
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.footer {
+  padding: 1.2rem 1.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+.footer code {
+  background: var(--panel-2);
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+}
+
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
+  .hero, .layout, .footer { padding-left: 1rem; padding-right: 1rem; }
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>股票行情图</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="updatedBar" class="updated-bar">数据更新时间：加载中…</div>
+
+  <header class="hero">
+    <h1>📈 股票行情图</h1>
+    <p class="sub">
+      读取 <code>stock/data</code> 下的数据，为每个标的绘制实心日 K（实体=开收，影线=高低，红涨绿跌）；
+      <strong>最新交易日</strong>仅显示收盘价（圆点）。
+      图内
+      <span class="legend-dot red"></span>红点标识前 20 日最高价、
+      <span class="legend-dot green"></span>绿点标识前 10 日最低价（均不含最新日）；
+      横向虚线表示最新收盘价（颜色随突破状态）。点击任意 K 线可在右侧查看当日数据。
+      在 <code>etf.txt</code> 中以「代码 买入价格」填写时，标题显示为橙色并展示自买入价至今的涨跌幅。
+    </p>
+  </header>
+
+  <main class="layout">
+    <div class="toolbar">
+      <button type="button" id="btnReload" class="ghost">↻ 重新加载</button>
+      <span id="status" class="status"></span>
+    </div>
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <footer class="footer">
+    Gasskin.io · 股票行情图 · 数据由 <code>stock/gen_data.py</code> 生成
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

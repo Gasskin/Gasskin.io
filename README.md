@@ -96,12 +96,14 @@ GitHub 仓库设置：**Settings → Pages → Source** 选择 **"GitHub Actions
 |------|------|
 | Checkout | 拉取代码 |
 | Set up Python | 准备 Python 3.11 环境 |
+| Update stock data | 安装 tushare/pandas 并运行 `stock/gen_data.py` 刷新行情（失败不阻断部署） |
 | Build docs | 运行 `build.py`，打包到 `docs/` |
 | Deploy to GitHub Pages | 部署 `docs/` 到 GitHub Pages |
 
 **触发条件：**
 - `push` 到 `main` 分支
 - 手动：GitHub 页面 → Actions → Run workflow
+- 定时：每天北京时间 18/19/20/21/22 点（cron 用 UTC：`0 10,11,12,13,14 * * *`）自动刷新股票数据并部署
 
 ### 6. 本地开发服务器
 

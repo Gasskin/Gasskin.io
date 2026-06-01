@@ -1,0 +1,343 @@
+"use strict";
+
+const HIGH_LOOKBACK = 20; // 前 20 个交易日最高价（不含最新交易日）
+const LOW_LOOKBACK = 10; // 前 10 个交易日最低价（不含最新交易日）
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+const grid = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+const btnReload = document.getElementById("btnReload");
+const updatedBar = document.getElementById("updatedBar");
+
+function setStatus(text) {
+  statusEl.textContent = text || "";
+}
+
+async function fetchJSON(url) {
+  const resp = await fetch(url, { cache: "no-store" });
+  if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+  return resp.json();
+}
+
+function fmtPrice(value) {
+  if (value == null || Number.isNaN(value)) return "N/A";
+  const text = Number(value).toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+  return text || "0";
+}
+
+function fmtPct(value) {
+  if (value == null || Number.isNaN(value)) return "N/A";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+// 根据最新交易日收盘价与历史高低点关系，决定颜色与状态文案。
+function evaluateLevel(bars) {
+  if (!bars || bars.length < 2) {
+    return { color: "gray", state: "数据不足", high20: null, low10: null };
+  }
+  const latestClose = bars[bars.length - 1].close;
+  const prior = bars.slice(0, -1); // 去掉最新交易日
+  const past20 = prior.slice(-HIGH_LOOKBACK);
+  const past10 = prior.slice(-LOW_LOOKBACK);
+
+  let highBar = past20[0];
+  for (const b of past20) if (b.high > highBar.high) highBar = b;
+  let lowBar = past10[0];
+  for (const b of past10) if (b.low < lowBar.low) lowBar = b;
+
+  const high20 = highBar.high;
+  const high20Date = highBar.date;
+  const low10 = lowBar.low;
+  const low10Date = lowBar.date;
+
+  let color = "gray";
+  let state = "区间内";
+  if (latestClose >= high20) {
+    color = "red";
+    state = `区间最高 ${high20Date} ${fmtPrice(high20)}`;
+  } else if (latestClose <= low10) {
+    color = "green";
+    state = `区间最低 ${low10Date} ${fmtPrice(low10)}`;
+  }
+  return { color, state, high20, high20Date, low10, low10Date, latestClose };
+}
+
+function el(tag, attrs, children) {
+  const node = document.createElementNS(SVG_NS, tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  }
+  if (children) {
+    for (const c of children) node.appendChild(c);
+  }
+  return node;
+}
+
+function buildChart(bars, level, onSelect) {
+  const W = 960;
+  const H = 360;
+  const padL = 56;
+  const padR = 56;
+  const padT = 18;
+  const padB = 38;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const n = bars.length;
+  const lastIdx = n - 1;
+
+  // 纵轴范围：日 K 含每天的最高/最低价 + 参考线，留 5% 余量。
+  const candidates = [];
+  bars.forEach((b, i) => {
+    if (i === lastIdx) {
+      candidates.push(b.close); // 最新交易日只参与收盘价
+    } else {
+      candidates.push(b.high, b.low);
+    }
+  });
+  if (level.high20 != null) candidates.push(level.high20);
+  if (level.low10 != null) candidates.push(level.low10);
+  let min = Math.min(...candidates);
+  let max = Math.max(...candidates);
+  if (min === max) {
+    min -= 1;
+    max += 1;
+  }
+  const margin = (max - min) * 0.05;
+  min -= margin;
+  max += margin;
+
+  const slot = n <= 0 ? plotW : plotW / n;
+  const x = (i) => padL + slot * (i + 0.5);
+  const y = (v) => padT + (1 - (v - min) / (max - min)) * plotH;
+  const barW = Math.max(3, Math.min(16, slot * 0.6));
+
+  const svg = el("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    preserveAspectRatio: "xMidYMid meet",
+    class: "chart",
+    role: "img",
+  });
+
+  let selected = null;
+  function select(node, bar) {
+    if (selected) selected.classList.remove("selected");
+    selected = node;
+    if (selected) selected.classList.add("selected");
+    if (typeof onSelect === "function") onSelect(bar);
+  }
+
+  // 水平网格线 + Y 轴刻度
+  const ticks = 4;
+  for (let t = 0; t <= ticks; t++) {
+    const v = min + ((max - min) * t) / ticks;
+    const yy = y(v);
+    svg.appendChild(el("line", {
+      x1: padL, y1: yy, x2: W - padR, y2: yy, class: "gridline",
+    }));
+    const label = el("text", { x: padL - 6, y: yy + 3, class: "axis-label y" });
+    label.textContent = fmtPrice(v);
+    svg.appendChild(label);
+  }
+
+  // X 轴日期标签（首、中、尾）
+  const xIdx = n <= 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
+  for (const i of xIdx) {
+    const label = el("text", { x: x(i), y: H - padB + 18, class: "axis-label x" });
+    label.textContent = (bars[i].date || "").slice(5); // MM-DD
+    svg.appendChild(label);
+  }
+
+  // 最新收盘价：水平虚线（颜色随状态），不标注价格文字。
+  const latestClose = bars[lastIdx].close;
+  const refY = y(latestClose);
+  svg.appendChild(el("line", {
+    x1: padL, y1: refY, x2: W - padR, y2: refY, class: `ref-line ${level.color}`,
+  }));
+
+  // 实心日 K：实体 = 开盘-收盘，影线 = 最高-最低；红涨绿跌（按收盘与开盘比较）。
+  bars.forEach((b, i) => {
+    const cx = x(i);
+
+    if (i === lastIdx) {
+      // 最新交易日只显示收盘价：一个圆点（颜色随状态），不标注价格。
+      const dot = el("circle", {
+        cx, cy: y(b.close), r: 4.5, class: `dot dot-last clickable ${level.color}`,
+      });
+      const title = el("title");
+      title.textContent = `${b.date}（最新）  收 ${fmtPrice(b.close)}`;
+      dot.appendChild(title);
+      dot.addEventListener("click", () => select(dot, b));
+      svg.appendChild(dot);
+      return;
+    }
+
+    const dir = b.close >= b.open ? "up" : "down"; // 红涨绿跌
+    const g = el("g", { class: `candle clickable ${dir}` });
+
+    // 上下影线
+    g.appendChild(el("line", {
+      x1: cx, y1: y(b.high), x2: cx, y2: y(b.low), class: "wick",
+    }));
+
+    // 实体
+    const top = y(Math.max(b.open, b.close));
+    const bottom = y(Math.min(b.open, b.close));
+    const h = Math.max(1, bottom - top);
+    g.appendChild(el("rect", {
+      x: cx - barW / 2, y: top, width: barW, height: h, class: "body",
+    }));
+
+    // 透明点击热区，方便点中较窄的 K 线
+    g.appendChild(el("rect", {
+      x: cx - slot / 2, y: padT, width: slot, height: plotH, class: "hit",
+    }));
+
+    const title = el("title");
+    title.textContent = `${b.date}  开 ${fmtPrice(b.open)} / 高 ${fmtPrice(b.high)} / 低 ${fmtPrice(b.low)} / 收 ${fmtPrice(b.close)}`;
+    g.appendChild(title);
+    g.addEventListener("click", () => select(g, b));
+    svg.appendChild(g);
+  });
+
+  // 前 20 日最高 / 前 10 日最低：仅用一个数据点标识（不显示文字）。
+  function markPoint(value, dateStr, cls, prefix) {
+    if (value == null) return;
+    const idx = bars.findIndex((b) => b.date === dateStr);
+    const cx = idx >= 0 ? x(idx) : padL;
+    const dot = el("circle", { cx, cy: y(value), r: 4, class: `mark-dot ${cls}` });
+    const title = el("title");
+    title.textContent = `${prefix} ${dateStr} ${fmtPrice(value)}`;
+    dot.appendChild(title);
+    svg.appendChild(dot);
+  }
+  markPoint(level.high20, level.high20Date, "red", "区间最高");
+  markPoint(level.low10, level.low10Date, "green", "区间最低");
+
+  return svg;
+}
+
+function buildCard(payload) {
+  const bars = Array.isArray(payload.data) ? payload.data : [];
+  const level = evaluateLevel(bars);
+  const latest = bars.length ? bars[bars.length - 1] : null;
+
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+
+  const titleWrap = document.createElement("div");
+  const title = document.createElement("h2");
+  title.textContent = payload.name ? payload.name : payload.code;
+  const sub = document.createElement("div");
+  sub.className = "code";
+  sub.textContent = payload.code;
+  titleWrap.appendChild(title);
+  titleWrap.appendChild(sub);
+
+  // 存在买入价格：标题橙色，并显示自买入价至今的涨跌幅。
+  const buyPrice = payload.buy_price;
+  if (buyPrice != null && !Number.isNaN(Number(buyPrice)) && latest) {
+    title.classList.add("buy");
+    const pnl = ((latest.close - buyPrice) / buyPrice) * 100;
+    const pnlEl = document.createElement("div");
+    pnlEl.className = `pnl ${pnl >= 0 ? "up" : "down"}`;
+    pnlEl.textContent = `买入 ${fmtPrice(buyPrice)} · 至今 ${fmtPct(pnl)}`;
+    titleWrap.appendChild(pnlEl);
+  }
+
+  const badge = document.createElement("div");
+  badge.className = `badge ${level.color}`;
+  const price = latest ? fmtPrice(latest.close) : "N/A";
+  badge.innerHTML = `<span class="badge-price">${price}</span><span class="badge-state">${level.state}</span>`;
+
+  head.appendChild(titleWrap);
+  head.appendChild(badge);
+  card.appendChild(head);
+
+  if (bars.length) {
+    const body = document.createElement("div");
+    body.className = "card-body";
+
+    const detail = document.createElement("div");
+    detail.className = "detail";
+
+    function renderDetail(bar) {
+      const isLatest = bar.date === latest.date;
+      detail.innerHTML = `
+        <div class="detail-title">当日数据${isLatest ? "（最新）" : ""}</div>
+        <dl class="detail-list">
+          <dt>日期</dt><dd>${bar.date}</dd>
+          <dt>收盘价</dt><dd>${fmtPrice(bar.close)}</dd>
+          <dt>最高价</dt><dd>${fmtPrice(bar.high)}</dd>
+          <dt>最低价</dt><dd>${fmtPrice(bar.low)}</dd>
+        </dl>
+        <div class="detail-hint">点击任意 K 线查看当日数据</div>
+      `;
+    }
+    renderDetail(latest); // 默认展示最新交易日
+
+    const chart = buildChart(bars, level, renderDetail);
+    body.appendChild(chart);
+    body.appendChild(detail);
+    card.appendChild(body);
+
+    const foot = document.createElement("div");
+    foot.className = "card-foot";
+    foot.textContent = `最新交易日 ${payload.latest_trade_date || latest.date} · 共 ${bars.length} 个交易日`;
+    card.appendChild(foot);
+  } else {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "无可用数据";
+    card.appendChild(empty);
+  }
+
+  return card;
+}
+
+async function load() {
+  setStatus("加载中…");
+  grid.innerHTML = "";
+  let index;
+  try {
+    index = await fetchJSON("data/index.json");
+  } catch (err) {
+    setStatus(`无法读取 data/index.json：${err.message}`);
+    if (updatedBar) updatedBar.textContent = "数据更新时间：未知";
+    return;
+  }
+
+  if (updatedBar) {
+    updatedBar.textContent = index.generated_at
+      ? `数据更新时间：${index.generated_at}（北京时间）`
+      : "数据更新时间：未知";
+  }
+
+  const items = (index && index.items) || [];
+  if (!items.length) {
+    setStatus("data/index.json 中没有可显示的标的。");
+    return;
+  }
+
+  let ok = 0;
+  for (const item of items) {
+    try {
+      const payload = await fetchJSON(`data/${item.file || item.code + ".json"}`);
+      grid.appendChild(buildCard(payload));
+      ok += 1;
+    } catch (err) {
+      const card = document.createElement("section");
+      card.className = "card";
+      card.innerHTML = `<div class="card-head"><div><h2>${item.name || item.code}</h2><div class="code">${item.code}</div></div></div><div class="empty">加载失败：${err.message}</div>`;
+      grid.appendChild(card);
+    }
+  }
+  setStatus(`已加载 ${ok}/${items.length} 个标的`);
+}
+
+btnReload.addEventListener("click", load);
+load();
