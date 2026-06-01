@@ -150,7 +150,7 @@ def build_pro_client(token: str) -> Any:
     return ts.pro_api(token)
 
 
-def get_previous_trade_date(pro: Any, as_of: date) -> str:
+def get_trade_date_candidate(pro: Any, as_of: date) -> str:
     end_date = yyyymmdd(as_of)
     start_date = yyyymmdd(as_of - timedelta(days=120))
 
@@ -165,9 +165,9 @@ def get_previous_trade_date(pro: Any, as_of: date) -> str:
 
     cal = cal.copy()
     cal["cal_date"] = cal["cal_date"].astype(str)
-    open_days = cal[(cal["is_open"].astype(str) == "1") & (cal["cal_date"] < end_date)]
+    open_days = cal[(cal["is_open"].astype(str) == "1") & (cal["cal_date"] <= end_date)]
     if open_days.empty:
-        raise RuntimeError(f"{display_date(end_date)} 之前 120 天内未找到开市交易日")
+        raise RuntimeError(f"{display_date(end_date)} 及之前 120 天内未找到开市交易日")
 
     return str(open_days.sort_values("cal_date").iloc[-1]["cal_date"])
 
@@ -335,7 +335,7 @@ def analyze_and_print(code: str, fetch: FetchResult, requested_t: str) -> CodeRe
     if anchor_date != requested_t:
         print(f"注意: Tushare 未返回 {display_date(requested_t)} 的行情，已改用最近可用日期 {display_date(anchor_date)}。")
     print()
-    print(f"昨日收盘价 {display_date(anchor_date)}")
+    print(f"T日收盘价 {display_date(anchor_date)}")
     print(fmt_price(t_close))
 
     relation_summaries: list[str] = []
@@ -396,7 +396,7 @@ def parse_args() -> argparse.Namespace:
         "--as-of",
         type=parse_yyyymmdd,
         default=date.today(),
-        help="按该日期之前的上一个交易日作为 T，格式 YYYYMMDD，默认今天。",
+        help="按该日期及之前的最近开市日作为候选 T，格式 YYYYMMDD，默认今天。",
     )
     parser.add_argument(
         "--fetch-days",
@@ -425,15 +425,16 @@ def main() -> int:
 
     try:
         pro = build_pro_client(token)
-        t_date = get_previous_trade_date(pro, args.as_of)
+        t_date = get_trade_date_candidate(pro, args.as_of)
     except Exception as exc:  # noqa: BLE001 - user-facing script
         print(f"Tushare 初始化或交易日历读取失败: {exc}", file=sys.stderr)
         return 1
 
     print(f"ETF 数量: {len(codes)}")
-    print(f"判定口径: 以 {display_date(yyyymmdd(args.as_of))} 之前的上一个开市交易日作为 T")
-    print(f"T = {display_date(t_date)}")
-    print("输出口径: 昨日收盘价；最低价统计 T-1 到 T-11；最高价统计 T-1 到 T-21")
+    print(f"判定口径: 以 {display_date(yyyymmdd(args.as_of))} 及之前的最近开市日作为候选 T")
+    print(f"候选 T = {display_date(t_date)}")
+    print("若候选 T 已有收盘行情，则 T 为候选 T；否则按每个代码回退到最近有收盘价的交易日。")
+    print("输出口径: T 日收盘价；最低价统计 T-1 到 T-11；最高价统计 T-1 到 T-21")
 
     results: list[CodeResult] = []
     for code in codes:
