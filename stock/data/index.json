@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-06-02 16:47",
+  "generated_at": "2026-06-02 16:49",
   "timezone": "Asia/Shanghai (UTC+8)",
-  "count": 8,
+  "count": 9,
   "items": [
     {
       "code": "159278.SZ",
@@ -58,6 +58,13 @@
       "type": "etf",
       "buy_price": null,
       "file": "159920.SZ.json"
+    },
+    {
+      "code": "600036.SH",
+      "name": "招商银行",
+      "type": "stock",
+      "buy_price": 38.635,
+      "file": "600036.SH.json"
     }
   ]
 }
