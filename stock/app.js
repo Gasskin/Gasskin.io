@@ -79,7 +79,7 @@ function el(tag, attrs, children) {
   return node;
 }
 
-function buildChart(bars, level, onSelect) {
+function buildChart(bars, level, onSelect, buyPrice) {
   const W = 960;
   const H = 360;
   const padL = 56;
@@ -103,6 +103,8 @@ function buildChart(bars, level, onSelect) {
   });
   if (level.high20 != null) candidates.push(level.high20);
   if (level.low10 != null) candidates.push(level.low10);
+  const hasBuy = buyPrice != null && !Number.isNaN(Number(buyPrice));
+  if (hasBuy) candidates.push(Number(buyPrice));
   let min = Math.min(...candidates);
   let max = Math.max(...candidates);
   if (min === max) {
@@ -160,6 +162,19 @@ function buildChart(bars, level, onSelect) {
   svg.appendChild(el("line", {
     x1: padL, y1: refY, x2: W - padR, y2: refY, class: `ref-line ${level.color}`,
   }));
+
+  // 持仓买入价：橙色水平虚线（含标注）。
+  if (hasBuy) {
+    const by = y(Number(buyPrice));
+    svg.appendChild(el("line", {
+      x1: padL, y1: by, x2: W - padR, y2: by, class: "buy-line",
+    }));
+    const buyLabel = el("text", {
+      x: W - padR, y: by - 5, class: "buy-label", "text-anchor": "end",
+    });
+    buyLabel.textContent = `买入 ${fmtPrice(buyPrice)}`;
+    svg.appendChild(buyLabel);
+  }
 
   // 实心日 K：实体 = 开盘-收盘，影线 = 最高-最低；红涨绿跌（按收盘与开盘比较）。
   bars.forEach((b, i) => {
@@ -286,7 +301,7 @@ function buildCard(payload) {
     }
     renderDetail(latest); // 默认展示最新交易日
 
-    const chart = buildChart(bars, level, renderDetail);
+    const chart = buildChart(bars, level, renderDetail, payload.buy_price);
     body.appendChild(chart);
     body.appendChild(detail);
     card.appendChild(body);

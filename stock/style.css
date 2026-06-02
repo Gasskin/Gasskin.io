@@ -314,6 +314,10 @@ button.ghost:hover {
 .ref-line.green { stroke: var(--green); }
 .ref-line.gray { stroke: var(--gray); }
 
+/* 持仓买入价：橙色水平虚线 */
+.buy-line { stroke: var(--orange); stroke-width: 1.6; stroke-dasharray: 4 4; }
+.buy-label { fill: var(--orange); font-size: 10px; font-weight: 600; }
+
 .dot { fill: var(--accent); }
 .dot-last.red { fill: var(--red); }
 .dot-last.green { fill: var(--green); }
