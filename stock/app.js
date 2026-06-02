@@ -8,6 +8,11 @@ const grid = document.getElementById("grid");
 const statusEl = document.getElementById("status");
 const btnReload = document.getElementById("btnReload");
 const updatedBar = document.getElementById("updatedBar");
+const stockNav = document.getElementById("stockNav");
+
+function cardId(code) {
+  return `card-${String(code).replace(/[^a-zA-Z0-9]/g, "_")}`;
+}
 
 function setStatus(text) {
   statusEl.textContent = text || "";
@@ -225,6 +230,7 @@ function buildCard(payload) {
 
   const card = document.createElement("section");
   card.className = "card";
+  card.id = cardId(payload.code);
 
   const head = document.createElement("div");
   head.className = "card-head";
@@ -320,8 +326,11 @@ async function load() {
   const items = (index && index.items) || [];
   if (!items.length) {
     setStatus("data/index.json 中没有可显示的标的。");
+    if (stockNav) stockNav.innerHTML = "";
     return;
   }
+
+  buildNav(items);
 
   let ok = 0;
   for (const item of items) {
@@ -332,11 +341,33 @@ async function load() {
     } catch (err) {
       const card = document.createElement("section");
       card.className = "card";
+      card.id = cardId(item.code);
       card.innerHTML = `<div class="card-head"><div><h2>${item.name || item.code}</h2><div class="code">${item.code}</div></div></div><div class="empty">加载失败：${err.message}</div>`;
       grid.appendChild(card);
     }
   }
   setStatus(`已加载 ${ok}/${items.length} 个标的`);
+}
+
+// 左侧导航：列出标的名称，持仓（有买入价）显示为橙色，点击滚动到对应卡片。
+function buildNav(items) {
+  if (!stockNav) return;
+  stockNav.innerHTML = "";
+  for (const item of items) {
+    const held = item.buy_price != null && !Number.isNaN(Number(item.buy_price));
+    const link = document.createElement("a");
+    link.className = `nav-item${held ? " held" : ""}`;
+    link.href = `#${cardId(item.code)}`;
+    link.innerHTML = `<span class="nav-name">${item.name || item.code}</span><span class="nav-code">${item.code}</span>`;
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const target = document.getElementById(cardId(item.code));
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      stockNav.querySelectorAll(".nav-item.active").forEach((n) => n.classList.remove("active"));
+      link.classList.add("active");
+    });
+    stockNav.appendChild(link);
+  }
 }
 
 btnReload.addEventListener("click", load);

@@ -22,13 +22,19 @@
     </p>
   </header>
 
-  <main class="layout">
-    <div class="toolbar">
-      <button type="button" id="btnReload" class="ghost">↻ 重新加载</button>
-      <span id="status" class="status"></span>
-    </div>
-    <div id="grid" class="grid"></div>
-  </main>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-title">标的列表</div>
+      <nav id="stockNav" class="nav"></nav>
+    </aside>
+    <main class="content">
+      <div class="toolbar">
+        <button type="button" id="btnReload" class="ghost">↻ 重新加载</button>
+        <span id="status" class="status"></span>
+      </div>
+      <div id="grid" class="grid"></div>
+    </main>
+  </div>
 
   <footer class="footer">
     Gasskin.io · 股票行情图 · 数据由 <code>stock/gen_data.py</code> 生成
