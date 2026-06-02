@@ -1,18 +1,12 @@
 {
   "code": "159278.SZ",
   "name": "机器人ETF鹏华",
+  "type": "etf",
   "buy_price": null,
   "source": "fund_daily(ETF日线)",
-  "latest_trade_date": "2026-06-01",
+  "latest_trade_date": "2026-06-02",
   "count": 21,
   "data": [
-    {
-      "date": "2026-04-29",
-      "open": 1.025,
-      "high": 1.042,
-      "low": 1.016,
-      "close": 1.038
-    },
     {
       "date": "2026-04-30",
       "open": 1.035,
@@ -152,6 +146,13 @@
       "high": 1.1,
       "low": 1.07,
       "close": 1.07
+    },
+    {
+      "date": "2026-06-02",
+      "open": 1.087,
+      "high": 1.102,
+      "low": 1.074,
+      "close": 1.085
     }
   ]
 }

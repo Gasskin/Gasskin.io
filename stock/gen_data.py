@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-为 etf.txt 中的每个代码生成最新 21 个交易日的行情数据。
+为 stock.txt 中的每个代码（个股或 ETF）生成最新 21 个交易日的行情数据。
 
 通过 Tushare 拉取日线，为每个代码在 data/ 目录下生成一个 ``<代码>.json``
 文件，记录最新 21 个交易日的开盘价、最高价、最低价、收盘价；并生成
 ``data/index.json`` 清单供前端发现标的。本脚本自包含，不依赖其它模块。
 
+代码可能是个股或 ETF，两者日线接口不同（个股 daily、ETF fund_daily）。脚本
+会先用 fund_basic / stock_basic 判定类型，缺失时按代码段猜测，据此选择接口。
+
 默认文件相对脚本目录解析：
-- key.txt: Tushare token，取第一条非空非注释行
-- etf.txt: 每行一个代码（可选「代码 买入价格」），忽略空行与 # 开头的行
-- data/:   输出目录
+- key.txt:   Tushare token，取第一条非空非注释行
+- stock.txt: 每行一个代码（可选「代码 买入价格」），忽略空行与 # 开头的行
+- data/:     输出目录
 """
 
 from __future__ import annotations
@@ -174,7 +177,15 @@ def fetch_from_endpoint(pro: Any, endpoint: str, ts_code: str, start_date: str, 
     )
 
 
-def fetch_price_data(pro: Any, ts_code: str, end_date: str, initial_days: int) -> FetchResult:
+def fetch_price_data(
+    pro: Any,
+    ts_code: str,
+    end_date: str,
+    initial_days: int,
+    endpoints: list[tuple[str, str]] | None = None,
+) -> FetchResult:
+    if endpoints is None:
+        endpoints = [("fund_daily", "fund_daily(ETF日线)"), ("daily", "daily(股票日线)")]
     end_day = datetime.strptime(end_date, "%Y%m%d").date()
     max_days = 730
     days = min(max(initial_days, 45), max_days)
@@ -185,7 +196,7 @@ def fetch_price_data(pro: Any, ts_code: str, end_date: str, initial_days: int) -
         start_date = yyyymmdd(end_day - timedelta(days=days))
         last_empty_source = ""
 
-        for endpoint, source_name in (("fund_daily", "fund_daily(ETF日线)"), ("daily", "daily(股票日线)")):
+        for endpoint, source_name in endpoints:
             try:
                 raw = fetch_from_endpoint(pro, endpoint, ts_code, start_date, end_date)
                 data = normalize_price_frame(raw, end_date)
@@ -224,9 +235,13 @@ def fetch_price_data(pro: Any, ts_code: str, end_date: str, initial_days: int) -
     )
 
 
-def build_name_map(pro: Any) -> dict[str, str]:
-    """构建 ts_code -> 名称 的映射，场内基金优先，股票兜底。"""
+def build_basic_maps(pro: Any) -> tuple[dict[str, str], dict[str, str]]:
+    """构建 ts_code -> 名称 与 ts_code -> 类型(etf/stock) 映射。
+
+    在 fund_basic（场内基金）中出现的判为 etf，在 stock_basic 中出现的判为 stock。
+    """
     name_map: dict[str, str] = {}
+    type_map: dict[str, str] = {}
 
     try:
         funds = pro.fund_basic(market="E", fields="ts_code,name")
@@ -235,30 +250,58 @@ def build_name_map(pro: Any) -> dict[str, str]:
                 code = str(row["ts_code"]).strip().upper()
                 if code:
                     name_map[code] = str(row["name"]).strip()
+                    type_map[code] = "etf"
     except Exception as exc:  # noqa: BLE001 - 名称缺失不应中断主流程
-        print(f"提示: 读取 fund_basic 失败，部分基金名称可能缺失: {exc}", file=sys.stderr)
+        print(f"提示: 读取 fund_basic 失败，部分基金名称/类型可能缺失: {exc}", file=sys.stderr)
 
     try:
         stocks = pro.stock_basic(exchange="", list_status="L", fields="ts_code,name")
         if stocks is not None and not stocks.empty:
             for _, row in stocks.iterrows():
                 code = str(row["ts_code"]).strip().upper()
-                if code and code not in name_map:
-                    name_map[code] = str(row["name"]).strip()
+                if not code:
+                    continue
+                name_map.setdefault(code, str(row["name"]).strip())
+                type_map.setdefault(code, "stock")
     except Exception as exc:  # noqa: BLE001 - 名称缺失不应中断主流程
-        print(f"提示: 读取 stock_basic 失败，部分股票名称可能缺失: {exc}", file=sys.stderr)
+        print(f"提示: 读取 stock_basic 失败，部分股票名称/类型可能缺失: {exc}", file=sys.stderr)
 
-    return name_map
+    return name_map, type_map
 
 
-def read_code_entries(etf_file: Path) -> list[tuple[str, float | None]]:
-    """解析 etf.txt，每行支持「代码」或「代码 买入价格」（空格分隔）。"""
-    if not etf_file.exists():
-        raise FileNotFoundError(f"找不到代码列表文件: {etf_file}")
+def guess_type_by_code(ts_code: str) -> str | None:
+    """按 A 股代码段猜测类型；无法判断时返回 None。"""
+    symbol = ts_code.split(".", 1)[0]
+    if len(symbol) != 6 or not symbol.isdigit():
+        return None
+    # 上交所 5 开头、深交所 15/16/18 开头为场内基金/ETF
+    if symbol.startswith("5") or symbol[:2] in ("15", "16", "18"):
+        return "etf"
+    # 上交所 6 开头、深交所 0/3 开头、北交所 4/8 开头为个股
+    if symbol[0] in ("6", "0", "3", "4", "8"):
+        return "stock"
+    return None
+
+
+def endpoints_for_type(code_type: str | None) -> list[tuple[str, str]]:
+    """按类型返回 Tushare 日线接口的尝试顺序（首个为首选，其余兜底）。"""
+    fund_ep = ("fund_daily", "fund_daily(ETF日线)")
+    stock_ep = ("daily", "daily(股票日线)")
+    if code_type == "etf":
+        return [fund_ep, stock_ep]
+    if code_type == "stock":
+        return [stock_ep, fund_ep]
+    return [fund_ep, stock_ep]
+
+
+def read_code_entries(stock_file: Path) -> list[tuple[str, float | None]]:
+    """解析 stock.txt，每行支持「代码」或「代码 买入价格」（空格分隔）。"""
+    if not stock_file.exists():
+        raise FileNotFoundError(f"找不到代码列表文件: {stock_file}")
 
     entries: list[tuple[str, float | None]] = []
     seen: set[str] = set()
-    for line_no, line in enumerate(etf_file.read_text(encoding="utf-8-sig").splitlines(), start=1):
+    for line_no, line in enumerate(stock_file.read_text(encoding="utf-8-sig").splitlines(), start=1):
         text = line.strip()
         if not text or text.startswith("#"):
             continue
@@ -277,10 +320,10 @@ def read_code_entries(etf_file: Path) -> list[tuple[str, float | None]]:
             try:
                 buy_price = float(parts[1])
             except ValueError:
-                print(f"提示: {etf_file.name} 第 {line_no} 行买入价格无法解析: {parts[1]}，已忽略。")
+                print(f"提示: {stock_file.name} 第 {line_no} 行买入价格无法解析: {parts[1]}，已忽略。")
 
         if code in seen:
-            print(f"提示: {etf_file.name} 第 {line_no} 行重复代码 {code}，已忽略。")
+            print(f"提示: {stock_file.name} 第 {line_no} 行重复代码 {code}，已忽略。")
             continue
         seen.add(code)
         entries.append((code, buy_price))
@@ -341,7 +384,7 @@ def write_json(out_dir: Path, code: str, payload: dict[str, Any]) -> Path:
 def parse_args() -> argparse.Namespace:
     default_dir = script_dir()
     parser = argparse.ArgumentParser(
-        description="读取 etf.txt，为每个代码生成最新 21 个交易日的行情 JSON。",
+        description="读取 stock.txt，为每个代码（个股或 ETF）生成最新 21 个交易日的行情 JSON。",
     )
     parser.add_argument(
         "--key-file",
@@ -350,10 +393,10 @@ def parse_args() -> argparse.Namespace:
         help="Tushare token 文件，默认 stock/key.txt。",
     )
     parser.add_argument(
-        "--etf-file",
+        "--stock-file",
         type=Path,
-        default=default_dir / "etf.txt",
-        help="代码列表文件，默认 stock/etf.txt。",
+        default=default_dir / "stock.txt",
+        help="代码列表文件（个股/ETF 混合），默认 stock/stock.txt。",
     )
     parser.add_argument(
         "--out-dir",
@@ -382,13 +425,13 @@ def main() -> int:
 
     try:
         token = read_token(args.key_file)
-        entries = read_code_entries(args.etf_file)
+        entries = read_code_entries(args.stock_file)
     except Exception as exc:  # noqa: BLE001 - 面向用户脚本
         print(f"配置读取失败: {exc}", file=sys.stderr)
         return 1
 
     if not entries:
-        print(f"没有可处理的代码: {args.etf_file}")
+        print(f"没有可处理的代码: {args.stock_file}")
         return 1
 
     try:
@@ -398,7 +441,7 @@ def main() -> int:
         print(f"Tushare 初始化或交易日历读取失败: {exc}", file=sys.stderr)
         return 1
 
-    name_map = build_name_map(pro)
+    name_map, type_map = build_basic_maps(pro)
 
     print(f"代码数量: {len(entries)}")
     print(f"最新交易日候选: {display_date(t_date)}")
@@ -408,8 +451,12 @@ def main() -> int:
     ok_count = 0
     manifest: list[dict[str, Any]] = []
     for code, buy_price in entries:
+        # 先用基础表判定类型，缺失时按代码段猜测，仍未知则两个接口都试。
+        code_type = type_map.get(code) or guess_type_by_code(code)
         try:
-            fetch = fetch_price_data(pro, code, t_date, args.fetch_days)
+            fetch = fetch_price_data(
+                pro, code, t_date, args.fetch_days, endpoints_for_type(code_type)
+            )
             anchor_date = resolve_anchor_date(fetch, t_date)
             records = build_records(fetch, anchor_date)
         except Exception as exc:  # noqa: BLE001 - 继续处理其它代码
@@ -421,9 +468,15 @@ def main() -> int:
             print(f"  - {code}: 失败，未获取到行情数据（{details}）")
             continue
 
+        # 实际命中的数据源更可靠：据此校正类型。
+        resolved_type = "etf" if fetch.source.startswith("fund_daily") else (
+            "stock" if fetch.source.startswith("daily") else (code_type or "unknown")
+        )
+
         payload = {
             "code": code,
             "name": name_map.get(code, ""),
+            "type": resolved_type,
             "buy_price": buy_price,
             "source": fetch.source,
             "latest_trade_date": display_date(anchor_date),
@@ -432,11 +485,17 @@ def main() -> int:
         }
         out_file = write_json(args.out_dir, code, payload)
         manifest.append(
-            {"code": code, "name": payload["name"], "buy_price": buy_price, "file": out_file.name}
+            {
+                "code": code,
+                "name": payload["name"],
+                "type": resolved_type,
+                "buy_price": buy_price,
+                "file": out_file.name,
+            }
         )
         ok_count += 1
         note = "" if len(records) >= OUTPUT_BARS else f"（仅 {len(records)} 条，少于 {OUTPUT_BARS}）"
-        print(f"  - {code}: 成功，{out_file.name} 写入 {len(records)} 条{note}")
+        print(f"  - {code}: 成功 [{resolved_type}]，{out_file.name} 写入 {len(records)} 条{note}")
 
     if manifest:
         generated_at = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")

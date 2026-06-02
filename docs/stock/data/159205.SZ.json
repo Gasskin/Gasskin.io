@@ -1,18 +1,12 @@
 {
   "code": "159205.SZ",
   "name": "创业板ETF东财",
+  "type": "etf",
   "buy_price": null,
   "source": "fund_daily(ETF日线)",
-  "latest_trade_date": "2026-06-01",
+  "latest_trade_date": "2026-06-02",
   "count": 21,
   "data": [
-    {
-      "date": "2026-04-29",
-      "open": 1.75,
-      "high": 1.805,
-      "low": 1.748,
-      "close": 1.802
-    },
     {
       "date": "2026-04-30",
       "open": 1.802,
@@ -152,6 +146,13 @@
       "high": 1.999,
       "low": 1.932,
       "close": 1.942
+    },
+    {
+      "date": "2026-06-02",
+      "open": 1.941,
+      "high": 2,
+      "low": 1.933,
+      "close": 1.987
     }
   ]
 }

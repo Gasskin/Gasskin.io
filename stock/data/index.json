@@ -1,37 +1,63 @@
 {
-  "generated_at": "2026-06-01 19:19",
+  "generated_at": "2026-06-02 16:47",
   "timezone": "Asia/Shanghai (UTC+8)",
-  "count": 5,
+  "count": 8,
   "items": [
     {
       "code": "159278.SZ",
       "name": "机器人ETF鹏华",
+      "type": "etf",
       "buy_price": null,
       "file": "159278.SZ.json"
     },
     {
       "code": "159599.SZ",
       "name": "芯片ETF东财",
+      "type": "etf",
       "buy_price": null,
       "file": "159599.SZ.json"
     },
     {
       "code": "159611.SZ",
       "name": "电力ETF广发",
+      "type": "etf",
       "buy_price": 1.248,
       "file": "159611.SZ.json"
     },
     {
       "code": "159205.SZ",
       "name": "创业板ETF东财",
+      "type": "etf",
       "buy_price": null,
       "file": "159205.SZ.json"
     },
     {
       "code": "589850.SH",
       "name": "科创50ETF东财",
+      "type": "etf",
       "buy_price": null,
       "file": "589850.SH.json"
+    },
+    {
+      "code": "159330.SZ",
+      "name": "沪深300ETF东财",
+      "type": "etf",
+      "buy_price": null,
+      "file": "159330.SZ.json"
+    },
+    {
+      "code": "516310.SH",
+      "name": "银行ETF易方达",
+      "type": "etf",
+      "buy_price": null,
+      "file": "516310.SH.json"
+    },
+    {
+      "code": "159920.SZ",
+      "name": "恒生ETF华夏",
+      "type": "etf",
+      "buy_price": null,
+      "file": "159920.SZ.json"
     }
   ]
 }

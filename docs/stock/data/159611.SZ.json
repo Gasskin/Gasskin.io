@@ -1,18 +1,12 @@
 {
   "code": "159611.SZ",
   "name": "电力ETF广发",
+  "type": "etf",
   "buy_price": 1.248,
   "source": "fund_daily(ETF日线)",
-  "latest_trade_date": "2026-06-01",
+  "latest_trade_date": "2026-06-02",
   "count": 21,
   "data": [
-    {
-      "date": "2026-04-29",
-      "open": 1.115,
-      "high": 1.131,
-      "low": 1.111,
-      "close": 1.124
-    },
     {
       "date": "2026-04-30",
       "open": 1.12,
@@ -152,6 +146,13 @@
       "high": 1.257,
       "low": 1.202,
       "close": 1.257
+    },
+    {
+      "date": "2026-06-02",
+      "open": 1.236,
+      "high": 1.246,
+      "low": 1.222,
+      "close": 1.241
     }
   ]
 }

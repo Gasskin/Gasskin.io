@@ -1,18 +1,12 @@
 {
   "code": "159599.SZ",
   "name": "芯片ETF东财",
+  "type": "etf",
   "buy_price": null,
   "source": "fund_daily(ETF日线)",
-  "latest_trade_date": "2026-06-01",
+  "latest_trade_date": "2026-06-02",
   "count": 21,
   "data": [
-    {
-      "date": "2026-04-29",
-      "open": 2.36,
-      "high": 2.399,
-      "low": 2.325,
-      "close": 2.398
-    },
     {
       "date": "2026-04-30",
       "open": 2.426,
@@ -152,6 +146,13 @@
       "high": 2.993,
       "low": 2.814,
       "close": 2.82
+    },
+    {
+      "date": "2026-06-02",
+      "open": 2.82,
+      "high": 2.91,
+      "low": 2.774,
+      "close": 2.862
     }
   ]
 }
