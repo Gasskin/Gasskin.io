@@ -163,16 +163,16 @@ function buildChart(bars, level, onSelect, buyPrice) {
     x1: padL, y1: refY, x2: W - padR, y2: refY, class: `ref-line ${level.color}`,
   }));
 
-  // 持仓买入价：橙色水平虚线（含标注）。
+  // 持仓买入价：橙色水平虚线，价格标在左侧 Y 轴。
   if (hasBuy) {
     const by = y(Number(buyPrice));
     svg.appendChild(el("line", {
       x1: padL, y1: by, x2: W - padR, y2: by, class: "buy-line",
     }));
     const buyLabel = el("text", {
-      x: W - padR, y: by - 5, class: "buy-label", "text-anchor": "end",
+      x: padL - 6, y: by + 3, class: "buy-label", "text-anchor": "end",
     });
-    buyLabel.textContent = `买入 ${fmtPrice(buyPrice)}`;
+    buyLabel.textContent = fmtPrice(buyPrice);
     svg.appendChild(buyLabel);
   }
 
