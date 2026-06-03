@@ -21,8 +21,8 @@ on:
     branches: [main]
   workflow_dispatch:   # 支持在 GitHub 页面手动触发
   schedule:
-    # GitHub Actions 使用 UTC；北京时间(UTC+8) 18,19,20,21,22 点 = UTC 10,11,12,13,14 点
-    - cron: '0 10,11,12,13,14 * * *'
+    # GitHub Actions 使用 UTC；北京时间(UTC+8) 16,17,18,19,20,21,22 点 = UTC 8,9,10,11,12,13,14 点
+    - cron: '0 8,9,10,11,12,13,14 * * *'
 
 # 防止多个 job 同时部署 Pages，后触发的排队等待（不 cancel）
 concurrency:
