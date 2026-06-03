@@ -261,13 +261,19 @@ function buildCard(payload) {
 
   // 存在买入价格：标题橙色，并显示自买入价至今的涨跌幅。
   const buyPrice = payload.buy_price;
-  if (buyPrice != null && !Number.isNaN(Number(buyPrice)) && latest) {
+  const held = buyPrice != null && !Number.isNaN(Number(buyPrice)) && latest;
+  if (held) {
     title.classList.add("buy");
     const pnl = ((latest.close - buyPrice) / buyPrice) * 100;
     const pnlEl = document.createElement("div");
     pnlEl.className = `pnl ${pnl >= 0 ? "up" : "down"}`;
     pnlEl.textContent = `买入 ${fmtPrice(buyPrice)} · 至今 ${fmtPct(pnl)}`;
     titleWrap.appendChild(pnlEl);
+  } else if (level.color === "red") {
+    // 未持仓但突破前 20 日高点：标题与导航项标红。
+    title.classList.add("breakout");
+    const navItem = stockNav && stockNav.querySelector(`[data-code="${payload.code}"]`);
+    if (navItem) navItem.classList.add("breakout");
   }
 
   const badge = document.createElement("div");
@@ -372,6 +378,7 @@ function buildNav(items) {
     const held = item.buy_price != null && !Number.isNaN(Number(item.buy_price));
     const link = document.createElement("a");
     link.className = `nav-item${held ? " held" : ""}`;
+    link.dataset.code = item.code;
     link.href = `#${cardId(item.code)}`;
     link.innerHTML = `<span class="nav-name">${item.name || item.code}</span><span class="nav-code">${item.code}</span>`;
     link.addEventListener("click", (e) => {
