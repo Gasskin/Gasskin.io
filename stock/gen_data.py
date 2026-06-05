@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
@@ -28,8 +29,11 @@ from typing import Any
 
 
 PRICE_FIELDS = "ts_code,trade_date,open,high,low,close"
-OUTPUT_BARS = 21
-NEEDED_BARS = OUTPUT_BARS + 1
+OUTPUT_BARS = 21          # 展示的交易日数量
+MA_SHORT = 20             # 短期均线（用于副图日变化）
+MA_LONG = 60              # 长期均线（画在 K 图上）
+# 为了给最旧的展示日也算出 60 日均线，需要 OUTPUT_BARS + (MA_LONG-1) = 80 个交易日。
+NEEDED_BARS = OUTPUT_BARS + MA_LONG - 1
 
 
 @dataclass
@@ -336,17 +340,34 @@ def to_number(value: Any) -> float:
     return int(number) if number.is_integer() else round(number, 4)
 
 
+def num_or_none(value: Any, digits: int = 6) -> float | None:
+    """转成数值；NaN/无法解析返回 None（保证可被 JSON 序列化）。"""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if math.isnan(number):
+        return None
+    return int(number) if number.is_integer() else round(number, digits)
+
+
 def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
     data = fetch.data
     if data is None or data.empty:
         return []
 
-    # data 已按 trade_date 降序排列，取锚定日及之前最新 OUTPUT_BARS 条。
-    window = data[data["trade_date"].astype(str) <= anchor_date].head(OUTPUT_BARS).copy()
-    if window.empty:
+    # 用全量历史（升序）计算均线，再截取最新 OUTPUT_BARS 条展示。
+    full = data[data["trade_date"].astype(str) <= anchor_date].copy()
+    if full.empty:
         return []
+    full = full.sort_values("trade_date", ascending=True)
 
-    window = window.sort_values("trade_date", ascending=True)
+    # 收盘价的 20 日 / 60 日均线，以及 20 日均线的日变化。
+    full["ma_short"] = full["close"].rolling(MA_SHORT).mean()
+    full["ma_long"] = full["close"].rolling(MA_LONG).mean()
+    full["ma_short_delta"] = full["ma_short"].diff()
+
+    window = full.tail(OUTPUT_BARS)
 
     records: list[dict[str, Any]] = []
     for _, row in window.iterrows():
@@ -357,6 +378,9 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
                 "high": to_number(row["high"]),
                 "low": to_number(row["low"]),
                 "close": to_number(row["close"]),
+                "ma20": num_or_none(row["ma_short"]),
+                "ma60": num_or_none(row["ma_long"]),
+                "ma20_delta": num_or_none(row["ma_short_delta"]),
             }
         )
     return records
@@ -413,8 +437,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--fetch-days",
         type=int,
-        default=90,
-        help="初始回看自然日天数，数据不足时会自动扩大，默认 90。",
+        default=160,
+        help="初始回看自然日天数，数据不足时会自动扩大，默认 160（约可覆盖 80 个交易日）。",
     )
     return parser.parse_args()
 
@@ -445,7 +469,7 @@ def main() -> int:
 
     print(f"代码数量: {len(entries)}")
     print(f"最新交易日候选: {display_date(t_date)}")
-    print(f"每个代码输出最新 {OUTPUT_BARS} 个交易日的开盘价、最高价、最低价、收盘价。")
+    print(f"每个代码输出最新 {OUTPUT_BARS} 个交易日的 OHLC，并附 {MA_SHORT}/{MA_LONG} 日均线及 {MA_SHORT} 日均线日变化。")
     print(f"输出目录: {args.out_dir}")
 
     ok_count = 0

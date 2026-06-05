@@ -10,6 +10,7 @@
   --green: #3fd07f;
   --gray: #8b98a5;
   --orange: #ff9f40;
+  --ma60: #5a8fd6;
 }
 
 * { box-sizing: border-box; }
@@ -68,6 +69,7 @@ body {
 .legend-dot.red { background: var(--red); }
 .legend-dot.green { background: var(--green); }
 .legend-dot.gray { background: var(--gray); }
+.legend-dot.ma60 { background: var(--ma60); }
 
 .shell {
   display: flex;
@@ -320,6 +322,16 @@ button.ghost:hover {
 /* 持仓买入价：橙色水平虚线 */
 .buy-line { stroke: var(--orange); stroke-width: 1.6; stroke-dasharray: 4 4; }
 .buy-label { fill: var(--orange); font-size: 10px; font-weight: 600; }
+
+/* 60 日均线：蓝色细线，弱化处理 */
+.ma-line { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.ma-line.ma60 { stroke: var(--ma60); stroke-width: 1; opacity: 0.75; }
+
+/* 副图：20 日均线日变化柱状图 */
+.sub-title { fill: var(--muted); font-size: 11px; }
+.sub-zero { stroke: var(--border); stroke-width: 1; }
+.delta-bar.up { fill: var(--red); }
+.delta-bar.down { fill: var(--green); }
 
 .dot { fill: var(--accent); }
 .dot-last.red { fill: var(--red); }
