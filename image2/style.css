@@ -118,7 +118,7 @@ code {
 }
 
 .top-row {
-  grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr);
+  grid-template-columns: minmax(220px, .5fr) minmax(280px, 1.5fr);
 }
 
 .form-grid {

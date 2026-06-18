@@ -522,7 +522,37 @@ async function parseResponse(res) {
 
 function getErrorMessage(res, text, data) {
   const apiMessage = data?.error?.message || data?.message;
-  return apiMessage || text || `${res.status} ${res.statusText}`;
+  if (apiMessage) return apiMessage;
+  const htmlMessage = getHtmlErrorMessage(res, text);
+  return htmlMessage || text || `${res.status} ${res.statusText}`;
+}
+
+function getHtmlErrorMessage(res, text) {
+  const trimmed = (text || "").trim();
+  if (!/^<!doctype html|^<html[\s>]/i.test(trimmed)) return "";
+
+  const title = decodeHtml(extractFirstMatch(trimmed, /<title[^>]*>([\s\S]*?)<\/title>/i));
+  const heading = decodeHtml(extractFirstMatch(trimmed, /<h1[^>]*>[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/i));
+  const code = extractFirstMatch(trimmed, /Error code\s*([0-9]+)/i) || extractFirstMatch(title, /\b([45][0-9]{2})\b/);
+  const host = decodeHtml(extractFirstMatch(trimmed, /<span[^>]*>\s*Host\s*<\/span>[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/i));
+
+  if (code === "524") {
+    return `目标服务响应超时（524）${host ? `：${host}` : ""}。\n目标接口已经收到请求，但上游服务长时间没有返回，请稍后重试或切换请求网址。`;
+  }
+
+  const summary = heading || title || `${res.status} ${res.statusText}`;
+  return `目标服务返回 HTML 错误页${code ? `（${code}）` : ""}${host ? `：${host}` : ""}。\n${summary}`;
+}
+
+function extractFirstMatch(value, pattern) {
+  return pattern.exec(value || "")?.[1]?.trim() || "";
+}
+
+function decodeHtml(value) {
+  if (!value) return "";
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return textarea.value;
 }
 
 async function onGenerate() {
