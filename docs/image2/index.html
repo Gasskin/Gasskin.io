@@ -18,14 +18,14 @@
       <div class="top-row">
         <label>
           请求网址
-          <input id="baseUrl" type="url" value="https://api.openai.com" placeholder="https://api.openai.com" />
+          <input id="baseUrl" type="url" value="https://api.openai.com" placeholder="https://api.openai.com 或你的代理地址" />
         </label>
         <label>
           Token
           <input id="token" type="password" autocomplete="off" placeholder="请求鉴权 token" />
         </label>
       </div>
-      <p class="note">请求网址留空时默认使用 <code>https://api.openai.com</code>。</p>
+      <p class="note">GitHub Pages 直连 OpenAI 会触发 CORS，请填写你部署的代理地址，或在 <code>config.js</code> 中设置 <code>window.IMAGE2_API_BASE</code>。</p>
     </section>
 
     <section class="card" aria-labelledby="prompt-heading">
@@ -124,10 +124,11 @@
         <button id="generateBtn" type="button" class="primary">生成</button>
         <button id="stopBtn" type="button" class="ghost" disabled>停止当前请求</button>
       </div>
-      <p class="note">如果浏览器提示 CORS 或网络错误，可以把请求网址换成你自己的同源代理地址。</p>
+      <p class="note">如果浏览器提示 CORS，说明当前请求仍然直连 OpenAI；请改用支持 CORS 预检的 HTTPS 代理地址。</p>
     </section>
   </main>
 
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

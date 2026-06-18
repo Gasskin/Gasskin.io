@@ -1,4 +1,7 @@
-const DEFAULT_BASE_URL = "https://api.openai.com";
+const OPENAI_BASE_URL = "https://api.openai.com";
+const PAGE_PARAMS = new URLSearchParams(window.location.search);
+const CONFIGURED_BASE_URL = PAGE_PARAMS.get("apiBase") || window.IMAGE2_API_BASE || "";
+const DEFAULT_BASE_URL = CONFIGURED_BASE_URL.trim() || OPENAI_BASE_URL;
 const GENERATE_PATH = "/v1/images/generations";
 const EDIT_PATH = "/v1/images/edits";
 const MAX_EDGE = 3840;
@@ -40,6 +43,13 @@ let runSeq = 0;
 let previewModal = null;
 let referenceSeq = 0;
 const referenceImages = [];
+
+function initBaseUrl() {
+  const current = els.baseUrl.value.trim();
+  if (!current || (CONFIGURED_BASE_URL.trim() && current === OPENAI_BASE_URL)) {
+    els.baseUrl.value = DEFAULT_BASE_URL;
+  }
+}
 
 function normalizeBaseUrl(value) {
   return (value || DEFAULT_BASE_URL).trim().replace(/\/+$/, "") || DEFAULT_BASE_URL;
@@ -562,5 +572,6 @@ els.sizeTier.addEventListener("change", updateFinalSize);
 els.aspectRatio.addEventListener("change", updateFinalSize);
 els.outputFormat.addEventListener("change", onFormatChange);
 
+initBaseUrl();
 updateFinalSize();
 onFormatChange();

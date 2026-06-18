@@ -1,0 +1,260 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version. Defaults to package.json version.
+        required: false
+        type: string
+      tag:
+        description: Release tag. Defaults to the release version.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Resolve release version
+        id: release
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version || '' }}
+          INPUT_TAG: ${{ github.event.inputs.tag || '' }}
+        run: |
+          set -euo pipefail
+
+          package_version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            version="${INPUT_VERSION:-$package_version}"
+            tag="${INPUT_TAG:-$version}"
+          else
+            tag="${GITHUB_REF_NAME}"
+            version="${tag#v}"
+          fi
+
+          if [ "$version" != "$package_version" ]; then
+            echo "::error title=Version mismatch::package.json is $package_version, but release version is $version."
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.26.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run checks
+        run: pnpm check
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs:
+      - prepare
+      - check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            id: windows-x64
+            os: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            release-args: ""
+          - name: macOS arm64
+            id: macos-arm64
+            os: macos-14
+            rust-target: aarch64-apple-darwin
+            release-args: "--macos-arch aarch64"
+          - name: macOS x64
+            id: macos-x64
+            os: macos-14
+            rust-target: x86_64-apple-darwin
+            release-args: "--macos-arch x86_64"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10.26.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - name: Cache Rust dependencies
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Windows bundle tools
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install wixtoolset nsis --yes --no-progress
+
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $wixBin = Get-ChildItem -Path $programFilesX86 -Filter 'WiX Toolset*' -Directory |
+            Sort-Object Name -Descending |
+            Select-Object -First 1 |
+            ForEach-Object { Join-Path $_.FullName 'bin' }
+          $nsisBin = Join-Path $programFilesX86 'NSIS'
+
+          if ($wixBin -and (Test-Path $wixBin)) {
+            Add-Content -Path $env:GITHUB_PATH -Value $wixBin
+          }
+          if (Test-Path $nsisBin) {
+            Add-Content -Path $env:GITHUB_PATH -Value $nsisBin
+          }
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare updater signing key
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
+            echo "::error title=Missing secret::Set TAURI_SIGNING_PRIVATE_KEY to the production updater private key."
+            exit 1
+          fi
+
+          mkdir -p artifacts/release-updater/keys
+          printf "%s" "$TAURI_SIGNING_PRIVATE_KEY" > artifacts/release-updater/keys/updater.key
+
+          node <<'NODE'
+          const { readFileSync, writeFileSync } = require('node:fs')
+          const config = JSON.parse(readFileSync('src-tauri/tauri.conf.json', 'utf8'))
+          const pubkey = config?.plugins?.updater?.pubkey?.trim()
+          if (!pubkey) {
+            throw new Error('Missing plugins.updater.pubkey in src-tauri/tauri.conf.json')
+          }
+          writeFileSync('artifacts/release-updater/keys/updater.key.pub', `${pubkey}\n`)
+          NODE
+
+      - name: Build signed updater package
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_ARGS: ${{ matrix.release-args }}
+        run: pnpm updater:release:build -- --version "$VERSION" $RELEASE_ARGS
+
+      - name: Stage updater assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ARGS: ${{ matrix.release-args }}
+        run: pnpm updater:release:manifest -- --version "$VERSION" --tag "$TAG" $RELEASE_ARGS
+
+      - name: Upload staged assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-staging-${{ matrix.id }}
+          path: artifacts/release-updater/staging/${{ needs.prepare.outputs.version }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - build
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Download staged assets
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-staging-*
+          path: artifacts/release-updater/ci-staging
+
+      - name: Create draft GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+            exit 0
+          fi
+
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "PixAI $VERSION" \
+            --generate-notes \
+            --draft
+
+      - name: Publish merged updater assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: node scripts/release-updater.mjs publish-staged --version "$VERSION" --tag "$TAG" --input-dir artifacts/release-updater/ci-staging --require-platforms windows-x86_64-msi,windows-x86_64-nsis,darwin-aarch64,darwin-x86_64
+
+      - name: Publish draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release edit "$TAG" --draft=false --latest

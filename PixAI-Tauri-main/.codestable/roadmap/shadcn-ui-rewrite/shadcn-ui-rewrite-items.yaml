@@ -1,0 +1,51 @@
+roadmap: shadcn-ui-rewrite
+created: 2026-05-24
+
+items:
+  - slug: ui-foundation
+    description: 安装 Tailwind/shadcn，建立 UI primitives、主题 token 和 cn 工具
+    depends_on: []
+    status: done
+    feature: null
+    minimal_loop: true
+    notes: "Tailwind v4 + shadcn initialized; pnpm check passed."
+
+  - slug: app-shell
+    description: 用 shadcn/Tailwind 重写 App shell、顶部导航、侧栏会话列表、主题与设置入口
+    depends_on: [ui-foundation]
+    status: done
+    feature: null
+    minimal_loop: false
+    notes: "MainLayout and App shell rewritten with shadcn/Tailwind; browser smoke verified."
+
+  - slug: workspace-flow
+    description: 重写 Composer、Canvas、ImageTile、生成状态和图片预览
+    depends_on: [app-shell]
+    status: done
+    feature: null
+    minimal_loop: false
+    notes: "Composer, CanvasArea, ImageTile, GeneratingTile, preview and error dialogs rewritten; component tests passed."
+
+  - slug: settings-system
+    description: 重写工作区参数面板、全局设置 Modal、Provider 配置和设置开关
+    depends_on: [ui-foundation]
+    status: done
+    feature: null
+    minimal_loop: false
+    notes: "Workspace settings, global settings tabs, Provider dialog, update and notification cards rewritten."
+
+  - slug: library-pages
+    description: 重写图库和提示词库页面
+    depends_on: [app-shell, workspace-flow]
+    status: done
+    feature: null
+    minimal_loop: false
+    notes: "Gallery and prompt library rewritten; browser smoke verified."
+
+  - slug: verification-cleanup
+    description: 删除旧 CSS，清理残留 class，跑测试和浏览器验收
+    depends_on: [workspace-flow, settings-system, library-pages]
+    status: done
+    feature: null
+    minimal_loop: false
+    notes: "Deleted old styles.css and Dropdown hook; pnpm check and pnpm build passed; 1280x720 and 1080x720 smoke checks completed; decision and architecture docs backfilled; Gemini review accepted completion."

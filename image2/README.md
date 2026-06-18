@@ -5,7 +5,11 @@
 ## 请求配置
 
 - 请求网址默认是 `https://api.openai.com`。
-- 请求网址留空时，也会回退到 `https://api.openai.com`。
+- GitHub Pages 直连 OpenAI 会被浏览器 CORS 预检拦截，线上使用时需要填写你自己的 HTTPS 代理地址。
+- 页面支持两种代理配置方式：
+  - 在 `config.js` 里设置 `window.IMAGE2_API_BASE = "https://你的代理地址"`。
+  - 访问页面时追加 `?apiBase=https%3A%2F%2F你的代理地址`。
+- 请求网址留空时，会回退到当前默认地址。
 - 页面实际请求路径会根据模式自动拼接：
   - 文生图：`{请求网址}/v1/images/generations`
   - 图生图：`{请求网址}/v1/images/edits`
@@ -61,7 +65,29 @@
 
 ## 注意事项
 
-- 浏览器直连 OpenAI 可能遇到 CORS 限制，生产环境建议使用自己的同源服务端代理。
+- 浏览器直连 OpenAI 会遇到 CORS 限制；GitHub Pages 是静态托管，无法在 Pages 侧为 OpenAI 响应补 CORS 头。
+- 可以把 `openai-proxy-worker.js` 部署为 Cloudflare Worker，然后把 Worker 地址填入 `config.js`。
+- 生产环境建议使用自己的服务端代理，并按你的站点域名限制允许来源。
 - 不要把长期有效的 API Key 暴露给公开网页用户。
 - 图生图接口必须使用 `multipart/form-data`，不能手动设置 `Content-Type`，否则 boundary 可能错误。
 - 如果请求网址已经包含 `/v1`，页面会避免重复拼接 `/v1`。
+
+## GitHub Pages CORS 处理
+
+GitHub Pages 只能托管静态文件，不能处理 `OPTIONS` 预检，也不能修改 `api.openai.com` 的响应头。因此线上页面需要经过一个支持 CORS 的代理。
+
+最小流程：
+
+1. 在 Cloudflare Workers 创建一个 Worker。
+2. 把 `openai-proxy-worker.js` 的内容粘贴进去并部署。
+3. 得到类似 `https://your-openai-proxy.your-name.workers.dev` 的地址。
+4. 修改 `config.js`：
+
+```js
+window.IMAGE2_API_BASE = "https://your-openai-proxy.your-name.workers.dev";
+```
+
+部署后页面会请求：
+
+- 文生图：`https://your-openai-proxy.your-name.workers.dev/v1/images/generations`
+- 图生图：`https://your-openai-proxy.your-name.workers.dev/v1/images/edits`

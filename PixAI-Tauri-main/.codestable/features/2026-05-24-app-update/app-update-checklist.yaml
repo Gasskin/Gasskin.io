@@ -1,0 +1,57 @@
+feature: 2026-05-24-app-update
+created: 2026-05-24
+
+steps:
+  - action: "桌面更新底座：接入 Tauri updater 插件和权限"
+    exit_signal: "桌面端构建或 Rust 检查能识别 updater 配置，不因插件注册或 capability 缺失失败"
+    status: done
+  - action: "前端平台适配：封装版本读取、检查更新、下载安装和重启入口"
+    exit_signal: "浏览器环境有受控兜底，Tauri 环境调用路径集中在一个适配模块"
+    status: done
+  - action: "store 编排骨架：新增 appUpdate 状态和启动自动静默检查"
+    exit_signal: "测试能观察到状态从 idle/checking 进入 upToDate、available 或 error"
+    status: done
+  - action: "设置页静态结构：新增 AppUpdateSection 并覆盖无更新、有更新、失败、下载中状态"
+    exit_signal: "组件在现有设置栏宽度内不溢出，按钮状态清晰"
+    status: done
+  - action: "真实状态接入：设置页和侧边栏使用运行时版本与更新状态"
+    exit_signal: "启动后侧边栏版本与运行时版本一致，手动检查能更新区块状态"
+    status: done
+  - action: "验证与文档：补测试并更新 README 的发布 / updater 配置说明"
+    exit_signal: "pnpm check 通过，发布说明能指导生成 updater artifact"
+    status: done
+
+checks:
+  - item: "AppUpdateState 覆盖 idle、checking、upToDate、available、downloading、downloaded、installing、error，并包含 currentVersion、availableUpdate、lastCheckedAt、errorMessage"
+    source: 名词契约
+    status: passed
+  - item: "pixaiApi.appUpdate 提供 getVersionInfo、check、downloadAndInstall、relaunch 或等价重启入口"
+    source: 名词契约
+    status: passed
+  - item: "启动自动检查只在应用生命周期内静默触发一次，失败不阻塞工作台"
+    source: 编排骨架
+    status: passed
+  - item: "手动检查复用同一检查流程，检查中禁用重复点击，失败展示可重试原因"
+    source: 流程级约束
+    status: passed
+  - item: "下载并重启只在 availableUpdate 存在时可触发，下载/安装中禁止并发触发"
+    source: 流程级约束
+    status: passed
+  - item: "Tauri 插件、发布配置说明、capability 权限、store 启动流程、设置页区块、侧边栏版本展示六个挂载点均已接入"
+    source: 挂载点
+    status: passed
+  - item: "不存在强制更新或阻止用户继续使用旧版本的分支"
+    source: 范围守护
+    status: passed
+  - item: "启动时不会自动调用下载、安装或重启"
+    source: 范围守护
+    status: passed
+  - item: "React 组件中没有硬编码发布源 URL 或 updater public key"
+    source: 范围守护
+    status: passed
+  - item: "没有新增渠道选择、灰度策略或测试版开关"
+    source: 范围守护
+    status: passed
+  - item: "无更新、有更新、检查失败、下载安装失败、浏览器 dev 兜底和侧边栏版本展示场景均有可观察验证"
+    source: 验收场景
+    status: passed

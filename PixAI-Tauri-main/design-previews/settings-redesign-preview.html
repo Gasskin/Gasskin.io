@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixAI Settings Redesign Preview</title>
+  <style>
+    :root {
+      --bg: #eef3ef;
+      --paper: rgba(255, 255, 255, 0.82);
+      --panel: #f8fbf8;
+      --line: #d5e1d8;
+      --text: #18211d;
+      --muted: #6a756f;
+      --mint: #1f9f79;
+      --mint-soft: #dcf3ea;
+      --warn: #f2eee2;
+      --shadow: 0 26px 80px rgba(27, 54, 42, 0.15);
+      --radius: 12px;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(31, 159, 121, 0.15), transparent 25%),
+        linear-gradient(135deg, #f4f8f5 0%, #edf3ef 45%, #f7f4ee 100%);
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr) 340px;
+      gap: 18px;
+      height: 100vh;
+      padding: 18px;
+    }
+
+    .nav,
+    .canvas,
+    .panel,
+    .modal {
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: var(--radius);
+      background: var(--paper);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px 16px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 6px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand strong { font-size: 18px; }
+    .brand span, .muted { color: var(--muted); font-size: 12px; }
+
+    .nav-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .nav-card.active {
+      border-color: #b9e4d4;
+      background: #effaf5;
+    }
+
+    .canvas {
+      position: relative;
+      display: grid;
+      grid-template-rows: 56px 1fr;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .toolbar .chips,
+    .row,
+    .tab-list,
+    .toggle,
+    .provider-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chip,
+    .seg button,
+    .ghost,
+    .primary {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .chip.active,
+    .seg button.active {
+      border-color: #bde6d8;
+      background: var(--mint-soft);
+      color: var(--mint);
+    }
+
+    .ghost {
+      border-radius: 10px;
+      background: #f7faf7;
+    }
+
+    .primary {
+      border-color: transparent;
+      background: var(--mint);
+      color: #fff;
+    }
+
+    .workspace {
+      display: grid;
+      place-items: center;
+      color: #9aa7a0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .panel {
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .panel h2,
+    .modal h2,
+    .section-head strong {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .section {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .select,
+    .field input {
+      min-height: 38px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .seg {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .adv {
+      display: grid;
+      gap: 10px;
+      padding-top: 4px;
+      border-top: 1px dashed var(--line);
+    }
+
+    .toggle {
+      justify-content: space-between;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .switch {
+      width: 40px;
+      height: 22px;
+      border-radius: 999px;
+      background: #dce5df;
+      position: relative;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 21px;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+    }
+
+    .switch.off::after { left: 3px; }
+    .switch.on { background: #8ed7bd; }
+
+    .modal-shell {
+      position: absolute;
+      inset: 40px 70px;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+
+    .modal {
+      width: min(860px, 100%);
+      height: 560px;
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      overflow: hidden;
+      pointer-events: auto;
+    }
+
+    .modal-nav {
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      padding: 18px 14px;
+      border-right: 1px solid var(--line);
+      background: rgba(250, 252, 250, 0.88);
+    }
+
+    .tab {
+      padding: 11px 12px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .tab.active {
+      border-color: #bde6d8;
+      background: var(--mint-soft);
+      color: var(--mint);
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-width: 0;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-content {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      overflow: auto;
+      padding: 18px 20px 22px;
+    }
+
+    .status-card,
+    .provider-card {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .status-card.highlight {
+      border-color: #c6e7da;
+      background: linear-gradient(135deg, #eff9f4 0%, #fafcf9 100%);
+    }
+
+    .provider-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .provider-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--mint-soft);
+      color: var(--mint);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .warn-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1px solid #eadcc0;
+      border-radius: 12px;
+      background: var(--warn);
+      color: #6f5c2c;
+      font-size: 13px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="nav">
+      <div class="brand">
+        <strong>PixAI</strong>
+        <span>会话与导航仍留在左侧，设置从“工作流参数”与“全局配置”分层。</span>
+      </div>
+      <div class="nav-card active">
+        <strong>工作台</strong>
+        <div class="muted">当前会话参数留在右侧高频区。</div>
+      </div>
+      <div class="nav-card">
+        <strong>图库</strong>
+        <div class="muted">不受设置重构影响。</div>
+      </div>
+      <div class="nav-card">
+        <strong>提示词库</strong>
+        <div class="muted">全局设置通过齿轮入口打开。</div>
+      </div>
+    </aside>
+
+    <main class="canvas">
+      <div class="toolbar">
+        <div class="chips">
+          <button class="ghost">设置</button>
+          <button class="chip active">工作台</button>
+          <button class="chip">图库</button>
+          <button class="chip">提示词库</button>
+        </div>
+        <button class="primary">新建会话</button>
+      </div>
+      <div class="workspace">这里仍是你的主工作画布，设置只保留必要高频项。</div>
+
+      <div class="modal-shell">
+        <section class="modal" aria-label="全局设置预览">
+          <nav class="modal-nav">
+            <div class="tab">常规</div>
+            <div class="tab">通知</div>
+            <div class="tab active">服务</div>
+            <div class="tab">扩展</div>
+          </nav>
+          <div class="modal-body">
+            <div class="modal-head">
+              <div>
+                <h2>全局设置 / 服务</h2>
+                <div class="muted">Provider 维护迁出工作区，只在这里集中管理。</div>
+              </div>
+              <button class="ghost">关闭</button>
+            </div>
+            <div class="modal-content">
+              <div class="status-card highlight">
+                <strong>默认生成引擎</strong>
+                <div class="row">
+                  <div class="select">图片 Provider: 本地 ComfyUI</div>
+                  <div class="select">提示词 Provider: GPT-4.1 Prompt</div>
+                </div>
+                <div class="muted">工作区右侧只显示这些结果摘要，不再承载完整维护表单。</div>
+              </div>
+
+              <div class="provider-grid">
+                <div class="provider-card">
+                  <header>
+                    <div>
+                      <strong>本地 ComfyUI</strong>
+                      <div class="muted">http://127.0.0.1:8188 · 默认图片生成</div>
+                    </div>
+                    <span class="badge">当前默认</span>
+                  </header>
+                  <div class="provider-actions">
+                    <button class="ghost">编辑</button>
+                    <button class="ghost">设为提示词</button>
+                    <button class="ghost">删除</button>
+                  </div>
+                </div>
+
+                <div class="provider-card">
+                  <header>
+                    <div>
+                      <strong>OpenAI Compatible</strong>
+                      <div class="muted">https://api.example.com · 默认提示词助手</div>
+                    </div>
+                    <span class="badge">提示词默认</span>
+                  </header>
+                  <div class="provider-actions">
+                    <button class="ghost">编辑</button>
+                    <button class="ghost">设为图片</button>
+                    <button class="ghost">删除</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="warn-card">
+                <span>这里也会承载 API Key、端点、模型默认值等低频配置，不再挤进工作区右栏。</span>
+                <button class="primary">新增 Provider</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <aside class="panel">
+      <div class="section">
+        <div class="section-head">
+          <strong>引擎</strong>
+          <span class="muted">高频</span>
+        </div>
+        <div class="field">
+          <label>图片模型</label>
+          <div class="select">gpt-image-1 / SDXL Turbo ▾</div>
+        </div>
+        <div class="field">
+          <label>提示词模型</label>
+          <div class="select">gpt-4.1-mini ▾</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <strong>基础参数</strong>
+          <span class="muted">常用</span>
+        </div>
+        <div class="field">
+          <label>长宽比</label>
+          <div class="seg">
+            <button class="active">1:1</button>
+            <button>3:2</button>
+            <button>2:3</button>
+            <button>16:9</button>
+            <button>9:16</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field" style="flex:1">
+            <label>分辨率</label>
+            <div class="select">1024 × 1024 ▾</div>
+          </div>
+          <div class="field" style="width:92px">
+            <label>数量</label>
+            <input value="4" />
+          </div>
+        </div>
+        <div class="field">
+          <label>质量</label>
+          <div class="select">高质量 ▾</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <strong>高级设置</strong>
+          <span class="muted">默认折叠</span>
+        </div>
+        <div class="adv">
+          <div class="row">
+            <div class="field" style="flex:1">
+              <label>输出格式</label>
+              <div class="select">PNG ▾</div>
+            </div>
+            <div class="field" style="width:96px">
+              <label>重试</label>
+              <input value="2" />
+            </div>
+          </div>
+          <div class="toggle"><span>流式输出</span><span class="switch off"></span></div>
+          <div class="toggle"><span>安全审核</span><span class="switch on"></span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <strong>会话选项</strong>
+          <span class="muted">轻量</span>
+        </div>
+        <div class="toggle"><span>自动写入历史</span><span class="switch on"></span></div>
+        <div class="toggle"><span>保留失败详情</span><span class="switch on"></span></div>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>

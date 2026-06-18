@@ -1,0 +1,48 @@
+feature: 2026-06-03-macos-distribution-support
+created: 2026-06-03
+
+steps:
+  - action: "脚本微重构：抽出共享 updater 资产发现 / manifest helper，先保持 Windows 行为不变"
+    exit_signal: "现有 Windows 的本地与正式 updater 命令在资产发现、latest.json 结构和上传行为上无回归"
+    status: completed
+  - action: "平台契约：补齐桌面端 OS / arch 信息读取，解除 installerType-only 假设"
+    exit_signal: "Windows 仍能识别 msi/nsis，macOS 至少能稳定返回 os=macos 与正确架构"
+    status: completed
+  - action: "macOS 构建基线：在 macOS 环境完成 .app / .dmg smoke build，并收敛 Windows-only 依赖"
+    exit_signal: "tauri build 的 macOS bundle 路径稳定通过，或失败点已被代码层明确修复"
+    status: completed
+  - action: "更新路径：让 AppUpdateService 支持 darwin updater target 与 macOS 的 dmg fallback"
+    exit_signal: "macOS 检查更新不再因 unknown installer type 直接失败，fallback 资产指向正确平台"
+    status: completed
+  - action: "发布路径：本地 / 正式 updater 脚本支持 darwin 资产、manifest merge 和跨平台顺序化发布"
+    exit_signal: "同一 tag 先发 Windows 再发 macOS 或反过来，都不会丢失另一平台的 latest.json 条目"
+    status: completed
+  - action: "文档与验证：更新 README，形成 macOS 构建 / 发布 / updater 的最小执行手册"
+    exit_signal: "实现者只看 README + checklist 就能在 macOS 环境复现构建和发布演练"
+    status: completed
+
+checks:
+  - item: "桌面端平台契约至少覆盖 os、arch 和 Windows installerType；macOS 不再依赖 msi/nsis 才能检查更新"
+    source: 名词契约
+    status: completed
+  - item: "AppUpdateService 的 updater target 选择同时支持 Windows 与 macOS，且 GitHub fallback 会按平台选择手动安装资产"
+    source: 编排骨架
+    status: completed
+  - item: "release 与 local updater 脚本都能发现 darwin updater 资产，并正确写入 latest.json 平台 key"
+    source: 挂载点
+    status: completed
+  - item: "跨平台分机发布同一 tag 时，latest.json 会做 manifest merge，不会覆盖已存在的其他平台条目"
+    source: 流程级约束
+    status: completed
+  - item: "Windows 现有 updater / GitHub fallback 路径不回归"
+    source: 范围守护
+    status: completed
+  - item: "macOS smoke build 至少覆盖 .app 或 .dmg 产物生成，且失败原因不再停留在 Windows-only 依赖"
+    source: 验收场景
+    status: completed
+  - item: "README 已补齐 macOS 的构建、手动安装资产、updater 资产和正式发布说明"
+    source: 文档交付
+    status: completed
+  - item: "不新增 Linux 发布范围，不引入 App Store 渠道，也不改动无关业务功能"
+    source: 范围守护
+    status: completed

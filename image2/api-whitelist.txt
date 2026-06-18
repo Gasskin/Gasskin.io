@@ -1,0 +1,3 @@
+https://api.openai.com
+https://flux.infpro.me
+https://ai.input.im

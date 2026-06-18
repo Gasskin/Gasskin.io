@@ -1,4 +1,12 @@
-const DEFAULT_BASE_URL = "https://api.openai.com";
+const DEFAULT_UPSTREAM_BASE_URL = "https://api.openai.com";
+const PAGE_PARAMS = new URLSearchParams(window.location.search);
+const CONFIGURED_PROXY_BASE_URL =
+  PAGE_PARAMS.get("proxyBase") ||
+  PAGE_PARAMS.get("apiBase") ||
+  window.IMAGE2_PROXY_BASE ||
+  window.IMAGE2_API_BASE ||
+  "";
+const WHITELIST_PATH = "api-whitelist.txt";
 const GENERATE_PATH = "/v1/images/generations";
 const EDIT_PATH = "/v1/images/edits";
 const MAX_EDGE = 3840;
@@ -40,15 +48,74 @@ let runSeq = 0;
 let previewModal = null;
 let referenceSeq = 0;
 const referenceImages = [];
+let allowedBaseUrls = [DEFAULT_UPSTREAM_BASE_URL];
+
+function cleanBaseUrl(value) {
+  return (value || "").trim().replace(/\/+$/, "");
+}
 
 function normalizeBaseUrl(value) {
-  return (value || DEFAULT_BASE_URL).trim().replace(/\/+$/, "") || DEFAULT_BASE_URL;
+  return cleanBaseUrl(value) || DEFAULT_UPSTREAM_BASE_URL;
+}
+
+function parseWhitelist(text) {
+  const urls = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))
+    .map(cleanBaseUrl)
+    .filter((line) => {
+      try {
+        const url = new URL(line);
+        return url.protocol === "https:" || url.protocol === "http:";
+      } catch {
+        return false;
+      }
+    });
+
+  return Array.from(new Set(urls));
+}
+
+function renderBaseUrlOptions(urls) {
+  const selected = normalizeBaseUrl(els.baseUrl.value);
+  els.baseUrl.replaceChildren();
+
+  urls.forEach((url) => {
+    const option = document.createElement("option");
+    option.value = url;
+    option.textContent = url;
+    els.baseUrl.appendChild(option);
+  });
+
+  els.baseUrl.value = urls.includes(selected) ? selected : urls[0] || DEFAULT_UPSTREAM_BASE_URL;
+}
+
+async function loadBaseUrlWhitelist() {
+  try {
+    const response = await fetch(WHITELIST_PATH, { cache: "no-store" });
+    if (response.ok) {
+      const urls = parseWhitelist(await response.text());
+      if (urls.length) allowedBaseUrls = urls;
+    }
+  } catch {
+    // Keep the built-in default if the whitelist file cannot be loaded.
+  }
+
+  renderBaseUrlOptions(allowedBaseUrls);
 }
 
 function buildApiUrl(path) {
-  const baseUrl = normalizeBaseUrl(els.baseUrl.value);
-  const apiPath = baseUrl.endsWith("/v1") && path.startsWith("/v1/") ? path.slice(3) : path;
-  return `${baseUrl}${apiPath}`;
+  const upstreamBaseUrl = normalizeBaseUrl(els.baseUrl.value);
+  const apiPath = upstreamBaseUrl.endsWith("/v1") && path.startsWith("/v1/") ? path.slice(3) : path;
+  const proxyBaseUrl = cleanBaseUrl(CONFIGURED_PROXY_BASE_URL);
+
+  if (!proxyBaseUrl) {
+    return `${upstreamBaseUrl}${apiPath}`;
+  }
+
+  const url = new URL(`${proxyBaseUrl}${apiPath}`);
+  url.searchParams.set("target", upstreamBaseUrl);
+  return url.toString();
 }
 
 function parseRatio(value) {
@@ -562,5 +629,6 @@ els.sizeTier.addEventListener("change", updateFinalSize);
 els.aspectRatio.addEventListener("change", updateFinalSize);
 els.outputFormat.addEventListener("change", onFormatChange);
 
+void loadBaseUrlWhitelist();
 updateFinalSize();
 onFormatChange();
