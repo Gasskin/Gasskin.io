@@ -1,18 +1,22 @@
 # 图片生成页面说明
 
-`image2` 是一个静态图片生成页面，用于调用 OpenAI Images API。页面支持文生图和图生图，用户在浏览器内填写请求地址、token、提示词和生成参数后发起请求。
+`image2` 是一个静态图片生成页面，用于调用 OpenAI Images API 或兼容接口。页面支持文生图和图生图，用户在浏览器内选择请求地址、填写 token、提示词和生成参数后发起请求。
 
 ## 请求配置
 
-- 请求网址默认是 `https://api.openai.com`。
-- GitHub Pages 直连 OpenAI 会被浏览器 CORS 预检拦截，线上使用时需要填写你自己的 HTTPS 代理地址。
-- 页面支持两种代理配置方式：
-  - 在 `config.js` 里设置 `window.IMAGE2_API_BASE = "https://你的代理地址"`。
-  - 访问页面时追加 `?apiBase=https%3A%2F%2F你的代理地址`。
-- 请求网址留空时，会回退到当前默认地址。
+- 请求网址来自 `api-whitelist.txt`，页面只允许选择白名单中的地址。
+- 当前白名单包含：
+  - `https://api.openai.com`
+  - `https://flux.infpro.me`
+  - `https://ai.input.im`
+- GitHub Pages 直连这些接口可能被浏览器 CORS 预检拦截，线上使用时需要配置 Worker 代理。
+- 代理配置方式：
+  - 在 `config.js` 里设置 `window.IMAGE2_PROXY_BASE = "https://你的代理地址"`。
+  - 访问页面时追加 `?proxyBase=https%3A%2F%2F你的代理地址`。
 - 页面实际请求路径会根据模式自动拼接：
   - 文生图：`{请求网址}/v1/images/generations`
   - 图生图：`{请求网址}/v1/images/edits`
+- 配置 Worker 代理后，页面会把选中的白名单地址作为 `target` 参数传给 Worker，由 Worker 校验后转发。
 - Token 会作为 `Authorization: Bearer <token>` 发送。
 - Token 只保存在当前页面运行时内存中，不会写入本地文件。
 
@@ -65,8 +69,9 @@
 
 ## 注意事项
 
-- 浏览器直连 OpenAI 会遇到 CORS 限制；GitHub Pages 是静态托管，无法在 Pages 侧为 OpenAI 响应补 CORS 头。
+- 浏览器直连目标 API 可能会遇到 CORS 限制；GitHub Pages 是静态托管，无法在 Pages 侧为目标 API 响应补 CORS 头。
 - 可以把 `openai-proxy-worker.js` 部署为 Cloudflare Worker，然后把 Worker 地址填入 `config.js`。
+- Worker 内部也维护了同样的白名单，避免它变成可请求任意地址的开放代理。
 - 生产环境建议使用自己的服务端代理，并按你的站点域名限制允许来源。
 - 不要把长期有效的 API Key 暴露给公开网页用户。
 - 图生图接口必须使用 `multipart/form-data`，不能手动设置 `Content-Type`，否则 boundary 可能错误。
@@ -74,20 +79,20 @@
 
 ## GitHub Pages CORS 处理
 
-GitHub Pages 只能托管静态文件，不能处理 `OPTIONS` 预检，也不能修改 `api.openai.com` 的响应头。因此线上页面需要经过一个支持 CORS 的代理。
+GitHub Pages 只能托管静态文件，不能处理 `OPTIONS` 预检，也不能修改目标 API 的响应头。因此线上页面需要经过一个支持 CORS 的代理。
 
 最小流程：
 
 1. 在 Cloudflare Workers 创建一个 Worker。
 2. 把 `openai-proxy-worker.js` 的内容粘贴进去并部署。
-3. 得到类似 `https://your-openai-proxy.your-name.workers.dev` 的地址。
+3. 得到类似 `https://your-image-proxy.your-name.workers.dev` 的地址。
 4. 修改 `config.js`：
 
 ```js
-window.IMAGE2_API_BASE = "https://your-openai-proxy.your-name.workers.dev";
+window.IMAGE2_PROXY_BASE = "https://your-image-proxy.your-name.workers.dev";
 ```
 
-部署后页面会请求：
+部署后页面会请求 Worker，并附带选中的目标地址：
 
-- 文生图：`https://your-openai-proxy.your-name.workers.dev/v1/images/generations`
-- 图生图：`https://your-openai-proxy.your-name.workers.dev/v1/images/edits`
+- 文生图：`https://your-image-proxy.your-name.workers.dev/v1/images/generations?target=https%3A%2F%2Fapi.openai.com`
+- 图生图：`https://your-image-proxy.your-name.workers.dev/v1/images/edits?target=https%3A%2F%2Fapi.openai.com`
