@@ -45,7 +45,11 @@ const els = {
   countPlus: $("countPlus"),
   imageList: $("imageList"),
   generateBtn: $("generateBtn"),
-  stopBtn: $("stopBtn"),
+  tokenClear: $("tokenClear"),
+  pagination: $("pagination"),
+  pagePrev: $("pagePrev"),
+  pageNext: $("pageNext"),
+  pageInfo: $("pageInfo"),
 };
 
 let activeAbort = null;
@@ -54,6 +58,9 @@ let previewModal = null;
 let referenceSeq = 0;
 const referenceImages = [];
 let allowedBaseUrls = DEFAULT_ALLOWED_BASE_URLS;
+let runItems = [];
+let currentPage = 1;
+let pageSize = 4;
 
 function cleanBaseUrl(value) {
   return (value || "").trim().replace(/\/+$/, "");
@@ -225,9 +232,46 @@ function setEmptyVisible(visible) {
   if (empty) empty.classList.toggle("hidden", !visible);
 }
 
+function getResponsivePageSize() {
+  const width = els.imageList.clientWidth || window.innerWidth;
+  if (width >= 920) return 4;
+  if (width >= 640) return 3;
+  return 2;
+}
+
+function updatePageSize() {
+  const nextSize = getResponsivePageSize();
+  if (nextSize === pageSize) return;
+  const firstVisibleIndex = (currentPage - 1) * pageSize;
+  pageSize = nextSize;
+  currentPage = Math.floor(firstVisibleIndex / pageSize) + 1;
+  renderPagination();
+}
+
+function renderPagination() {
+  const totalRuns = runItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalRuns / pageSize));
+  currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  runItems.forEach((item, index) => {
+    const visible = index >= (currentPage - 1) * pageSize && index < currentPage * pageSize;
+    item.classList.toggle("hidden", !visible);
+  });
+
+  setEmptyVisible(totalRuns === 0);
+  els.pagination.classList.toggle("hidden", totalRuns <= pageSize);
+  els.pageInfo.textContent = `第 ${currentPage} / ${totalPages} 页 · 共 ${totalRuns} 条`;
+  els.pagePrev.disabled = currentPage <= 1;
+  els.pageNext.disabled = currentPage >= totalPages;
+}
+
+function changePage(delta) {
+  currentPage += delta;
+  renderPagination();
+}
+
 function createRunItem(payload) {
   runSeq += 1;
-  setEmptyVisible(false);
   const modeLabel = payload.mode === "edit" ? `图生图 · ${payload.referenceCount} 张参考图` : "文生图";
 
   const item = document.createElement("article");
@@ -247,6 +291,9 @@ function createRunItem(payload) {
     </div>
   `;
   els.imageList.prepend(item);
+  runItems.unshift(item);
+  currentPage = 1;
+  renderPagination();
   return item;
 }
 
@@ -336,7 +383,8 @@ function deleteImage(figure, item) {
   figure.remove();
   if (!item.querySelector(".thumb")) {
     item.remove();
-    setEmptyVisible(!els.imageList.querySelector(".run-item"));
+    runItems = runItems.filter((runItem) => runItem !== item);
+    renderPagination();
   }
 }
 
@@ -488,7 +536,6 @@ async function onGenerate() {
   activeAbort?.abort();
   activeAbort = new AbortController();
   els.generateBtn.disabled = true;
-  els.stopBtn.disabled = false;
 
   const startedAt = Date.now();
   const waitingTimer = window.setInterval(() => {
@@ -554,13 +601,8 @@ async function onGenerate() {
   } finally {
     window.clearInterval(waitingTimer);
     els.generateBtn.disabled = false;
-    els.stopBtn.disabled = true;
     activeAbort = null;
   }
-}
-
-function onStop() {
-  activeAbort?.abort();
 }
 
 function onFormatChange() {
@@ -618,7 +660,10 @@ function escapeHtml(value) {
 }
 
 els.generateBtn.addEventListener("click", () => void onGenerate());
-els.stopBtn.addEventListener("click", onStop);
+els.tokenClear.addEventListener("click", () => {
+  els.token.value = "";
+  els.token.focus();
+});
 els.referenceImages.addEventListener("change", () => {
   addReferenceFiles(Array.from(els.referenceImages.files || []));
   els.referenceImages.value = "";
@@ -633,7 +678,11 @@ els.count.addEventListener("change", () => setCount(els.count.value));
 els.sizeTier.addEventListener("change", updateFinalSize);
 els.aspectRatio.addEventListener("change", updateFinalSize);
 els.outputFormat.addEventListener("change", onFormatChange);
+els.pagePrev.addEventListener("click", () => changePage(-1));
+els.pageNext.addEventListener("click", () => changePage(1));
+window.addEventListener("resize", updatePageSize);
 
 void loadBaseUrlWhitelist();
 updateFinalSize();
 onFormatChange();
+updatePageSize();

@@ -147,6 +147,59 @@ textarea {
   transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
 
+.select-wrap,
+.token-field {
+  position: relative;
+  display: block;
+}
+
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: .85rem;
+  top: 50%;
+  width: .55rem;
+  height: .55rem;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  pointer-events: none;
+  transform: translateY(-65%) rotate(45deg);
+}
+
+.select-wrap select {
+  min-height: 46px;
+  appearance: none;
+  padding-right: 2.4rem;
+  background:
+    linear-gradient(135deg, rgba(91, 141, 239, .16), rgba(91, 141, 239, 0) 42%),
+    #0f1219;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: .82rem;
+}
+
+.token-field input {
+  padding-right: 4.2rem;
+}
+
+.token-field button {
+  position: absolute;
+  right: .45rem;
+  top: 50%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: rgba(91, 141, 239, .12);
+  color: var(--accent);
+  padding: .22rem .45rem;
+  font-size: .72rem;
+  transform: translateY(-50%);
+}
+
+.token-field button:hover {
+  border-color: rgba(91, 141, 239, .4);
+  background: rgba(91, 141, 239, .2);
+}
+
 textarea {
   resize: vertical;
   min-height: 130px;
@@ -324,6 +377,27 @@ input[readonly] {
   gap: .75rem;
 }
 
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-head h2 {
+  margin-bottom: .35rem;
+}
+
+.section-head .note {
+  margin-top: 0;
+}
+
+.section-head .primary {
+  min-width: 112px;
+  min-height: 46px;
+}
+
 .primary,
 .ghost {
   border: 1px solid transparent;
@@ -361,6 +435,26 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: .9rem;
+}
+
+.generate-card .image-list {
+  min-height: 72px;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.pagination button {
+  min-width: 88px;
+  padding: .48rem .7rem;
 }
 
 .run-item {
@@ -593,6 +687,14 @@ button:disabled {
   .top-row,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .section-head {
+    flex-direction: column;
+  }
+
+  .section-head .primary {
+    width: 100%;
   }
 
   .hero,
