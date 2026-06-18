@@ -9,6 +9,11 @@ const CONFIGURED_PROXY_BASE_URL =
 const WHITELIST_PATH = "api-whitelist.txt";
 const GENERATE_PATH = "/v1/images/generations";
 const EDIT_PATH = "/v1/images/edits";
+const DEFAULT_ALLOWED_BASE_URLS = [
+  "https://api.openai.com",
+  "https://flux.infpro.me",
+  "https://ai.input.im",
+];
 const MAX_EDGE = 3840;
 const MAX_PIXELS = 3840 * 2160;
 const MULTIPLE = 16;
@@ -48,7 +53,7 @@ let runSeq = 0;
 let previewModal = null;
 let referenceSeq = 0;
 const referenceImages = [];
-let allowedBaseUrls = [DEFAULT_UPSTREAM_BASE_URL];
+let allowedBaseUrls = DEFAULT_ALLOWED_BASE_URLS;
 
 function cleanBaseUrl(value) {
   return (value || "").trim().replace(/\/+$/, "");

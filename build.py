@@ -19,6 +19,7 @@ HOME_FILES = ("index.html", "pages.json")
 EXCLUDE_DIRS = {"docs", ".git", "__pycache__", "node_modules"}
 SKIP_NAMES = {"Readme", "__pycache__", "tushare-data"}
 SKIP_SUFFIXES = {".py", ".pyc", ".md", ".txt", ".bat"}
+PUBLISH_TXT_FILES = {"api-whitelist.txt"}
 
 
 
@@ -36,6 +37,8 @@ def discover_plugins() -> list[Path]:
 def should_publish(plugin_dir: Path, item: Path) -> bool:
     if item.name in SKIP_NAMES or item.name.startswith("."):
         return False
+    if item.is_file() and item.name in PUBLISH_TXT_FILES:
+        return True
     if item.is_file() and item.suffix.lower() in SKIP_SUFFIXES:
         return False
     return True
