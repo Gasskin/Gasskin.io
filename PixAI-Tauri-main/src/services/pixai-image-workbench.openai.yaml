@@ -1,7 +1,0 @@
-interface:
-  display_name: "PixAI Image Workbench"
-  short_description: "Route Codex image tasks through PixAI"
-  default_prompt: "Use $pixai-image-workbench to generate one image through the local PixAI desktop workbench."
-
-policy:
-  allow_implicit_invocation: true
