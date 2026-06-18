@@ -25,7 +25,7 @@
           <input id="token" type="password" autocomplete="off" placeholder="请求鉴权 token" />
         </label>
       </div>
-      <p class="note">无参考图时请求 <code>{请求网址}/v1/images/generations</code>；上传参考图后请求 <code>{请求网址}/v1/images/edits</code>。请求网址留空时默认使用 <code>https://api.openai.com</code>。</p>
+      <p class="note">请求网址留空时默认使用 <code>https://api.openai.com</code>。</p>
     </section>
 
     <section class="card" aria-labelledby="prompt-heading">
@@ -94,14 +94,19 @@
         </label>
         <label>
           背景
-          <select id="background">
+          <select id="background" disabled>
             <option value="auto" selected>auto</option>
-            <option value="opaque">opaque</option>
           </select>
         </label>
         <label>
           图片数量
-          <input id="count" type="number" min="1" max="10" value="1" />
+          <div class="count-stepper">
+            <input id="count" type="number" min="1" max="10" value="1" inputmode="numeric" />
+            <div class="count-buttons">
+              <button id="countMinus" type="button" aria-label="减少图片数量">−</button>
+              <button id="countPlus" type="button" aria-label="增加图片数量">+</button>
+            </div>
+          </div>
         </label>
       </div>
     </section>

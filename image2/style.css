@@ -166,6 +166,51 @@ input[readonly] {
   cursor: not-allowed;
 }
 
+.count-stepper {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto;
+  gap: .45rem;
+  align-items: stretch;
+}
+
+.count-buttons {
+  display: grid;
+  grid-template-columns: 52px 52px;
+  gap: .45rem;
+}
+
+.count-stepper button {
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, .04);
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.count-stepper button:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+.count-stepper input {
+  min-height: 46px;
+  text-align: center;
+}
+
+.count-stepper input::-webkit-outer-spin-button,
+.count-stepper input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.count-stepper input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
 .note {
   margin: .85rem 0 0;
   font-size: .82rem;

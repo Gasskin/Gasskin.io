@@ -28,6 +28,8 @@ const els = {
   outputCompression: $("outputCompression"),
   background: $("background"),
   count: $("count"),
+  countMinus: $("countMinus"),
+  countPlus: $("countPlus"),
   imageList: $("imageList"),
   generateBtn: $("generateBtn"),
   stopBtn: $("stopBtn"),
@@ -494,6 +496,22 @@ function onFormatChange() {
   els.outputCompression.disabled = !canCompress;
 }
 
+function clampCount(value) {
+  const min = Number.parseInt(els.count.min, 10) || 1;
+  const max = Number.parseInt(els.count.max, 10) || 10;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed)) return min;
+  return Math.max(min, Math.min(max, parsed));
+}
+
+function setCount(value) {
+  els.count.value = String(clampCount(value));
+}
+
+function stepCount(delta) {
+  setCount(clampCount(els.count.value) + delta);
+}
+
 function hasDraggedFiles(event) {
   return Array.from(event.dataTransfer?.types || []).includes("Files");
 }
@@ -537,6 +555,9 @@ els.referenceDropzone.addEventListener("dragenter", onReferenceDragOver);
 els.referenceDropzone.addEventListener("dragover", onReferenceDragOver);
 els.referenceDropzone.addEventListener("dragleave", onReferenceDragLeave);
 els.referenceDropzone.addEventListener("drop", onReferenceDrop);
+els.countMinus.addEventListener("click", () => stepCount(-1));
+els.countPlus.addEventListener("click", () => stepCount(1));
+els.count.addEventListener("change", () => setCount(els.count.value));
 els.sizeTier.addEventListener("change", updateFinalSize);
 els.aspectRatio.addEventListener("change", updateFinalSize);
 els.outputFormat.addEventListener("change", onFormatChange);
