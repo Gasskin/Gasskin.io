@@ -45,6 +45,7 @@ const els = {
   countPlus: $("countPlus"),
   imageList: $("imageList"),
   generateBtn: $("generateBtn"),
+  clearRunsBtn: $("clearRunsBtn"),
   tokenClear: $("tokenClear"),
   pagination: $("pagination"),
   pagePrev: $("pagePrev"),
@@ -263,10 +264,25 @@ function renderPagination() {
   els.pageInfo.textContent = `第 ${currentPage} / ${totalPages} 页 · 共 ${totalRuns} 条`;
   els.pagePrev.disabled = currentPage <= 1;
   els.pageNext.disabled = currentPage >= totalPages;
+  els.clearRunsBtn.disabled = totalRuns === 0;
 }
 
 function changePage(delta) {
   currentPage += delta;
+  renderPagination();
+}
+
+function removeRunItem(item) {
+  item.remove();
+  runItems = runItems.filter((runItem) => runItem !== item);
+  renderPagination();
+}
+
+function clearRunItems() {
+  activeAbort?.abort();
+  runItems.forEach((item) => item.remove());
+  runItems = [];
+  currentPage = 1;
   renderPagination();
 }
 
@@ -282,7 +298,10 @@ function createRunItem(payload) {
         <strong>生成请求 #${runSeq}</strong>
         <span>${escapeHtml(modeLabel)} · ${escapeHtml(payload.size)} · ${escapeHtml(payload.aspectRatio)} · ${escapeHtml(payload.quality)} · ${escapeHtml(payload.output_format)} · ${payload.n} 张</span>
       </div>
-      <span class="badge" data-state="running">准备中</span>
+      <div class="run-actions">
+        <span class="badge" data-state="running">准备中</span>
+        <button type="button" class="run-remove" aria-label="删除生成请求 #${runSeq}">删除</button>
+      </div>
     </div>
     <div class="run-body">
       <div class="progress"><span></span></div>
@@ -290,6 +309,7 @@ function createRunItem(payload) {
       <div class="thumb-grid"></div>
     </div>
   `;
+  item.querySelector(".run-remove").addEventListener("click", () => removeRunItem(item));
   els.imageList.prepend(item);
   runItems.unshift(item);
   currentPage = 1;
@@ -382,9 +402,7 @@ function renderImages(item, images, format, prompt) {
 function deleteImage(figure, item) {
   figure.remove();
   if (!item.querySelector(".thumb")) {
-    item.remove();
-    runItems = runItems.filter((runItem) => runItem !== item);
-    renderPagination();
+    removeRunItem(item);
   }
 }
 
@@ -660,6 +678,7 @@ function escapeHtml(value) {
 }
 
 els.generateBtn.addEventListener("click", () => void onGenerate());
+els.clearRunsBtn.addEventListener("click", clearRunItems);
 els.tokenClear.addEventListener("click", () => {
   els.token.value = "";
   els.token.focus();

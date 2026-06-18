@@ -126,7 +126,10 @@
           <h2 id="generate-heading">生成</h2>
           <p class="note">如果浏览器提示 CORS，说明当前请求仍然直连目标 API；请确认已配置支持 CORS 预检的 Worker 代理地址。</p>
         </div>
-        <button id="generateBtn" type="button" class="primary">生成</button>
+        <div class="generate-actions">
+          <button id="clearRunsBtn" type="button" class="ghost danger">清空</button>
+          <button id="generateBtn" type="button" class="primary">生成</button>
+        </div>
       </div>
       <div id="imageList" class="image-list" aria-live="polite">
         <div class="empty">生成任务会显示在这里。</div>

@@ -398,6 +398,17 @@ input[readonly] {
   min-height: 46px;
 }
 
+.generate-actions,
+.run-actions {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.generate-actions {
+  flex-shrink: 0;
+}
+
 .primary,
 .ghost {
   border: 1px solid transparent;
@@ -424,6 +435,17 @@ input[readonly] {
 .ghost:hover {
   color: var(--text);
   border-color: #3a4a60;
+}
+
+.ghost.danger,
+.run-remove {
+  color: var(--danger);
+}
+
+.ghost.danger:hover,
+.run-remove:hover {
+  border-color: var(--danger);
+  background: rgba(248, 113, 113, .1);
 }
 
 button:disabled {
@@ -515,6 +537,15 @@ button:disabled {
 .badge[data-state="stopped"] {
   background: rgba(251, 191, 36, .12);
   color: var(--warning);
+}
+
+.run-remove {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .03);
+  padding: .2rem .55rem;
+  font-size: .78rem;
+  font-weight: 650;
 }
 
 .run-body {
@@ -695,6 +726,15 @@ button:disabled {
 
   .section-head .primary {
     width: 100%;
+  }
+
+  .generate-actions {
+    width: 100%;
+  }
+
+  .generate-actions .ghost,
+  .generate-actions .primary {
+    flex: 1;
   }
 
   .hero,
