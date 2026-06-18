@@ -7,6 +7,13 @@
     "path": "seedance/index.html"
   },
   {
+    "id": "image2",
+    "title": "图片生成",
+    "icon": "🖼️",
+    "description": "图片生成页面",
+    "path": "image2/index.html"
+  },
+  {
     "id": "stock",
     "title": "股票行情图",
     "icon": "📈",
