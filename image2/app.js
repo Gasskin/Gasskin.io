@@ -1,11 +1,4 @@
 const DEFAULT_UPSTREAM_BASE_URL = "https://api.openai.com";
-const PAGE_PARAMS = new URLSearchParams(window.location.search);
-const CONFIGURED_PROXY_BASE_URL =
-  PAGE_PARAMS.get("proxyBase") ||
-  PAGE_PARAMS.get("apiBase") ||
-  window.IMAGE2_PROXY_BASE ||
-  window.IMAGE2_API_BASE ||
-  "";
 const WHITELIST_PATH = "api-whitelist.txt";
 const GENERATE_PATH = "/v1/images/generations";
 const EDIT_PATH = "/v1/images/edits";
@@ -120,15 +113,7 @@ async function loadBaseUrlWhitelist() {
 function buildApiUrl(path) {
   const upstreamBaseUrl = normalizeBaseUrl(els.baseUrl.value);
   const apiPath = upstreamBaseUrl.endsWith("/v1") && path.startsWith("/v1/") ? path.slice(3) : path;
-  const proxyBaseUrl = cleanBaseUrl(CONFIGURED_PROXY_BASE_URL);
-
-  if (!proxyBaseUrl) {
-    return `${upstreamBaseUrl}${apiPath}`;
-  }
-
-  const url = new URL(`${proxyBaseUrl}${apiPath}`);
-  url.searchParams.set("target", upstreamBaseUrl);
-  return url.toString();
+  return `${upstreamBaseUrl}${apiPath}`;
 }
 
 function parseRatio(value) {

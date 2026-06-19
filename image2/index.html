@@ -34,7 +34,7 @@
           </span>
         </label>
       </div>
-      <p class="note">可选请求网址来自 <code>api-whitelist.txt</code>。GitHub Pages 访问时会通过 <code>config.js</code> 中的 Worker 代理转发。</p>
+      <p class="note">可选请求网址来自 <code>api-whitelist.txt</code>。请确保所选目标 API 已允许本站跨域调用。</p>
     </section>
 
     <section class="card" aria-labelledby="prompt-heading">
@@ -124,7 +124,7 @@
       <div class="section-head">
         <div>
           <h2 id="generate-heading">生成</h2>
-          <p class="note">如果浏览器提示 CORS，说明当前请求仍然直连目标 API；请确认已配置支持 CORS 预检的 Worker 代理地址。</p>
+          <p class="note">如果浏览器提示 CORS，说明所选目标 API 尚未允许本站跨域调用，需要在目标 API 后台放开 CORS。</p>
         </div>
         <div class="generate-actions">
           <button id="clearRunsBtn" type="button" class="ghost danger">清空</button>
@@ -142,7 +142,6 @@
     </section>
   </main>
 
-  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
