@@ -30,10 +30,9 @@ from typing import Any
 
 PRICE_FIELDS = "ts_code,trade_date,open,high,low,close"
 OUTPUT_BARS = 21          # 展示的交易日数量
-MA_SHORT = 20             # 短期均线（用于副图日变化）
-MA_LONG = 60              # 长期均线（画在 K 图上）
-# 为了给最旧的展示日也算出 60 日均线，需要 OUTPUT_BARS + (MA_LONG-1) = 80 个交易日。
-NEEDED_BARS = OUTPUT_BARS + MA_LONG - 1
+MA_DELTA = 50             # 副图展示的均线日变化周期
+# 为了给最旧的展示日也算出 50 日均线变化，需要 OUTPUT_BARS + MA_DELTA = 71 个交易日。
+NEEDED_BARS = OUTPUT_BARS + MA_DELTA
 
 
 @dataclass
@@ -362,10 +361,9 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
         return []
     full = full.sort_values("trade_date", ascending=True)
 
-    # 收盘价的 20 日 / 60 日均线，以及 20 日均线的日变化。
-    full["ma_short"] = full["close"].rolling(MA_SHORT).mean()
-    full["ma_long"] = full["close"].rolling(MA_LONG).mean()
-    full["ma_short_delta"] = full["ma_short"].diff()
+    # 收盘价的 50 日均线日变化。
+    full["ma_delta"] = full["close"].rolling(MA_DELTA).mean()
+    full["ma_delta_change"] = full["ma_delta"].diff()
 
     window = full.tail(OUTPUT_BARS)
 
@@ -378,9 +376,7 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
                 "high": to_number(row["high"]),
                 "low": to_number(row["low"]),
                 "close": to_number(row["close"]),
-                "ma20": num_or_none(row["ma_short"]),
-                "ma60": num_or_none(row["ma_long"]),
-                "ma20_delta": num_or_none(row["ma_short_delta"]),
+                "ma50_delta": num_or_none(row["ma_delta_change"]),
             }
         )
     return records
@@ -469,7 +465,7 @@ def main() -> int:
 
     print(f"代码数量: {len(entries)}")
     print(f"最新交易日候选: {display_date(t_date)}")
-    print(f"每个代码输出最新 {OUTPUT_BARS} 个交易日的 OHLC，并附 {MA_SHORT}/{MA_LONG} 日均线及 {MA_SHORT} 日均线日变化。")
+    print(f"每个代码输出最新 {OUTPUT_BARS} 个交易日的 OHLC，并附 {MA_DELTA} 日均线日变化。")
     print(f"输出目录: {args.out_dir}")
 
     ok_count = 0

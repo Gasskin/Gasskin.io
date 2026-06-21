@@ -84,7 +84,7 @@ function buildChart(bars, level, onSelect, buyPrice) {
   const padL = 56;
   const padR = 56;
   const padT = 18;
-  // 主图（价格）与副图（20 日均线日变化）两块绘图区。
+  // 主图（价格）与副图（50 日均线日变化）两块绘图区。
   const priceH = 224;
   const gap = 30; // 主副图之间留白（副图标题占用）
   const subH = 64;
@@ -99,7 +99,7 @@ function buildChart(bars, level, onSelect, buyPrice) {
   const n = bars.length;
   const lastIdx = n - 1;
 
-  // 主图纵轴范围：日 K 高/低价 + 参考线 + 60 日均线，留 5% 余量。
+  // 主图纵轴范围：日 K 高/低价 + 参考线，留 5% 余量。
   const candidates = [];
   bars.forEach((b, i) => {
     if (i === lastIdx) {
@@ -107,7 +107,6 @@ function buildChart(bars, level, onSelect, buyPrice) {
     } else {
       candidates.push(b.high, b.low);
     }
-    if (b.ma60 != null) candidates.push(b.ma60);
   });
   if (level.high20 != null) candidates.push(level.high20);
   if (level.low10 != null) candidates.push(level.low10);
@@ -229,23 +228,6 @@ function buildChart(bars, level, onSelect, buyPrice) {
     svg.appendChild(g);
   });
 
-  // 60 日均线：按收盘价计算（后端已算好），跨整段展示日连线（跳过缺失值）。
-  let segment = [];
-  const flush = () => {
-    if (segment.length >= 2) {
-      svg.appendChild(el("polyline", { points: segment.join(" "), class: "ma-line ma60" }));
-    }
-    segment = [];
-  };
-  bars.forEach((b, i) => {
-    if (b.ma60 == null) {
-      flush();
-    } else {
-      segment.push(`${x(i).toFixed(2)},${y(b.ma60).toFixed(2)}`);
-    }
-  });
-  flush();
-
   // 前 20 日最高 / 前 10 日最低：仅用一个数据点标识（不显示文字）。
   function markPoint(value, dateStr, cls, prefix) {
     if (value == null) return;
@@ -260,26 +242,26 @@ function buildChart(bars, level, onSelect, buyPrice) {
   markPoint(level.high20, level.high20Date, "red", "区间最高");
   markPoint(level.low10, level.low10Date, "green", "区间最低");
 
-  // ── 副图：20 日均线较前一日的变化（红增绿减，含负坐标） ──
+  // ── 副图：50 日均线较前一日的变化（红增绿减，含负坐标） ──
   buildSubChart(svg, bars, { x, slot, barW, subTop, subBottom, padL, padR, W }, select);
 
   return svg;
 }
 
-// 副图：柱状图，柱高 = 当日 20 日均线 - 前一日 20 日均线。红增、绿减，零线居中、向下为负。
+// 副图：柱状图，柱高 = 当日 50 日均线 - 前一日 50 日均线。红增、绿减，零线居中、向下为负。
 function buildSubChart(svg, bars, geo, select) {
   const { x, slot, barW, subTop, subBottom, padL, padR, W } = geo;
   const zeroY = (subTop + subBottom) / 2;
   const halfH = (subBottom - subTop) / 2;
 
-  const deltas = bars.map((b) => (b.ma20_delta == null ? null : Number(b.ma20_delta)));
+  const deltas = bars.map((b) => (b.ma50_delta == null ? null : Number(b.ma50_delta)));
   const maxAbs = Math.max(0, ...deltas.filter((d) => d != null).map((d) => Math.abs(d)));
   const scale = maxAbs > 0 ? maxAbs : 1;
   const ySub = (v) => zeroY - (v / scale) * halfH;
 
   // 副图标题
   const subTitle = el("text", { x: padL, y: subTop - 8, class: "sub-title" });
-  subTitle.textContent = "Δ20日均线（较前一日 · 红增绿减）";
+  subTitle.textContent = "Δ50日均线（较前一日 · 红增绿减）";
   svg.appendChild(subTitle);
 
   // 上下边界刻度 + 零线
@@ -306,7 +288,7 @@ function buildSubChart(svg, bars, geo, select) {
       class: `delta-bar clickable ${up ? "up" : "down"}`,
     });
     const title = el("title");
-    title.textContent = `${b.date}  Δ20日均线 ${d >= 0 ? "+" : ""}${fmtPrice(d)}`;
+    title.textContent = `${b.date}  Δ50日均线 ${d >= 0 ? "+" : ""}${fmtPrice(d)}`;
     rect.appendChild(title);
     rect.addEventListener("click", () => select(rect, b));
     svg.appendChild(rect);
@@ -369,11 +351,9 @@ function buildCard(payload) {
 
     function renderDetail(bar) {
       const isLatest = bar.date === latest.date;
-      const ma20 = bar.ma20 == null ? "—" : fmtPrice(bar.ma20);
-      const ma60 = bar.ma60 == null ? "—" : fmtPrice(bar.ma60);
-      const dlt = bar.ma20_delta == null
+      const dlt = bar.ma50_delta == null
         ? "—"
-        : `${bar.ma20_delta >= 0 ? "+" : ""}${fmtPrice(bar.ma20_delta)}`;
+        : `${bar.ma50_delta >= 0 ? "+" : ""}${fmtPrice(bar.ma50_delta)}`;
       detail.innerHTML = `
         <div class="detail-title">当日数据${isLatest ? "（最新）" : ""}</div>
         <dl class="detail-list">
@@ -381,9 +361,7 @@ function buildCard(payload) {
           <dt>收盘价</dt><dd>${fmtPrice(bar.close)}</dd>
           <dt>最高价</dt><dd>${fmtPrice(bar.high)}</dd>
           <dt>最低价</dt><dd>${fmtPrice(bar.low)}</dd>
-          <dt>20日均线</dt><dd>${ma20}</dd>
-          <dt>60日均线</dt><dd>${ma60}</dd>
-          <dt>Δ20日均线</dt><dd>${dlt}</dd>
+          <dt>Δ50日均线</dt><dd>${dlt}</dd>
         </dl>
         <div class="detail-hint">点击任意 K 线查看当日数据</div>
       `;
