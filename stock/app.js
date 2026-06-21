@@ -351,6 +351,7 @@ function buildCard(payload) {
 
     function renderDetail(bar) {
       const isLatest = bar.date === latest.date;
+      const ma50 = bar.ma50 == null ? "—" : fmtPrice(bar.ma50);
       const dlt = bar.ma50_delta == null
         ? "—"
         : `${bar.ma50_delta >= 0 ? "+" : ""}${fmtPrice(bar.ma50_delta)}`;
@@ -361,6 +362,7 @@ function buildCard(payload) {
           <dt>收盘价</dt><dd>${fmtPrice(bar.close)}</dd>
           <dt>最高价</dt><dd>${fmtPrice(bar.high)}</dd>
           <dt>最低价</dt><dd>${fmtPrice(bar.low)}</dd>
+          <dt>50日均线</dt><dd>${ma50}</dd>
           <dt>Δ50日均线</dt><dd>${dlt}</dd>
         </dl>
         <div class="detail-hint">点击任意 K 线查看当日数据</div>

@@ -361,7 +361,7 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
         return []
     full = full.sort_values("trade_date", ascending=True)
 
-    # 收盘价的 50 日均线日变化。
+    # 收盘价的 50 日均线及其日变化。
     full["ma_delta"] = full["close"].rolling(MA_DELTA).mean()
     full["ma_delta_change"] = full["ma_delta"].diff()
 
@@ -376,6 +376,7 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
                 "high": to_number(row["high"]),
                 "low": to_number(row["low"]),
                 "close": to_number(row["close"]),
+                "ma50": num_or_none(row["ma_delta"]),
                 "ma50_delta": num_or_none(row["ma_delta_change"]),
             }
         )
