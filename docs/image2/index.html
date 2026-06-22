@@ -18,14 +18,23 @@
       <div class="top-row">
         <label>
           请求网址
-          <input id="baseUrl" type="url" value="https://api.openai.com" placeholder="https://api.openai.com 或你的代理地址" />
+          <span class="select-wrap">
+            <select id="baseUrl">
+              <option value="https://api.openai.com">https://api.openai.com</option>
+              <option value="https://flux.infpro.me">https://flux.infpro.me</option>
+              <option value="https://ai.input.im">https://ai.input.im</option>
+            </select>
+          </span>
         </label>
         <label>
           Token
-          <input id="token" type="password" autocomplete="off" placeholder="请求鉴权 token" />
+          <span class="token-field">
+            <input id="token" type="password" autocomplete="off" placeholder="请求鉴权 token" />
+            <button id="tokenClear" type="button" aria-label="清除 token" title="清除 token">清除</button>
+          </span>
         </label>
       </div>
-      <p class="note">GitHub Pages 直连 OpenAI 会触发 CORS，请填写你部署的代理地址，或在 <code>config.js</code> 中设置 <code>window.IMAGE2_API_BASE</code>。</p>
+      <p class="note">可选请求网址来自 <code>api-whitelist.txt</code>。请确保所选目标 API 已允许本站跨域调用。</p>
     </section>
 
     <section class="card" aria-labelledby="prompt-heading">
@@ -111,24 +120,28 @@
       </div>
     </section>
 
-    <section class="card" aria-labelledby="list-heading">
-      <h2 id="list-heading">生成的图片列表</h2>
+    <section class="card generate-card" aria-labelledby="generate-heading">
+      <div class="section-head">
+        <div>
+          <h2 id="generate-heading">生成</h2>
+          <p class="note">如果浏览器提示 CORS，说明所选目标 API 尚未允许本站跨域调用，需要在目标 API 后台放开 CORS。</p>
+        </div>
+        <div class="generate-actions">
+          <button id="clearRunsBtn" type="button" class="ghost danger">清空</button>
+          <button id="generateBtn" type="button" class="primary">生成</button>
+        </div>
+      </div>
       <div id="imageList" class="image-list" aria-live="polite">
         <div class="empty">生成任务会显示在这里。</div>
       </div>
-    </section>
-
-    <section class="card actions-card" aria-labelledby="actions-heading">
-      <h2 id="actions-heading">操作</h2>
-      <div class="actions">
-        <button id="generateBtn" type="button" class="primary">生成</button>
-        <button id="stopBtn" type="button" class="ghost" disabled>停止当前请求</button>
+      <div id="pagination" class="pagination hidden" aria-label="生成记录分页">
+        <button id="pagePrev" type="button" class="ghost">上一页</button>
+        <span id="pageInfo">第 1 / 1 页</span>
+        <button id="pageNext" type="button" class="ghost">下一页</button>
       </div>
-      <p class="note">如果浏览器提示 CORS，说明当前请求仍然直连 OpenAI；请改用支持 CORS 预检的 HTTPS 代理地址。</p>
     </section>
   </main>
 
-  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -84,16 +84,20 @@ function buildChart(bars, level, onSelect, buyPrice) {
   const padL = 56;
   const padR = 56;
   const padT = 18;
-  // 主图（价格）与副图（50 日均线日变化）两块绘图区。
+  // 主图（价格）、55 日均线变化、ADX 三块绘图区。
   const priceH = 224;
   const gap = 30; // 主副图之间留白（副图标题占用）
   const subH = 64;
+  const adxGap = 28;
+  const adxH = 52;
   const padB = 34; // 底部日期标签
   const priceTop = padT;
   const priceBottom = priceTop + priceH;
   const subTop = priceBottom + gap;
   const subBottom = subTop + subH;
-  const H = subBottom + padB;
+  const adxTop = subBottom + adxGap;
+  const adxBottom = adxTop + adxH;
+  const H = adxBottom + padB;
   const plotW = W - padL - padR;
 
   const n = bars.length;
@@ -107,6 +111,13 @@ function buildChart(bars, level, onSelect, buyPrice) {
     } else {
       candidates.push(b.high, b.low);
     }
+  });
+  const ma55Values = bars.map((b) => {
+    const value = b.ma55 == null ? null : Number(b.ma55);
+    return value == null || Number.isNaN(value) ? null : value;
+  });
+  ma55Values.forEach((value) => {
+    if (value != null) candidates.push(value);
   });
   if (level.high20 != null) candidates.push(level.high20);
   if (level.low10 != null) candidates.push(level.low10);
@@ -155,10 +166,10 @@ function buildChart(bars, level, onSelect, buyPrice) {
     svg.appendChild(label);
   }
 
-  // X 轴日期标签（首、中、尾），放在副图下方。
+  // X 轴日期标签（首、中、尾），放在所有副图下方。
   const xIdx = n <= 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
   for (const i of xIdx) {
-    const label = el("text", { x: x(i), y: subBottom + 16, class: "axis-label x" });
+    const label = el("text", { x: x(i), y: adxBottom + 16, class: "axis-label x" });
     label.textContent = (bars[i].date || "").slice(5); // MM-DD
     svg.appendChild(label);
   }
@@ -228,6 +239,27 @@ function buildChart(bars, level, onSelect, buyPrice) {
     svg.appendChild(g);
   });
 
+  // 55 日均线：叠加在主图价格区间内，缺失数据时断开。
+  let ma55Path = "";
+  let drawingMa55 = false;
+  for (let i = 0; i < ma55Values.length; i++) {
+    const value = ma55Values[i];
+    if (value == null) {
+      drawingMa55 = false;
+      continue;
+    }
+    const cmd = drawingMa55 ? "L" : "M";
+    ma55Path += `${ma55Path ? " " : ""}${cmd} ${x(i)} ${y(value)}`;
+    drawingMa55 = true;
+  }
+  if (ma55Path && ma55Path.includes("L")) {
+    const line = el("path", { d: ma55Path, class: "ma-line ma55-line" });
+    const title = el("title");
+    title.textContent = "55日均线";
+    line.appendChild(title);
+    svg.appendChild(line);
+  }
+
   // 前 20 日最高 / 前 10 日最低：仅用一个数据点标识（不显示文字）。
   function markPoint(value, dateStr, cls, prefix) {
     if (value == null) return;
@@ -242,26 +274,29 @@ function buildChart(bars, level, onSelect, buyPrice) {
   markPoint(level.high20, level.high20Date, "red", "区间最高");
   markPoint(level.low10, level.low10Date, "green", "区间最低");
 
-  // ── 副图：50 日均线较前一日的变化（红增绿减，含负坐标） ──
+  // ── 副图：55 日均线较前一日的变化（红增绿减，含负坐标） ──
   buildSubChart(svg, bars, { x, slot, barW, subTop, subBottom, padL, padR, W }, select);
+
+  // ── 副图：DMI(14,6) ADX 曲线，按展示周期内高低值缩放 ──
+  buildAdxChart(svg, bars, { x, slot, adxTop, adxBottom, padL, padR, W }, select);
 
   return svg;
 }
 
-// 副图：柱状图，柱高 = 当日 50 日均线 - 前一日 50 日均线。红增、绿减，零线居中、向下为负。
+// 副图：柱状图，柱高 = 当日 55 日均线 - 前一日 55 日均线。红增、绿减，零线居中、向下为负。
 function buildSubChart(svg, bars, geo, select) {
   const { x, slot, barW, subTop, subBottom, padL, padR, W } = geo;
   const zeroY = (subTop + subBottom) / 2;
   const halfH = (subBottom - subTop) / 2;
 
-  const deltas = bars.map((b) => (b.ma50_delta == null ? null : Number(b.ma50_delta)));
+  const deltas = bars.map((b) => (b.ma55_delta == null ? null : Number(b.ma55_delta)));
   const maxAbs = Math.max(0, ...deltas.filter((d) => d != null).map((d) => Math.abs(d)));
   const scale = maxAbs > 0 ? maxAbs : 1;
   const ySub = (v) => zeroY - (v / scale) * halfH;
 
   // 副图标题
   const subTitle = el("text", { x: padL, y: subTop - 8, class: "sub-title" });
-  subTitle.textContent = "Δ50日均线（较前一日 · 红增绿减）";
+  subTitle.textContent = "Δ55日均线（较前一日 · 红增绿减）";
   svg.appendChild(subTitle);
 
   // 上下边界刻度 + 零线
@@ -288,10 +323,83 @@ function buildSubChart(svg, bars, geo, select) {
       class: `delta-bar clickable ${up ? "up" : "down"}`,
     });
     const title = el("title");
-    title.textContent = `${b.date}  Δ50日均线 ${d >= 0 ? "+" : ""}${fmtPrice(d)}`;
+    title.textContent = `${b.date}  Δ55日均线 ${d >= 0 ? "+" : ""}${fmtPrice(d)}`;
     rect.appendChild(title);
     rect.addEventListener("click", () => select(rect, b));
     svg.appendChild(rect);
+  });
+}
+
+// 副图：DMI(14,6) ADX 曲线，纵轴使用当前展示周期内的最低/最高 ADX。
+function buildAdxChart(svg, bars, geo, select) {
+  const { x, slot, adxTop, adxBottom, padL, padR, W } = geo;
+  const adxValues = bars.map((b) => {
+    const value = b.adx14_6 == null ? null : Number(b.adx14_6);
+    return value == null || Number.isNaN(value) ? null : value;
+  });
+  const validAdxValues = adxValues.filter((value) => value != null);
+  const adxMin = validAdxValues.length ? Math.min(...validAdxValues) : 0;
+  const adxMax = validAdxValues.length ? Math.max(...validAdxValues) : 100;
+  const adxRange = adxMax - adxMin;
+  const yAdx = (value) => {
+    if (adxRange === 0) return (adxTop + adxBottom) / 2;
+    const clamped = Math.max(adxMin, Math.min(adxMax, value));
+    return adxBottom - ((clamped - adxMin) / adxRange) * (adxBottom - adxTop);
+  };
+
+  const subTitle = el("text", { x: padL, y: adxTop - 8, class: "sub-title" });
+  subTitle.textContent = "ADX(14,6)";
+  svg.appendChild(subTitle);
+
+  const ticks = adxRange === 0 ? [adxMax] : [adxMax, (adxMax + adxMin) / 2, adxMin];
+  for (const tick of ticks) {
+    const yy = yAdx(tick);
+    svg.appendChild(el("line", {
+      x1: padL, y1: yy, x2: W - padR, y2: yy, class: tick === adxMin ? "sub-zero" : "adx-grid",
+    }));
+    const label = el("text", { x: padL - 6, y: yy + 3, class: "axis-label y" });
+    label.textContent = fmtPrice(tick);
+    svg.appendChild(label);
+  }
+
+  let path = "";
+  let drawing = false;
+  for (let i = 0; i < adxValues.length; i++) {
+    const value = adxValues[i];
+    if (value == null) {
+      drawing = false;
+      continue;
+    }
+    const cmd = drawing ? "L" : "M";
+    path += `${path ? " " : ""}${cmd} ${x(i)} ${yAdx(value)}`;
+    drawing = true;
+  }
+
+  if (path && path.includes("L")) {
+    const line = el("path", { d: path, class: "adx-line" });
+    const title = el("title");
+    title.textContent = "ADX(14,6)";
+    line.appendChild(title);
+    svg.appendChild(line);
+  }
+
+  adxValues.forEach((value, i) => {
+    if (value == null) return;
+    const dot = el("circle", {
+      cx: x(i), cy: yAdx(value), r: 3, class: "adx-dot clickable",
+    });
+    const title = el("title");
+    title.textContent = `${bars[i].date}  ADX(14,6) ${fmtPrice(value)}`;
+    dot.appendChild(title);
+    dot.addEventListener("click", () => select(dot, bars[i]));
+    svg.appendChild(dot);
+
+    const hit = el("rect", {
+      x: x(i) - slot / 2, y: adxTop, width: slot, height: adxBottom - adxTop,
+      class: "adx-hit clickable",
+    });
+    hit.addEventListener("click", () => select(dot, bars[i]));
+    svg.appendChild(hit);
   });
 }
 
@@ -351,9 +459,11 @@ function buildCard(payload) {
 
     function renderDetail(bar) {
       const isLatest = bar.date === latest.date;
-      const dlt = bar.ma50_delta == null
+      const ma55 = bar.ma55 == null ? "—" : fmtPrice(bar.ma55);
+      const dlt = bar.ma55_delta == null
         ? "—"
-        : `${bar.ma50_delta >= 0 ? "+" : ""}${fmtPrice(bar.ma50_delta)}`;
+        : `${bar.ma55_delta >= 0 ? "+" : ""}${fmtPrice(bar.ma55_delta)}`;
+      const adx = bar.adx14_6 == null ? "—" : fmtPrice(bar.adx14_6);
       detail.innerHTML = `
         <div class="detail-title">当日数据${isLatest ? "（最新）" : ""}</div>
         <dl class="detail-list">
@@ -361,7 +471,9 @@ function buildCard(payload) {
           <dt>收盘价</dt><dd>${fmtPrice(bar.close)}</dd>
           <dt>最高价</dt><dd>${fmtPrice(bar.high)}</dd>
           <dt>最低价</dt><dd>${fmtPrice(bar.low)}</dd>
-          <dt>Δ50日均线</dt><dd>${dlt}</dd>
+          <dt>55日均线</dt><dd>${ma55}</dd>
+          <dt>Δ55日均线</dt><dd>${dlt}</dd>
+          <dt>ADX(14,6)</dt><dd>${adx}</dd>
         </dl>
         <div class="detail-hint">点击任意 K 线查看当日数据</div>
       `;

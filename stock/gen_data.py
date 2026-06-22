@@ -30,9 +30,11 @@ from typing import Any
 
 PRICE_FIELDS = "ts_code,trade_date,open,high,low,close"
 OUTPUT_BARS = 21          # 展示的交易日数量
-MA_DELTA = 50             # 副图展示的均线日变化周期
-# 为了给最旧的展示日也算出 50 日均线变化，需要 OUTPUT_BARS + MA_DELTA = 71 个交易日。
-NEEDED_BARS = OUTPUT_BARS + MA_DELTA
+MA_DELTA = 55             # 副图展示的均线日变化周期
+DMI_DI_PERIOD = 14        # DMI(14, 6): DI/DX 计算周期
+DMI_ADX_PERIOD = 6        # DMI(14, 6): ADX 移动平均周期
+# 为了给最旧的展示日也算出指标，需要额外的历史交易日完成平滑初始化。
+NEEDED_BARS = max(OUTPUT_BARS + MA_DELTA, OUTPUT_BARS + DMI_DI_PERIOD + DMI_ADX_PERIOD)
 
 
 @dataclass
@@ -350,6 +352,63 @@ def num_or_none(value: Any, digits: int = 6) -> float | None:
     return int(number) if number.is_integer() else round(number, digits)
 
 
+def calculate_dmi_adx(
+    frame: Any,
+    di_period: int = DMI_DI_PERIOD,
+    adx_period: int = DMI_ADX_PERIOD,
+) -> list[float | None]:
+    """按常见 DMI(14, 6) 公式计算 ADX，返回与升序行情 frame 对齐的列表。"""
+    if frame is None or frame.empty:
+        return []
+
+    highs = [float(v) for v in frame["high"].tolist()]
+    lows = [float(v) for v in frame["low"].tolist()]
+    closes = [float(v) for v in frame["close"].tolist()]
+    total = len(highs)
+    adx: list[float | None] = [None] * total
+    if total < di_period + adx_period - 1:
+        return adx
+
+    tr = [0.0] * total
+    plus_dm = [0.0] * total
+    minus_dm = [0.0] * total
+    tr[0] = highs[0] - lows[0]
+    for i in range(1, total):
+        high = highs[i]
+        low = lows[i]
+        prev_high = highs[i - 1]
+        prev_low = lows[i - 1]
+        prev_close = closes[i - 1]
+
+        tr[i] = max(high - low, abs(high - prev_close), abs(low - prev_close))
+        up_move = high - prev_high
+        down_move = prev_low - low
+        plus_dm[i] = up_move if up_move > down_move and up_move > 0 else 0.0
+        minus_dm[i] = down_move if down_move > up_move and down_move > 0 else 0.0
+
+    dx: list[float | None] = [None] * total
+    for i in range(di_period - 1, total):
+        start = i - di_period + 1
+        tr_sum = sum(tr[start : i + 1])
+        plus_sum = sum(plus_dm[start : i + 1])
+        minus_sum = sum(minus_dm[start : i + 1])
+        if tr_sum == 0:
+            dx[i] = 0.0
+            continue
+        plus_di = 100 * plus_sum / tr_sum
+        minus_di = 100 * minus_sum / tr_sum
+        denominator = plus_di + minus_di
+        dx[i] = 0.0 if denominator == 0 else 100 * abs(plus_di - minus_di) / denominator
+
+    for i in range(di_period + adx_period - 2, total):
+        window = dx[i - adx_period + 1 : i + 1]
+        if any(value is None for value in window):
+            continue
+        adx[i] = sum(value for value in window if value is not None) / adx_period
+
+    return adx
+
+
 def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
     data = fetch.data
     if data is None or data.empty:
@@ -361,9 +420,10 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
         return []
     full = full.sort_values("trade_date", ascending=True)
 
-    # 收盘价的 50 日均线及其日变化。
+    # 收盘价的 55 日均线及其日变化。
     full["ma_delta"] = full["close"].rolling(MA_DELTA).mean()
     full["ma_delta_change"] = full["ma_delta"].diff()
+    full["adx14_6"] = calculate_dmi_adx(full, DMI_DI_PERIOD, DMI_ADX_PERIOD)
 
     window = full.tail(OUTPUT_BARS)
 
@@ -376,8 +436,9 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
                 "high": to_number(row["high"]),
                 "low": to_number(row["low"]),
                 "close": to_number(row["close"]),
-                "ma50": num_or_none(row["ma_delta"]),
-                "ma50_delta": num_or_none(row["ma_delta_change"]),
+                "ma55": num_or_none(row["ma_delta"]),
+                "ma55_delta": num_or_none(row["ma_delta_change"]),
+                "adx14_6": num_or_none(row["adx14_6"]),
             }
         )
     return records
@@ -466,7 +527,10 @@ def main() -> int:
 
     print(f"代码数量: {len(entries)}")
     print(f"最新交易日候选: {display_date(t_date)}")
-    print(f"每个代码输出最新 {OUTPUT_BARS} 个交易日的 OHLC，并附 {MA_DELTA} 日均线日变化。")
+    print(
+        f"每个代码输出最新 {OUTPUT_BARS} 个交易日的 OHLC，"
+        f"并附 {MA_DELTA} 日均线日变化与 DMI({DMI_DI_PERIOD}, {DMI_ADX_PERIOD}) 的 ADX。"
+    )
     print(f"输出目录: {args.out_dir}")
 
     ok_count = 0

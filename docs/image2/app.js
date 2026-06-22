@@ -1,9 +1,12 @@
-const OPENAI_BASE_URL = "https://api.openai.com";
-const PAGE_PARAMS = new URLSearchParams(window.location.search);
-const CONFIGURED_BASE_URL = PAGE_PARAMS.get("apiBase") || window.IMAGE2_API_BASE || "";
-const DEFAULT_BASE_URL = CONFIGURED_BASE_URL.trim() || OPENAI_BASE_URL;
+const DEFAULT_UPSTREAM_BASE_URL = "https://api.openai.com";
+const WHITELIST_PATH = "api-whitelist.txt";
 const GENERATE_PATH = "/v1/images/generations";
 const EDIT_PATH = "/v1/images/edits";
+const DEFAULT_ALLOWED_BASE_URLS = [
+  "https://api.openai.com",
+  "https://flux.infpro.me",
+  "https://ai.input.im",
+];
 const MAX_EDGE = 3840;
 const MAX_PIXELS = 3840 * 2160;
 const MULTIPLE = 16;
@@ -35,7 +38,12 @@ const els = {
   countPlus: $("countPlus"),
   imageList: $("imageList"),
   generateBtn: $("generateBtn"),
-  stopBtn: $("stopBtn"),
+  clearRunsBtn: $("clearRunsBtn"),
+  tokenClear: $("tokenClear"),
+  pagination: $("pagination"),
+  pagePrev: $("pagePrev"),
+  pageNext: $("pageNext"),
+  pageInfo: $("pageInfo"),
 };
 
 let activeAbort = null;
@@ -43,22 +51,69 @@ let runSeq = 0;
 let previewModal = null;
 let referenceSeq = 0;
 const referenceImages = [];
+let allowedBaseUrls = DEFAULT_ALLOWED_BASE_URLS;
+let runItems = [];
+let currentPage = 1;
+let pageSize = 4;
 
-function initBaseUrl() {
-  const current = els.baseUrl.value.trim();
-  if (!current || (CONFIGURED_BASE_URL.trim() && current === OPENAI_BASE_URL)) {
-    els.baseUrl.value = DEFAULT_BASE_URL;
-  }
+function cleanBaseUrl(value) {
+  return (value || "").trim().replace(/\/+$/, "");
 }
 
 function normalizeBaseUrl(value) {
-  return (value || DEFAULT_BASE_URL).trim().replace(/\/+$/, "") || DEFAULT_BASE_URL;
+  return cleanBaseUrl(value) || DEFAULT_UPSTREAM_BASE_URL;
+}
+
+function parseWhitelist(text) {
+  const urls = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))
+    .map(cleanBaseUrl)
+    .filter((line) => {
+      try {
+        const url = new URL(line);
+        return url.protocol === "https:" || url.protocol === "http:";
+      } catch {
+        return false;
+      }
+    });
+
+  return Array.from(new Set(urls));
+}
+
+function renderBaseUrlOptions(urls) {
+  const selected = normalizeBaseUrl(els.baseUrl.value);
+  els.baseUrl.replaceChildren();
+
+  urls.forEach((url) => {
+    const option = document.createElement("option");
+    option.value = url;
+    option.textContent = url;
+    els.baseUrl.appendChild(option);
+  });
+
+  els.baseUrl.value = urls.includes(selected) ? selected : urls[0] || DEFAULT_UPSTREAM_BASE_URL;
+}
+
+async function loadBaseUrlWhitelist() {
+  try {
+    const response = await fetch(WHITELIST_PATH, { cache: "no-store" });
+    if (response.ok) {
+      const urls = parseWhitelist(await response.text());
+      if (urls.length) allowedBaseUrls = urls;
+    }
+  } catch {
+    // Keep the built-in default if the whitelist file cannot be loaded.
+  }
+
+  renderBaseUrlOptions(allowedBaseUrls);
 }
 
 function buildApiUrl(path) {
-  const baseUrl = normalizeBaseUrl(els.baseUrl.value);
-  const apiPath = baseUrl.endsWith("/v1") && path.startsWith("/v1/") ? path.slice(3) : path;
-  return `${baseUrl}${apiPath}`;
+  const upstreamBaseUrl = normalizeBaseUrl(els.baseUrl.value);
+  const apiPath = upstreamBaseUrl.endsWith("/v1") && path.startsWith("/v1/") ? path.slice(3) : path;
+  return `${upstreamBaseUrl}${apiPath}`;
 }
 
 function parseRatio(value) {
@@ -163,9 +218,61 @@ function setEmptyVisible(visible) {
   if (empty) empty.classList.toggle("hidden", !visible);
 }
 
+function getResponsivePageSize() {
+  const width = els.imageList.clientWidth || window.innerWidth;
+  if (width >= 920) return 4;
+  if (width >= 640) return 3;
+  return 2;
+}
+
+function updatePageSize() {
+  const nextSize = getResponsivePageSize();
+  if (nextSize === pageSize) return;
+  const firstVisibleIndex = (currentPage - 1) * pageSize;
+  pageSize = nextSize;
+  currentPage = Math.floor(firstVisibleIndex / pageSize) + 1;
+  renderPagination();
+}
+
+function renderPagination() {
+  const totalRuns = runItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalRuns / pageSize));
+  currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  runItems.forEach((item, index) => {
+    const visible = index >= (currentPage - 1) * pageSize && index < currentPage * pageSize;
+    item.classList.toggle("hidden", !visible);
+  });
+
+  setEmptyVisible(totalRuns === 0);
+  els.pagination.classList.toggle("hidden", totalRuns <= pageSize);
+  els.pageInfo.textContent = `第 ${currentPage} / ${totalPages} 页 · 共 ${totalRuns} 条`;
+  els.pagePrev.disabled = currentPage <= 1;
+  els.pageNext.disabled = currentPage >= totalPages;
+  els.clearRunsBtn.disabled = totalRuns === 0;
+}
+
+function changePage(delta) {
+  currentPage += delta;
+  renderPagination();
+}
+
+function removeRunItem(item) {
+  item.remove();
+  runItems = runItems.filter((runItem) => runItem !== item);
+  renderPagination();
+}
+
+function clearRunItems() {
+  activeAbort?.abort();
+  runItems.forEach((item) => item.remove());
+  runItems = [];
+  currentPage = 1;
+  renderPagination();
+}
+
 function createRunItem(payload) {
   runSeq += 1;
-  setEmptyVisible(false);
   const modeLabel = payload.mode === "edit" ? `图生图 · ${payload.referenceCount} 张参考图` : "文生图";
 
   const item = document.createElement("article");
@@ -176,7 +283,10 @@ function createRunItem(payload) {
         <strong>生成请求 #${runSeq}</strong>
         <span>${escapeHtml(modeLabel)} · ${escapeHtml(payload.size)} · ${escapeHtml(payload.aspectRatio)} · ${escapeHtml(payload.quality)} · ${escapeHtml(payload.output_format)} · ${payload.n} 张</span>
       </div>
-      <span class="badge" data-state="running">准备中</span>
+      <div class="run-actions">
+        <span class="badge" data-state="running">准备中</span>
+        <button type="button" class="run-remove" aria-label="删除生成请求 #${runSeq}">删除</button>
+      </div>
     </div>
     <div class="run-body">
       <div class="progress"><span></span></div>
@@ -184,7 +294,11 @@ function createRunItem(payload) {
       <div class="thumb-grid"></div>
     </div>
   `;
+  item.querySelector(".run-remove").addEventListener("click", () => removeRunItem(item));
   els.imageList.prepend(item);
+  runItems.unshift(item);
+  currentPage = 1;
+  renderPagination();
   return item;
 }
 
@@ -273,8 +387,7 @@ function renderImages(item, images, format, prompt) {
 function deleteImage(figure, item) {
   figure.remove();
   if (!item.querySelector(".thumb")) {
-    item.remove();
-    setEmptyVisible(!els.imageList.querySelector(".run-item"));
+    removeRunItem(item);
   }
 }
 
@@ -394,7 +507,37 @@ async function parseResponse(res) {
 
 function getErrorMessage(res, text, data) {
   const apiMessage = data?.error?.message || data?.message;
-  return apiMessage || text || `${res.status} ${res.statusText}`;
+  if (apiMessage) return apiMessage;
+  const htmlMessage = getHtmlErrorMessage(res, text);
+  return htmlMessage || text || `${res.status} ${res.statusText}`;
+}
+
+function getHtmlErrorMessage(res, text) {
+  const trimmed = (text || "").trim();
+  if (!/^<!doctype html|^<html[\s>]/i.test(trimmed)) return "";
+
+  const title = decodeHtml(extractFirstMatch(trimmed, /<title[^>]*>([\s\S]*?)<\/title>/i));
+  const heading = decodeHtml(extractFirstMatch(trimmed, /<h1[^>]*>[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/i));
+  const code = extractFirstMatch(trimmed, /Error code\s*([0-9]+)/i) || extractFirstMatch(title, /\b([45][0-9]{2})\b/);
+  const host = decodeHtml(extractFirstMatch(trimmed, /<span[^>]*>\s*Host\s*<\/span>[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/i));
+
+  if (code === "524") {
+    return `目标服务响应超时（524）${host ? `：${host}` : ""}。\n目标接口已经收到请求，但上游服务长时间没有返回，请稍后重试或切换请求网址。`;
+  }
+
+  const summary = heading || title || `${res.status} ${res.statusText}`;
+  return `目标服务返回 HTML 错误页${code ? `（${code}）` : ""}${host ? `：${host}` : ""}。\n${summary}`;
+}
+
+function extractFirstMatch(value, pattern) {
+  return pattern.exec(value || "")?.[1]?.trim() || "";
+}
+
+function decodeHtml(value) {
+  if (!value) return "";
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return textarea.value;
 }
 
 async function onGenerate() {
@@ -426,7 +569,6 @@ async function onGenerate() {
   activeAbort?.abort();
   activeAbort = new AbortController();
   els.generateBtn.disabled = true;
-  els.stopBtn.disabled = false;
 
   const startedAt = Date.now();
   const waitingTimer = window.setInterval(() => {
@@ -492,13 +634,8 @@ async function onGenerate() {
   } finally {
     window.clearInterval(waitingTimer);
     els.generateBtn.disabled = false;
-    els.stopBtn.disabled = true;
     activeAbort = null;
   }
-}
-
-function onStop() {
-  activeAbort?.abort();
 }
 
 function onFormatChange() {
@@ -556,7 +693,11 @@ function escapeHtml(value) {
 }
 
 els.generateBtn.addEventListener("click", () => void onGenerate());
-els.stopBtn.addEventListener("click", onStop);
+els.clearRunsBtn.addEventListener("click", clearRunItems);
+els.tokenClear.addEventListener("click", () => {
+  els.token.value = "";
+  els.token.focus();
+});
 els.referenceImages.addEventListener("change", () => {
   addReferenceFiles(Array.from(els.referenceImages.files || []));
   els.referenceImages.value = "";
@@ -571,7 +712,11 @@ els.count.addEventListener("change", () => setCount(els.count.value));
 els.sizeTier.addEventListener("change", updateFinalSize);
 els.aspectRatio.addEventListener("change", updateFinalSize);
 els.outputFormat.addEventListener("change", onFormatChange);
+els.pagePrev.addEventListener("click", () => changePage(-1));
+els.pageNext.addEventListener("click", () => changePage(1));
+window.addEventListener("resize", updatePageSize);
 
-initBaseUrl();
+void loadBaseUrlWhitelist();
 updateFinalSize();
 onFormatChange();
+updatePageSize();

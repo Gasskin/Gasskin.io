@@ -1,4 +1,9 @@
-const OPENAI_ORIGIN = "https://api.openai.com";
+const DEFAULT_UPSTREAM = "https://api.openai.com";
+const ALLOWED_UPSTREAMS = [
+  "https://api.openai.com",
+  "https://flux.infpro.me",
+  "https://ai.input.im",
+];
 const ALLOWED_METHODS = "GET, HEAD, POST, OPTIONS";
 const ALLOWED_HEADERS = "Authorization, Content-Type";
 
@@ -24,6 +29,18 @@ function withCors(response, request) {
   });
 }
 
+function cleanBaseUrl(value) {
+  return (value || "").trim().replace(/\/+$/, "");
+}
+
+function getAllowedUpstream(value) {
+  const baseUrl = cleanBaseUrl(value || DEFAULT_UPSTREAM);
+  if (!ALLOWED_UPSTREAMS.includes(baseUrl)) {
+    return null;
+  }
+  return baseUrl;
+}
+
 export default {
   async fetch(request) {
     if (request.method === "OPTIONS") {
@@ -41,7 +58,16 @@ export default {
       });
     }
 
-    const upstreamUrl = new URL(incomingUrl.pathname + incomingUrl.search, OPENAI_ORIGIN);
+    const upstreamBaseUrl = getAllowedUpstream(incomingUrl.searchParams.get("target"));
+    if (!upstreamBaseUrl) {
+      return new Response("Target API is not allowed", {
+        status: 403,
+        headers: corsHeaders(request),
+      });
+    }
+
+    incomingUrl.searchParams.delete("target");
+    const upstreamUrl = new URL(incomingUrl.pathname + incomingUrl.search, upstreamBaseUrl);
 
     const headers = new Headers(request.headers);
     headers.delete("Host");
