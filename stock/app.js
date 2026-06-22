@@ -362,6 +362,17 @@ function buildAdxChart(svg, bars, geo, select) {
     svg.appendChild(label);
   }
 
+  if (adxMin <= 25 && adxMax >= 25) {
+    const yy = yAdx(25);
+    const line = el("line", {
+      x1: padL, y1: yy, x2: W - padR, y2: yy, class: "adx-threshold",
+    });
+    const title = el("title");
+    title.textContent = "ADX 25";
+    line.appendChild(title);
+    svg.appendChild(line);
+  }
+
   let path = "";
   let drawing = false;
   for (let i = 0; i < adxValues.length; i++) {
