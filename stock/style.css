@@ -299,10 +299,11 @@ button.ghost:hover {
 .candle.down .wick { stroke: var(--green); }
 .candle.down .body { fill: var(--green); stroke: var(--green); }
 
-/* 前20日最高 / 前10日最低：数据点标识 */
+/* 前20日最高 / 前10日最低 / 前5日最低：数据点标识 */
 .mark-dot { stroke: var(--bg); stroke-width: 1.5; pointer-events: none; }
 .mark-dot.red { fill: var(--red); }
 .mark-dot.green { fill: var(--green); }
+.mark-dot.gray { fill: var(--gray); }
 
 /* 可点击的 K 线 */
 .clickable { cursor: pointer; }

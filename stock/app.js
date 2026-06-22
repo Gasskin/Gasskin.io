@@ -2,6 +2,7 @@
 
 const HIGH_LOOKBACK = 20; // 前 20 个交易日最高价（不含最新交易日）
 const LOW_LOOKBACK = 10; // 前 10 个交易日最低价（不含最新交易日）
+const SHORT_LOW_LOOKBACK = 5; // 前 5 个交易日最低价（不含最新交易日）
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const grid = document.getElementById("grid");
@@ -39,22 +40,27 @@ function fmtPct(value) {
 // 根据最新交易日收盘价与历史高低点关系，决定颜色与状态文案。
 function evaluateLevel(bars) {
   if (!bars || bars.length < 2) {
-    return { color: "gray", state: "数据不足", high20: null, low10: null };
+    return { color: "gray", state: "数据不足", high20: null, low10: null, low5: null };
   }
   const latestClose = bars[bars.length - 1].close;
   const prior = bars.slice(0, -1); // 去掉最新交易日
   const past20 = prior.slice(-HIGH_LOOKBACK);
   const past10 = prior.slice(-LOW_LOOKBACK);
+  const past5 = prior.slice(-SHORT_LOW_LOOKBACK);
 
   let highBar = past20[0];
   for (const b of past20) if (b.high > highBar.high) highBar = b;
   let lowBar = past10[0];
   for (const b of past10) if (b.low < lowBar.low) lowBar = b;
+  let shortLowBar = past5[0];
+  for (const b of past5) if (b.low < shortLowBar.low) shortLowBar = b;
 
   const high20 = highBar.high;
   const high20Date = highBar.date;
   const low10 = lowBar.low;
   const low10Date = lowBar.date;
+  const low5 = shortLowBar.low;
+  const low5Date = shortLowBar.date;
 
   let color = "gray";
   let state = "区间内";
@@ -65,7 +71,7 @@ function evaluateLevel(bars) {
     color = "green";
     state = `区间最低 ${low10Date} ${fmtPrice(low10)}`;
   }
-  return { color, state, high20, high20Date, low10, low10Date, latestClose };
+  return { color, state, high20, high20Date, low10, low10Date, low5, low5Date, latestClose };
 }
 
 function el(tag, attrs, children) {
@@ -260,7 +266,7 @@ function buildChart(bars, level, onSelect, buyPrice) {
     svg.appendChild(line);
   }
 
-  // 前 20 日最高 / 前 10 日最低：仅用一个数据点标识（不显示文字）。
+  // 前 20 日最高 / 前 10 日最低 / 前 5 日最低：仅用一个数据点标识（不显示文字）。
   function markPoint(value, dateStr, cls, prefix) {
     if (value == null) return;
     const idx = bars.findIndex((b) => b.date === dateStr);
@@ -273,6 +279,7 @@ function buildChart(bars, level, onSelect, buyPrice) {
   }
   markPoint(level.high20, level.high20Date, "red", "区间最高");
   markPoint(level.low10, level.low10Date, "green", "区间最低");
+  markPoint(level.low5, level.low5Date, "gray", "5日最低");
 
   // ── 副图：55 日均线较前一日的变化（红增绿减，含负坐标） ──
   buildSubChart(svg, bars, { x, slot, barW, subTop, subBottom, padL, padR, W }, select);
