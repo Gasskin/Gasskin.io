@@ -3,7 +3,7 @@
   "name": "华夏上证科创板50成份ETF",
   "type": "etf",
   "buy_price": 2.047,
-  "source": "fund_daily(ETF日线)",
+  "source": "fund_daily(ETF日线)-前复权",
   "latest_trade_date": "2026-06-22",
   "count": 21,
   "data": [

@@ -3,12 +3,13 @@
 """
 为 stock.txt 中的每个代码（个股或 ETF）生成最新 21 个交易日的行情数据。
 
-通过 Tushare 拉取日线，为每个代码在 data/ 目录下生成一个 ``<代码>.json``
+通过 Tushare 拉取日线并转为前复权价格，为每个代码在 data/ 目录下生成一个 ``<代码>.json``
 文件，记录最新 21 个交易日的开盘价、最高价、最低价、收盘价；并生成
 ``data/index.json`` 清单供前端发现标的。本脚本自包含，不依赖其它模块。
 
-代码可能是个股或 ETF，两者日线接口不同（个股 daily、ETF fund_daily）。脚本
-会先用 fund_basic / stock_basic 判定类型，缺失时按代码段猜测，据此选择接口。
+代码可能是个股或 ETF，两者日线与复权因子接口不同（个股 daily/adj_factor、
+ETF fund_daily/fund_adj）。脚本会先用 fund_basic / stock_basic 判定类型，
+缺失时按代码段猜测，据此选择接口。
 
 默认文件相对脚本目录解析：
 - key.txt:   Tushare token，取第一条非空非注释行
@@ -177,6 +178,60 @@ def normalize_price_frame(frame: Any, end_date: str) -> Any:
     return data.sort_values("trade_date", ascending=False).reset_index(drop=True)
 
 
+def normalize_factor_frame(frame: Any, end_date: str) -> Any:
+    import pandas as pd
+
+    columns = ["trade_date", "adj_factor"]
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=columns)
+
+    missing = [field for field in columns if field not in frame.columns]
+    if missing:
+        raise ValueError(f"Tushare 复权因子字段缺失: {', '.join(missing)}")
+
+    factors = frame.copy()
+    factors["trade_date"] = factors["trade_date"].astype(str)
+    factors = factors[factors["trade_date"] <= end_date]
+    factors["adj_factor"] = pd.to_numeric(factors["adj_factor"], errors="coerce")
+    factors = factors.dropna(subset=columns)
+    factors = factors.drop_duplicates(subset=["trade_date"], keep="first")
+    return factors[columns].sort_values("trade_date", ascending=False).reset_index(drop=True)
+
+
+def fetch_adjustment_factors(pro: Any, endpoint: str, ts_code: str, start_date: str, end_date: str) -> Any:
+    factor_endpoint = "fund_adj" if endpoint == "fund_daily" else "adj_factor"
+    method = getattr(pro, factor_endpoint)
+    return method(
+        ts_code=ts_code,
+        start_date=start_date,
+        end_date=end_date,
+        fields="ts_code,trade_date,adj_factor",
+    )
+
+
+def apply_qfq_adjustment(price_frame: Any, factor_frame: Any, source_name: str) -> Any:
+    """用复权因子把不复权 OHLC 转成前复权价格。"""
+    if price_frame is None or price_frame.empty:
+        return price_frame
+    if factor_frame is None or factor_frame.empty:
+        raise ValueError(f"{source_name}: 未获取到复权因子，无法生成前复权行情")
+
+    merged = price_frame.merge(factor_frame, on="trade_date", how="left")
+    missing = merged[merged["adj_factor"].isna()]
+    if not missing.empty:
+        dates = ", ".join(missing["trade_date"].head(3).tolist())
+        raise ValueError(f"{source_name}: 复权因子缺失（{dates}）")
+
+    latest_factor = float(merged.sort_values("trade_date", ascending=False).iloc[0]["adj_factor"])
+    if latest_factor == 0:
+        raise ValueError(f"{source_name}: 最新复权因子为 0，无法生成前复权行情")
+
+    ratio = merged["adj_factor"] / latest_factor
+    for column in ["open", "high", "low", "close"]:
+        merged[column] = merged[column] * ratio
+    return merged.drop(columns=["adj_factor"])
+
+
 def fetch_from_endpoint(pro: Any, endpoint: str, ts_code: str, start_date: str, end_date: str) -> Any:
     method = getattr(pro, endpoint)
     return method(
@@ -210,12 +265,16 @@ def fetch_price_data(
             try:
                 raw = fetch_from_endpoint(pro, endpoint, ts_code, start_date, end_date)
                 data = normalize_price_frame(raw, end_date)
+                if not data.empty:
+                    raw_factors = fetch_adjustment_factors(pro, endpoint, ts_code, start_date, end_date)
+                    factors = normalize_factor_frame(raw_factors, end_date)
+                    data = apply_qfq_adjustment(data, factors, source_name)
             except Exception as exc:  # noqa: BLE001 - surface API errors in output
                 errors.append(f"{source_name}: {exc}")
                 continue
 
             if not data.empty:
-                current_fetch = FetchResult(data=data, source=source_name, start_date=start_date, errors=errors)
+                current_fetch = FetchResult(data=data, source=f"{source_name}-前复权", start_date=start_date, errors=errors)
                 if best_fetch is None or len(data) > len(best_fetch.data):
                     best_fetch = current_fetch
                 if len(data) >= NEEDED_BARS or days >= max_days:
