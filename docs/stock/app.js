@@ -1,8 +1,8 @@
 "use strict";
 
-const HIGH_LOOKBACK = 20; // 前 20 个交易日最高价（不含最新交易日）
-const LOW_LOOKBACK = 10; // 前 10 个交易日最低价（不含最新交易日）
-const SHORT_LOW_LOOKBACK = 5; // 前 5 个交易日最低价（不含最新交易日）
+const HIGH_LOOKBACK = 20; // 最近 20 个交易日最高价
+const LOW_LOOKBACK = 10; // 最近 10 个交易日最低价
+const SHORT_LOW_LOOKBACK = 5; // 最近 5 个交易日最低价
 const STOP_LOSS_HIGH_LOOKBACK = 14; // 止损价使用最近 14 个交易日最高价
 const STOP_LOSS_ATR_MULTIPLIER = 2;
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -45,10 +45,9 @@ function evaluateLevel(bars) {
     return { color: "gray", state: "数据不足", high20: null, low10: null, low5: null };
   }
   const latestClose = bars[bars.length - 1].close;
-  const prior = bars.slice(0, -1); // 去掉最新交易日
-  const past20 = prior.slice(-HIGH_LOOKBACK);
-  const past10 = prior.slice(-LOW_LOOKBACK);
-  const past5 = prior.slice(-SHORT_LOW_LOOKBACK);
+  const past20 = bars.slice(-HIGH_LOOKBACK);
+  const past10 = bars.slice(-LOW_LOOKBACK);
+  const past5 = bars.slice(-SHORT_LOW_LOOKBACK);
 
   let highBar = past20[0];
   for (const b of past20) if (b.high > highBar.high) highBar = b;
@@ -117,12 +116,8 @@ function buildChart(bars, level, onSelect, buyPrice) {
 
   // 主图纵轴范围：日 K 高/低价 + 参考线，留 5% 余量。
   const candidates = [];
-  bars.forEach((b, i) => {
-    if (i === lastIdx) {
-      candidates.push(b.close); // 最新交易日只参与收盘价
-    } else {
-      candidates.push(b.high, b.low);
-    }
+  bars.forEach((b) => {
+    candidates.push(b.high, b.low);
   });
   const ma55Values = bars.map((b) => {
     const value = b.ma55 == null ? null : Number(b.ma55);
@@ -200,26 +195,6 @@ function buildChart(bars, level, onSelect, buyPrice) {
     svg.appendChild(label);
   }
 
-  // 最新收盘价：水平虚线（颜色随状态），不标注价格文字。
-  const latestClose = bars[lastIdx].close;
-  const refY = y(latestClose);
-  svg.appendChild(el("line", {
-    x1: padL, y1: refY, x2: W - padR, y2: refY, class: `ref-line ${level.color}`,
-  }));
-
-  // 持仓买入价：橙色水平虚线，价格标在主图右侧。
-  if (hasBuy) {
-    const by = y(Number(buyPrice));
-    svg.appendChild(el("line", {
-      x1: padL, y1: by, x2: W - padR, y2: by, class: "buy-line",
-    }));
-    const buyLabel = el("text", {
-      x: W - padR + 6, y: by + 3, class: "buy-label", "text-anchor": "start",
-    });
-    buyLabel.textContent = fmtPrice(buyPrice);
-    svg.appendChild(buyLabel);
-  }
-
   // ATR 止损价：最近 N 日最高价 - M * 最新 ATR14。
   if (stopLossPrice != null) {
     const sy = y(stopLossPrice);
@@ -240,19 +215,6 @@ function buildChart(bars, level, onSelect, buyPrice) {
   // 实心日 K：实体 = 开盘-收盘，影线 = 最高-最低；红涨绿跌（按收盘与开盘比较）。
   bars.forEach((b, i) => {
     const cx = x(i);
-
-    if (i === lastIdx) {
-      // 最新交易日只显示收盘价：一个圆点（颜色随状态），不标注价格。
-      const dot = el("circle", {
-        cx, cy: y(b.close), r: 4.5, class: `dot dot-last clickable ${level.color}`,
-      });
-      const title = el("title");
-      title.textContent = `${b.date}（最新）  收 ${fmtPrice(b.close)}`;
-      dot.appendChild(title);
-      dot.addEventListener("click", () => select(dot, b));
-      svg.appendChild(dot);
-      return;
-    }
 
     const dir = b.close >= b.open ? "up" : "down"; // 红涨绿跌
     const g = el("g", { class: `candle clickable ${dir}` });
@@ -281,6 +243,44 @@ function buildChart(bars, level, onSelect, buyPrice) {
     g.addEventListener("click", () => select(g, b));
     svg.appendChild(g);
   });
+
+  // 买入价：用橙点标在价格区间包含买入价的最近一根 K 线上。
+  if (hasBuy) {
+    const buy = Number(buyPrice);
+    let buyIdx = -1;
+    for (let i = bars.length - 1; i >= 0; i--) {
+      const low = Math.min(Number(bars[i].low), Number(bars[i].high));
+      const high = Math.max(Number(bars[i].low), Number(bars[i].high));
+      if (buy >= low && buy <= high) {
+        buyIdx = i;
+        break;
+      }
+    }
+    if (buyIdx < 0) {
+      buyIdx = bars.reduce((bestIdx, bar, i) => {
+        const bestDistance = Math.abs(Number(bars[bestIdx].close) - buy);
+        const distance = Math.abs(Number(bar.close) - buy);
+        return distance < bestDistance ? i : bestIdx;
+      }, 0);
+    }
+
+    const bx = x(buyIdx);
+    const by = y(buy);
+    const buyDot = el("circle", { cx: bx, cy: by, r: 4, class: "buy-dot" });
+    const title = el("title");
+    title.textContent = `${bars[buyIdx].date}  买入价 ${fmtPrice(buy)}`;
+    buyDot.appendChild(title);
+    svg.appendChild(buyDot);
+
+    const buyLabel = el("text", {
+      x: bx + barW / 2 + 5,
+      y: by + 3,
+      class: "buy-label",
+      "text-anchor": "start",
+    });
+    buyLabel.textContent = fmtPrice(buy);
+    svg.appendChild(buyLabel);
+  }
 
   // 55 日均线：叠加在主图价格区间内，缺失数据时断开。
   let ma55Path = "";

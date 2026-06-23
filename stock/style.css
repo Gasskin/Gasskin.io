@@ -326,20 +326,13 @@ button.ghost:hover {
 .candle .hit { fill: transparent; }
 .candle.selected .body { stroke: var(--text); stroke-width: 1.5; }
 .candle.selected .wick { stroke: var(--text); }
-.dot-last.clickable.selected { stroke: var(--text); stroke-width: 2; }
-
-/* 最新收盘价：水平虚线 */
-.ref-line { stroke-width: 1; stroke-dasharray: 2 4; }
-.ref-line.red { stroke: var(--red); }
-.ref-line.green { stroke: var(--green); }
-.ref-line.gray { stroke: var(--gray); }
 
 /* 55 日均线：蓝色细线 */
 .ma-line { fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .ma55-line { stroke: var(--accent); stroke-width: 1.2; }
 
-/* 持仓买入价：橙色水平虚线 */
-.buy-line { stroke: var(--orange); stroke-width: 1; stroke-dasharray: 2 4; }
+/* 持仓买入价与止损价 */
+.buy-dot { fill: var(--orange); stroke: var(--bg); stroke-width: 1.5; pointer-events: none; }
 .buy-label { fill: var(--orange); font-size: 10px; font-weight: 600; }
 .stop-line { stroke: var(--yellow); stroke-width: 1; stroke-dasharray: 2 4; pointer-events: none; }
 .stop-label { fill: var(--yellow); font-size: 10px; font-weight: 600; }
@@ -364,11 +357,6 @@ button.ghost:hover {
 .atr-dot { fill: #ffd166; stroke: var(--panel); stroke-width: 1; }
 .atr-dot.selected { stroke: var(--text); stroke-width: 2; }
 .atr-hit { fill: transparent; pointer-events: all; }
-
-.dot { fill: var(--accent); }
-.dot-last.red { fill: var(--red); }
-.dot-last.green { fill: var(--green); }
-.dot-last.gray { fill: var(--text); }
 
 .card-foot {
   margin-top: 0.5rem;

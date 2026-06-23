@@ -30,7 +30,7 @@ from typing import Any
 
 
 PRICE_FIELDS = "ts_code,trade_date,open,high,low,close"
-OUTPUT_BARS = 21          # 展示的交易日数量
+OUTPUT_BARS = 20          # 展示的交易日数量
 MA_DELTA = 55             # 副图展示的均线日变化周期
 DMI_DI_PERIOD = 14        # DMI(14, 6): DI/DX 计算周期
 DMI_ADX_PERIOD = 6        # DMI(14, 6): ADX 移动平均周期
