@@ -201,14 +201,14 @@ function buildChart(bars, level, onSelect, buyPrice) {
     x1: padL, y1: refY, x2: W - padR, y2: refY, class: `ref-line ${level.color}`,
   }));
 
-  // 持仓买入价：橙色水平虚线，价格标在左侧 Y 轴。
+  // 持仓买入价：橙色水平虚线，价格标在主图右侧。
   if (hasBuy) {
     const by = y(Number(buyPrice));
     svg.appendChild(el("line", {
       x1: padL, y1: by, x2: W - padR, y2: by, class: "buy-line",
     }));
     const buyLabel = el("text", {
-      x: padL - 6, y: by + 3, class: "buy-label", "text-anchor": "end",
+      x: W - padR + 6, y: by + 3, class: "buy-label", "text-anchor": "start",
     });
     buyLabel.textContent = fmtPrice(buyPrice);
     svg.appendChild(buyLabel);
@@ -225,9 +225,9 @@ function buildChart(bars, level, onSelect, buyPrice) {
     stopLine.appendChild(title);
     svg.appendChild(stopLine);
     const stopLabel = el("text", {
-      x: padL - 6, y: sy + 3, class: "stop-label", "text-anchor": "end",
+      x: W - padR + 6, y: sy + 3, class: "stop-label", "text-anchor": "start",
     });
-    stopLabel.textContent = `止损 ${fmtPrice(stopLossPrice)}`;
+    stopLabel.textContent = fmtPrice(stopLossPrice);
     svg.appendChild(stopLabel);
   }
 

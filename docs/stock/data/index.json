@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-23 10:44",
+  "generated_at": "2026-06-23 10:49",
   "timezone": "Asia/Shanghai (UTC+8)",
   "count": 6,
   "items": [
@@ -7,42 +7,42 @@
       "code": "002156.SZ",
       "name": "通富微电",
       "type": "stock",
-      "buy_price": null,
+      "buy_price": 67.525,
       "file": "002156.SZ.json"
     },
     {
       "code": "002409.SZ",
       "name": "雅克科技",
       "type": "stock",
-      "buy_price": null,
+      "buy_price": 147.71,
       "file": "002409.SZ.json"
     },
     {
       "code": "600378.SH",
       "name": "昊华科技",
       "type": "stock",
-      "buy_price": null,
+      "buy_price": 63.826,
       "file": "600378.SH.json"
     },
     {
       "code": "600549.SH",
       "name": "厦门钨业",
       "type": "stock",
-      "buy_price": null,
+      "buy_price": 80.876,
       "file": "600549.SH.json"
     },
     {
       "code": "588000.SH",
       "name": "华夏上证科创板50成份ETF",
       "type": "etf",
-      "buy_price": null,
+      "buy_price": 2.047,
       "file": "588000.SH.json"
     },
     {
       "code": "159516.SZ",
       "name": "国泰中证半导体材料设备主题ETF",
       "type": "etf",
-      "buy_price": null,
+      "buy_price": 1.573,
       "file": "159516.SZ.json"
     }
   ]

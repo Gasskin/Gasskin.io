@@ -2,7 +2,7 @@
   "code": "159516.SZ",
   "name": "国泰中证半导体材料设备主题ETF",
   "type": "etf",
-  "buy_price": null,
+  "buy_price": 1.573,
   "source": "fund_daily(ETF日线)",
   "latest_trade_date": "2026-06-22",
   "count": 21,

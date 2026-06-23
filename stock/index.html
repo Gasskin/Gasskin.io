@@ -11,18 +11,32 @@
 
   <header class="hero">
     <h1>📈 股票行情图</h1>
-    <p class="sub">
-      读取 <code>stock/data</code> 下的数据，为每个标的绘制实心日 K（实体=开收，影线=高低，红涨绿跌）；
-      <strong>最新交易日</strong>仅显示收盘价（圆点）。
-      图内
-      <span class="legend-dot red"></span>红点标识前 20 日最高价、
-      <span class="legend-dot green"></span>绿点标识前 10 日最低价、
-      <span class="legend-dot gray"></span>灰点标识前 5 日最低价（均不含最新日）；
-      蓝色细线表示 55 日均线，横向虚线表示最新收盘价（颜色随突破状态）。点击任意 K 线可在右侧查看当日数据。
-      在 <code>stock.txt</code> 中以「代码 买入价格」填写时，标题显示为橙色、展示自买入价至今的涨跌幅，并在图内画橙色虚线标记买入价和止损价（买入价 - 2 × ATR14）。
-      未持仓但突破前 20 日高点的标的，名称与左侧导航显示为红色。
-      副图柱状为 55 日均线较前一日的变化（红增绿减，向下为负），下方曲线为 ADX(14,6) 和 ATR14。
-    </p>
+    <details class="chart-guide" open>
+      <summary>图表说明</summary>
+      <div class="guide-body">
+        <p>
+          实心日 K 表示历史交易日，实体为开盘价到收盘价，影线为最高价到最低价，红涨绿跌。
+          <strong>最新交易日</strong>只显示收盘价圆点。横向细虚线表示最新收盘价，颜色随突破状态变化。
+        </p>
+        <p>
+          <span class="legend-dot red"></span>红点标识前 20 日最高价，
+          <span class="legend-dot green"></span>绿点标识前 10 日最低价，
+          <span class="legend-dot gray"></span>灰点标识前 5 日最低价，以上区间均不包含最新交易日。
+        </p>
+        <p>
+          蓝色细线表示 55 日均线。<code>stock.txt</code> 中以「代码 买入价格」填写时，标题显示为橙色，
+          并在主图右侧标出买入价；黄色细虚线表示止损价，计算方式为买入价 - 2 × ATR14。
+        </p>
+        <p>
+          第一幅副图柱状为 55 日均线较前一日的变化，红增绿减，向下为负。
+          下方两条曲线分别为 ADX(14,6) 和 ATR14，纵轴按当前展示周期内的最高值与最低值缩放。
+        </p>
+        <p>
+          点击任意 K 线、副图柱或指标曲线点，可在右侧查看当日数据。
+          未持仓但突破前 20 日高点的标的，名称与左侧导航显示为红色。
+        </p>
+      </div>
+    </details>
   </header>
 
   <div class="shell">

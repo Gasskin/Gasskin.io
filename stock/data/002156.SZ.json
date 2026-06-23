@@ -2,7 +2,7 @@
   "code": "002156.SZ",
   "name": "通富微电",
   "type": "stock",
-  "buy_price": null,
+  "buy_price": 67.525,
   "source": "daily(股票日线)",
   "latest_trade_date": "2026-06-22",
   "count": 21,

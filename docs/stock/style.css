@@ -10,6 +10,7 @@
   --green: #3fd07f;
   --gray: #8b98a5;
   --orange: #ff9f40;
+  --yellow: #ffd166;
 }
 
 * { box-sizing: border-box; }
@@ -43,14 +44,29 @@ body {
   font-size: 1.5rem;
 }
 
-.hero .sub {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.86rem;
+.chart-guide {
   max-width: 980px;
 }
 
-.hero code {
+.chart-guide > summary {
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.guide-body {
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.guide-body p {
+  margin: 0.35rem 0;
+}
+
+.hero code,
+.chart-guide code {
   background: var(--panel-2);
   padding: 0.05rem 0.35rem;
   border-radius: 4px;
@@ -313,7 +329,7 @@ button.ghost:hover {
 .dot-last.clickable.selected { stroke: var(--text); stroke-width: 2; }
 
 /* 最新收盘价：水平虚线 */
-.ref-line { stroke-width: 1.6; stroke-dasharray: 6 4; }
+.ref-line { stroke-width: 1; stroke-dasharray: 2 4; }
 .ref-line.red { stroke: var(--red); }
 .ref-line.green { stroke: var(--green); }
 .ref-line.gray { stroke: var(--gray); }
@@ -323,10 +339,10 @@ button.ghost:hover {
 .ma55-line { stroke: var(--accent); stroke-width: 1.2; }
 
 /* 持仓买入价：橙色水平虚线 */
-.buy-line { stroke: var(--orange); stroke-width: 1.6; stroke-dasharray: 4 4; }
+.buy-line { stroke: var(--orange); stroke-width: 1; stroke-dasharray: 2 4; }
 .buy-label { fill: var(--orange); font-size: 10px; font-weight: 600; }
-.stop-line { stroke: var(--orange); stroke-width: 1; stroke-dasharray: 2 4; pointer-events: none; }
-.stop-label { fill: var(--orange); font-size: 10px; font-weight: 600; }
+.stop-line { stroke: var(--yellow); stroke-width: 1; stroke-dasharray: 2 4; pointer-events: none; }
+.stop-label { fill: var(--yellow); font-size: 10px; font-weight: 600; }
 
 /* 副图：55 日均线日变化柱状图 */
 .sub-title { fill: var(--muted); font-size: 11px; }

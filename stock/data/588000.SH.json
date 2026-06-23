@@ -2,7 +2,7 @@
   "code": "588000.SH",
   "name": "华夏上证科创板50成份ETF",
   "type": "etf",
-  "buy_price": null,
+  "buy_price": 2.047,
   "source": "fund_daily(ETF日线)",
   "latest_trade_date": "2026-06-22",
   "count": 21,
