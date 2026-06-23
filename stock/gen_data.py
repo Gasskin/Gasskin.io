@@ -33,8 +33,13 @@ OUTPUT_BARS = 21          # 展示的交易日数量
 MA_DELTA = 55             # 副图展示的均线日变化周期
 DMI_DI_PERIOD = 14        # DMI(14, 6): DI/DX 计算周期
 DMI_ADX_PERIOD = 6        # DMI(14, 6): ADX 移动平均周期
+ATR_PERIOD = 14           # ATR 计算周期
 # 为了给最旧的展示日也算出指标，需要额外的历史交易日完成平滑初始化。
-NEEDED_BARS = max(OUTPUT_BARS + MA_DELTA, OUTPUT_BARS + DMI_DI_PERIOD + DMI_ADX_PERIOD)
+NEEDED_BARS = max(
+    OUTPUT_BARS + MA_DELTA,
+    OUTPUT_BARS + DMI_DI_PERIOD + DMI_ADX_PERIOD,
+    OUTPUT_BARS + ATR_PERIOD,
+)
 
 
 @dataclass
@@ -409,6 +414,34 @@ def calculate_dmi_adx(
     return adx
 
 
+def calculate_atr(frame: Any, period: int = ATR_PERIOD) -> list[float | None]:
+    """计算 ATR，使用 TR 的 period 日简单移动平均。"""
+    if frame is None or frame.empty:
+        return []
+
+    highs = [float(v) for v in frame["high"].tolist()]
+    lows = [float(v) for v in frame["low"].tolist()]
+    closes = [float(v) for v in frame["close"].tolist()]
+    total = len(highs)
+    atr: list[float | None] = [None] * total
+    if total < period:
+        return atr
+
+    tr = [0.0] * total
+    tr[0] = highs[0] - lows[0]
+    for i in range(1, total):
+        tr[i] = max(
+            highs[i] - lows[i],
+            abs(highs[i] - closes[i - 1]),
+            abs(lows[i] - closes[i - 1]),
+        )
+
+    for i in range(period - 1, total):
+        atr[i] = sum(tr[i - period + 1 : i + 1]) / period
+
+    return atr
+
+
 def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
     data = fetch.data
     if data is None or data.empty:
@@ -424,6 +457,7 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
     full["ma_delta"] = full["close"].rolling(MA_DELTA).mean()
     full["ma_delta_change"] = full["ma_delta"].diff()
     full["adx14_6"] = calculate_dmi_adx(full, DMI_DI_PERIOD, DMI_ADX_PERIOD)
+    full["atr14"] = calculate_atr(full, ATR_PERIOD)
 
     window = full.tail(OUTPUT_BARS)
 
@@ -439,6 +473,7 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
                 "ma55": num_or_none(row["ma_delta"]),
                 "ma55_delta": num_or_none(row["ma_delta_change"]),
                 "adx14_6": num_or_none(row["adx14_6"]),
+                "atr14": num_or_none(row["atr14"]),
             }
         )
     return records
@@ -529,7 +564,7 @@ def main() -> int:
     print(f"最新交易日候选: {display_date(t_date)}")
     print(
         f"每个代码输出最新 {OUTPUT_BARS} 个交易日的 OHLC，"
-        f"并附 {MA_DELTA} 日均线日变化与 DMI({DMI_DI_PERIOD}, {DMI_ADX_PERIOD}) 的 ADX。"
+        f"并附 {MA_DELTA} 日均线日变化、DMI({DMI_DI_PERIOD}, {DMI_ADX_PERIOD}) 的 ADX 与 ATR({ATR_PERIOD})。"
     )
     print(f"输出目录: {args.out_dir}")
 

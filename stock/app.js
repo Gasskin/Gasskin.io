@@ -3,6 +3,7 @@
 const HIGH_LOOKBACK = 20; // 前 20 个交易日最高价（不含最新交易日）
 const LOW_LOOKBACK = 10; // 前 10 个交易日最低价（不含最新交易日）
 const SHORT_LOW_LOOKBACK = 5; // 前 5 个交易日最低价（不含最新交易日）
+const STOP_LOSS_ATR_MULTIPLIER = 2;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const grid = document.getElementById("grid");
@@ -90,12 +91,14 @@ function buildChart(bars, level, onSelect, buyPrice) {
   const padL = 56;
   const padR = 56;
   const padT = 18;
-  // 主图（价格）、55 日均线变化、ADX 三块绘图区。
+  // 主图（价格）、55 日均线变化、ADX、ATR 四块绘图区。
   const priceH = 224;
   const gap = 30; // 主副图之间留白（副图标题占用）
   const subH = 64;
   const adxGap = 28;
   const adxH = 52;
+  const atrGap = 28;
+  const atrH = 52;
   const padB = 34; // 底部日期标签
   const priceTop = padT;
   const priceBottom = priceTop + priceH;
@@ -103,7 +106,9 @@ function buildChart(bars, level, onSelect, buyPrice) {
   const subBottom = subTop + subH;
   const adxTop = subBottom + adxGap;
   const adxBottom = adxTop + adxH;
-  const H = adxBottom + padB;
+  const atrTop = adxBottom + atrGap;
+  const atrBottom = atrTop + atrH;
+  const H = atrBottom + padB;
   const plotW = W - padL - padR;
 
   const n = bars.length;
@@ -125,10 +130,19 @@ function buildChart(bars, level, onSelect, buyPrice) {
   ma55Values.forEach((value) => {
     if (value != null) candidates.push(value);
   });
+  const atr14Values = bars.map((b) => {
+    const value = b.atr14 == null ? null : Number(b.atr14);
+    return value == null || Number.isNaN(value) ? null : value;
+  });
   if (level.high20 != null) candidates.push(level.high20);
   if (level.low10 != null) candidates.push(level.low10);
   const hasBuy = buyPrice != null && !Number.isNaN(Number(buyPrice));
   if (hasBuy) candidates.push(Number(buyPrice));
+  const latestAtr14 = atr14Values[lastIdx];
+  const stopLossPrice = hasBuy && latestAtr14 != null
+    ? Number(buyPrice) - STOP_LOSS_ATR_MULTIPLIER * latestAtr14
+    : null;
+  if (stopLossPrice != null) candidates.push(stopLossPrice);
   let min = Math.min(...candidates);
   let max = Math.max(...candidates);
   if (min === max) {
@@ -175,7 +189,7 @@ function buildChart(bars, level, onSelect, buyPrice) {
   // X 轴日期标签（首、中、尾），放在所有副图下方。
   const xIdx = n <= 1 ? [0] : [0, Math.floor((n - 1) / 2), n - 1];
   for (const i of xIdx) {
-    const label = el("text", { x: x(i), y: adxBottom + 16, class: "axis-label x" });
+    const label = el("text", { x: x(i), y: atrBottom + 16, class: "axis-label x" });
     label.textContent = (bars[i].date || "").slice(5); // MM-DD
     svg.appendChild(label);
   }
@@ -198,6 +212,23 @@ function buildChart(bars, level, onSelect, buyPrice) {
     });
     buyLabel.textContent = fmtPrice(buyPrice);
     svg.appendChild(buyLabel);
+  }
+
+  // ATR 止损价：买入价 - N * 最新 ATR14。
+  if (stopLossPrice != null) {
+    const sy = y(stopLossPrice);
+    const stopLine = el("line", {
+      x1: padL, y1: sy, x2: W - padR, y2: sy, class: "stop-line",
+    });
+    const title = el("title");
+    title.textContent = `止损价 ${fmtPrice(stopLossPrice)} = 买入价 - ${STOP_LOSS_ATR_MULTIPLIER} × ATR14`;
+    stopLine.appendChild(title);
+    svg.appendChild(stopLine);
+    const stopLabel = el("text", {
+      x: padL - 6, y: sy + 3, class: "stop-label", "text-anchor": "end",
+    });
+    stopLabel.textContent = `止损 ${fmtPrice(stopLossPrice)}`;
+    svg.appendChild(stopLabel);
   }
 
   // 实心日 K：实体 = 开盘-收盘，影线 = 最高-最低；红涨绿跌（按收盘与开盘比较）。
@@ -286,6 +317,9 @@ function buildChart(bars, level, onSelect, buyPrice) {
 
   // ── 副图：DMI(14,6) ADX 曲线，按展示周期内高低值缩放 ──
   buildAdxChart(svg, bars, { x, slot, adxTop, adxBottom, padL, padR, W }, select);
+
+  // ── 副图：ATR14 曲线，按展示周期内高低值缩放 ──
+  buildAtrChart(svg, bars, { x, slot, atrTop, atrBottom, padL, padR, W }, select);
 
   return svg;
 }
@@ -421,6 +455,79 @@ function buildAdxChart(svg, bars, geo, select) {
   });
 }
 
+// 副图：ATR14 曲线，纵轴使用当前展示周期内的最低/最高 ATR。
+function buildAtrChart(svg, bars, geo, select) {
+  const { x, slot, atrTop, atrBottom, padL, padR, W } = geo;
+  const atrValues = bars.map((b) => {
+    const value = b.atr14 == null ? null : Number(b.atr14);
+    return value == null || Number.isNaN(value) ? null : value;
+  });
+  const validAtrValues = atrValues.filter((value) => value != null);
+  const atrMin = validAtrValues.length ? Math.min(...validAtrValues) : 0;
+  const atrMax = validAtrValues.length ? Math.max(...validAtrValues) : 1;
+  const atrRange = atrMax - atrMin;
+  const yAtr = (value) => {
+    if (atrRange === 0) return (atrTop + atrBottom) / 2;
+    const clamped = Math.max(atrMin, Math.min(atrMax, value));
+    return atrBottom - ((clamped - atrMin) / atrRange) * (atrBottom - atrTop);
+  };
+
+  const subTitle = el("text", { x: padL, y: atrTop - 8, class: "sub-title" });
+  subTitle.textContent = "ATR14";
+  svg.appendChild(subTitle);
+
+  const ticks = atrRange === 0 ? [atrMax] : [atrMax, (atrMax + atrMin) / 2, atrMin];
+  for (const tick of ticks) {
+    const yy = yAtr(tick);
+    svg.appendChild(el("line", {
+      x1: padL, y1: yy, x2: W - padR, y2: yy, class: tick === atrMin ? "sub-zero" : "atr-grid",
+    }));
+    const label = el("text", { x: padL - 6, y: yy + 3, class: "axis-label y" });
+    label.textContent = fmtPrice(tick);
+    svg.appendChild(label);
+  }
+
+  let path = "";
+  let drawing = false;
+  for (let i = 0; i < atrValues.length; i++) {
+    const value = atrValues[i];
+    if (value == null) {
+      drawing = false;
+      continue;
+    }
+    const cmd = drawing ? "L" : "M";
+    path += `${path ? " " : ""}${cmd} ${x(i)} ${yAtr(value)}`;
+    drawing = true;
+  }
+
+  if (path && path.includes("L")) {
+    const line = el("path", { d: path, class: "atr-line" });
+    const title = el("title");
+    title.textContent = "ATR14";
+    line.appendChild(title);
+    svg.appendChild(line);
+  }
+
+  atrValues.forEach((value, i) => {
+    if (value == null) return;
+    const dot = el("circle", {
+      cx: x(i), cy: yAtr(value), r: 3, class: "atr-dot clickable",
+    });
+    const title = el("title");
+    title.textContent = `${bars[i].date}  ATR14 ${fmtPrice(value)}`;
+    dot.appendChild(title);
+    dot.addEventListener("click", () => select(dot, bars[i]));
+    svg.appendChild(dot);
+
+    const hit = el("rect", {
+      x: x(i) - slot / 2, y: atrTop, width: slot, height: atrBottom - atrTop,
+      class: "atr-hit clickable",
+    });
+    hit.addEventListener("click", () => select(dot, bars[i]));
+    svg.appendChild(hit);
+  });
+}
+
 function buildCard(payload) {
   const bars = Array.isArray(payload.data) ? payload.data : [];
   const level = evaluateLevel(bars);
@@ -482,6 +589,7 @@ function buildCard(payload) {
         ? "—"
         : `${bar.ma55_delta >= 0 ? "+" : ""}${fmtPrice(bar.ma55_delta)}`;
       const adx = bar.adx14_6 == null ? "—" : fmtPrice(bar.adx14_6);
+      const atr = bar.atr14 == null ? "—" : fmtPrice(bar.atr14);
       detail.innerHTML = `
         <div class="detail-title">当日数据${isLatest ? "（最新）" : ""}</div>
         <dl class="detail-list">
@@ -492,6 +600,7 @@ function buildCard(payload) {
           <dt>55日均线</dt><dd>${ma55}</dd>
           <dt>Δ55日均线</dt><dd>${dlt}</dd>
           <dt>ADX(14,6)</dt><dd>${adx}</dd>
+          <dt>ATR14</dt><dd>${atr}</dd>
         </dl>
         <div class="detail-hint">点击任意 K 线查看当日数据</div>
       `;
