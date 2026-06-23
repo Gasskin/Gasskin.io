@@ -3,6 +3,7 @@
 const HIGH_LOOKBACK = 20; // 前 20 个交易日最高价（不含最新交易日）
 const LOW_LOOKBACK = 10; // 前 10 个交易日最低价（不含最新交易日）
 const SHORT_LOW_LOOKBACK = 5; // 前 5 个交易日最低价（不含最新交易日）
+const STOP_LOSS_HIGH_LOOKBACK = 14; // 止损价使用最近 14 个交易日最高价
 const STOP_LOSS_ATR_MULTIPLIER = 2;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -139,8 +140,13 @@ function buildChart(bars, level, onSelect, buyPrice) {
   const hasBuy = buyPrice != null && !Number.isNaN(Number(buyPrice));
   if (hasBuy) candidates.push(Number(buyPrice));
   const latestAtr14 = atr14Values[lastIdx];
+  const stopLossHigh = bars.slice(-STOP_LOSS_HIGH_LOOKBACK).reduce(
+    (high, bar) => Math.max(high, Number(bar.high)),
+    Number.NEGATIVE_INFINITY,
+  );
   const stopLossPrice = hasBuy && latestAtr14 != null
-    ? Number(buyPrice) - STOP_LOSS_ATR_MULTIPLIER * latestAtr14
+    && Number.isFinite(stopLossHigh)
+    ? stopLossHigh - STOP_LOSS_ATR_MULTIPLIER * latestAtr14
     : null;
   if (stopLossPrice != null) candidates.push(stopLossPrice);
   let min = Math.min(...candidates);
@@ -214,14 +220,14 @@ function buildChart(bars, level, onSelect, buyPrice) {
     svg.appendChild(buyLabel);
   }
 
-  // ATR 止损价：买入价 - N * 最新 ATR14。
+  // ATR 止损价：最近 N 日最高价 - M * 最新 ATR14。
   if (stopLossPrice != null) {
     const sy = y(stopLossPrice);
     const stopLine = el("line", {
       x1: padL, y1: sy, x2: W - padR, y2: sy, class: "stop-line",
     });
     const title = el("title");
-    title.textContent = `止损价 ${fmtPrice(stopLossPrice)} = 买入价 - ${STOP_LOSS_ATR_MULTIPLIER} × ATR14`;
+    title.textContent = `止损价 ${fmtPrice(stopLossPrice)} = ${STOP_LOSS_HIGH_LOOKBACK}日最高价 - ${STOP_LOSS_ATR_MULTIPLIER} × ATR14`;
     stopLine.appendChild(title);
     svg.appendChild(stopLine);
     const stopLabel = el("text", {
