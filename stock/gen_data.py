@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-为 stock.txt 中的每个代码（个股或 ETF）生成最新 21 个交易日的行情数据。
+为 stock.txt 中的每个代码（个股或 ETF）生成最新 20 个交易日的行情数据。
 
-通过 Tushare 拉取日线并转为前复权价格，为每个代码在 data/ 目录下生成一个 ``<代码>.json``
-文件，记录最新 21 个交易日的开盘价、最高价、最低价、收盘价；并生成
+通过 Tushare 专业因子接口拉取行情与指标，为每个代码在 data/ 目录下生成一个 ``<代码>.json``
+文件，记录最新 20 个交易日的开盘价、最高价、最低价、收盘价；并生成
 ``data/index.json`` 清单供前端发现标的。本脚本自包含，不依赖其它模块。
 
-代码可能是个股或 ETF，两者日线与复权因子接口不同（个股 daily/adj_factor、
-ETF fund_daily/fund_adj）。脚本会先用 fund_basic / stock_basic 判定类型，
+代码可能是个股或 ETF，两者专业因子接口不同（个股 stk_factor_pro、
+ETF fund_factor_pro）。脚本会先用 fund_basic / stock_basic 判定类型，
 缺失时按代码段猜测，据此选择接口。
 
 默认文件相对脚本目录解析：
@@ -31,16 +31,13 @@ from typing import Any
 
 PRICE_FIELDS = "ts_code,trade_date,open,high,low,close"
 OUTPUT_BARS = 20          # 展示的交易日数量
+FACTOR_HISTORY_BARS = 80  # 专业因子接口至少获取的交易日数量
 MA_DELTA = 55             # 副图展示的均线日变化周期
 DMI_DI_PERIOD = 14        # DMI(14, 6): DI/DX 计算周期
 DMI_ADX_PERIOD = 6        # DMI(14, 6): ADX 移动平均周期
 ATR_PERIOD = 14           # ATR 计算周期
-# 为了给最旧的展示日也算出指标，需要额外的历史交易日完成平滑初始化。
-NEEDED_BARS = max(
-    OUTPUT_BARS + MA_DELTA,
-    OUTPUT_BARS + DMI_DI_PERIOD + DMI_ADX_PERIOD,
-    OUTPUT_BARS + ATR_PERIOD,
-)
+# 专业因子接口直接提供 ATR/ADX；本地只需足够历史计算 55 日均线。
+NEEDED_BARS = FACTOR_HISTORY_BARS
 
 
 @dataclass
@@ -232,6 +229,154 @@ def apply_qfq_adjustment(price_frame: Any, factor_frame: Any, source_name: str) 
     return merged.drop(columns=["adj_factor"])
 
 
+def factor_fields(endpoint: str) -> str:
+    if endpoint == "stk_factor_pro":
+        return ",".join(
+            [
+                "ts_code",
+                "trade_date",
+                "open",
+                "high",
+                "low",
+                "close",
+                "open_qfq",
+                "high_qfq",
+                "low_qfq",
+                "close_qfq",
+                "atr_bfq",
+                "atr_qfq",
+                "dmi_adx_bfq",
+                "dmi_adx_qfq",
+            ]
+        )
+    return ",".join(
+        [
+            "ts_code",
+            "trade_date",
+            "open",
+            "high",
+            "low",
+            "close",
+            "atr_bfq",
+            "dmi_adx_bfq",
+        ]
+    )
+
+
+def fetch_factor_from_endpoint(pro: Any, endpoint: str, ts_code: str, start_date: str, end_date: str) -> Any:
+    method = getattr(pro, endpoint)
+    return method(
+        ts_code=ts_code,
+        start_date=start_date,
+        end_date=end_date,
+        fields=factor_fields(endpoint),
+    )
+
+
+def normalize_factor_pro_frame(frame: Any, end_date: str) -> Any:
+    import pandas as pd
+
+    required = ["trade_date", "open", "high", "low", "close"]
+    columns = [
+        "ts_code",
+        "trade_date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "open_qfq",
+        "high_qfq",
+        "low_qfq",
+        "close_qfq",
+        "atr_bfq",
+        "atr_qfq",
+        "dmi_adx_bfq",
+        "dmi_adx_qfq",
+    ]
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=columns)
+
+    missing = [field for field in required if field not in frame.columns]
+    if missing:
+        raise ValueError(f"Tushare 专业因子字段缺失: {', '.join(missing)}")
+
+    data = frame.copy()
+    data["trade_date"] = data["trade_date"].astype(str)
+    data = data[data["trade_date"] <= end_date]
+
+    for column in columns:
+        if column not in data.columns:
+            data[column] = None
+
+    for column in [field for field in columns if field not in ("ts_code", "trade_date")]:
+        data[column] = pd.to_numeric(data[column], errors="coerce")
+
+    data = data.dropna(subset=required)
+    data = data.drop_duplicates(subset=["trade_date"], keep="first")
+    return data[columns].sort_values("trade_date", ascending=False).reset_index(drop=True)
+
+
+def fetch_factor_data(
+    pro: Any,
+    ts_code: str,
+    end_date: str,
+    initial_days: int,
+    endpoints: list[tuple[str, str]] | None = None,
+) -> FetchResult:
+    if endpoints is None:
+        endpoints = [
+            ("fund_factor_pro", "fund_factor_pro(ETF专业因子)"),
+            ("stk_factor_pro", "stk_factor_pro(股票专业因子)"),
+        ]
+    end_day = datetime.strptime(end_date, "%Y%m%d").date()
+    max_days = 730
+    days = min(max(initial_days, 120), max_days)
+    errors: list[str] = []
+    best_fetch: FetchResult | None = None
+
+    while True:
+        start_date = yyyymmdd(end_day - timedelta(days=days))
+        last_empty_source = ""
+
+        for endpoint, source_name in endpoints:
+            try:
+                raw = fetch_factor_from_endpoint(pro, endpoint, ts_code, start_date, end_date)
+                data = normalize_factor_pro_frame(raw, end_date)
+            except Exception as exc:  # noqa: BLE001 - surface API errors in output
+                errors.append(f"{source_name}: {exc}")
+                continue
+
+            if not data.empty:
+                current_fetch = FetchResult(data=data, source=source_name, start_date=start_date, errors=errors)
+                if best_fetch is None or len(data) > len(best_fetch.data):
+                    best_fetch = current_fetch
+                if len(data) >= NEEDED_BARS or days >= max_days:
+                    return current_fetch
+                last_empty_source = source_name
+                break
+
+            last_empty_source = source_name
+
+        if last_empty_source:
+            errors.append(f"{last_empty_source}: {start_date} - {end_date} 数据不足或为空")
+
+        if days >= max_days:
+            break
+        days = min(days * 2, max_days)
+
+    if best_fetch is not None:
+        return best_fetch
+
+    import pandas as pd
+
+    return FetchResult(
+        data=pd.DataFrame(columns=["ts_code", "trade_date", "open", "high", "low", "close"]),
+        source="无可用数据",
+        start_date=yyyymmdd(end_day - timedelta(days=max_days)),
+        errors=errors,
+    )
+
+
 def fetch_from_endpoint(pro: Any, endpoint: str, ts_code: str, start_date: str, end_date: str) -> Any:
     method = getattr(pro, endpoint)
     return method(
@@ -356,6 +501,17 @@ def endpoints_for_type(code_type: str | None) -> list[tuple[str, str]]:
     """按类型返回 Tushare 日线接口的尝试顺序（首个为首选，其余兜底）。"""
     fund_ep = ("fund_daily", "fund_daily(ETF日线)")
     stock_ep = ("daily", "daily(股票日线)")
+    if code_type == "etf":
+        return [fund_ep, stock_ep]
+    if code_type == "stock":
+        return [stock_ep, fund_ep]
+    return [fund_ep, stock_ep]
+
+
+def factor_endpoints_for_type(code_type: str | None) -> list[tuple[str, str]]:
+    """按类型返回 Tushare 专业因子接口的尝试顺序。"""
+    fund_ep = ("fund_factor_pro", "fund_factor_pro(ETF专业因子)")
+    stock_ep = ("stk_factor_pro", "stk_factor_pro(股票专业因子)")
     if code_type == "etf":
         return [fund_ep, stock_ep]
     if code_type == "stock":
@@ -506,33 +662,61 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
     if data is None or data.empty:
         return []
 
-    # 用全量历史（升序）计算均线，再截取最新 OUTPUT_BARS 条展示。
+    # 用全量历史（升序）计算 55 日均线，再截取最新 OUTPUT_BARS 条展示。
     full = data[data["trade_date"].astype(str) <= anchor_date].copy()
     if full.empty:
         return []
     full = full.sort_values("trade_date", ascending=True)
 
-    # 收盘价的 55 日均线及其日变化。
-    full["ma_delta"] = full["close"].rolling(MA_DELTA).mean()
+    qfq_columns = ["open_qfq", "high_qfq", "low_qfq", "close_qfq"]
+    has_qfq = all(column in full.columns and full[column].notna().all() for column in qfq_columns)
+    adjustment = "qfq" if has_qfq else "bfq"
+    for column in ["open", "high", "low", "close"]:
+        full[f"{column}_display"] = full[f"{column}_qfq"] if has_qfq else full[column]
+    full["atr_display"] = full["atr_qfq"] if has_qfq and "atr_qfq" in full.columns else full["atr_bfq"]
+    full["adx_display"] = (
+        full["dmi_adx_qfq"] if has_qfq and "dmi_adx_qfq" in full.columns else full["dmi_adx_bfq"]
+    )
+
+    full["ma_delta"] = full["close_display"].rolling(MA_DELTA).mean()
     full["ma_delta_change"] = full["ma_delta"].diff()
-    full["adx14_6"] = calculate_dmi_adx(full, DMI_DI_PERIOD, DMI_ADX_PERIOD)
-    full["atr14"] = calculate_atr(full, ATR_PERIOD)
 
     window = full.tail(OUTPUT_BARS)
 
     records: list[dict[str, Any]] = []
     for _, row in window.iterrows():
+        bfq = {
+            "open": to_number(row["open"]),
+            "high": to_number(row["high"]),
+            "low": to_number(row["low"]),
+            "close": to_number(row["close"]),
+            "atr14": num_or_none(row.get("atr_bfq")),
+            "adx14_6": num_or_none(row.get("dmi_adx_bfq")),
+        }
+        qfq = None
+        if has_qfq:
+            qfq = {
+                "open": to_number(row["open_qfq"]),
+                "high": to_number(row["high_qfq"]),
+                "low": to_number(row["low_qfq"]),
+                "close": to_number(row["close_qfq"]),
+                "atr14": num_or_none(row.get("atr_qfq")),
+                "adx14_6": num_or_none(row.get("dmi_adx_qfq")),
+            }
         records.append(
             {
                 "date": display_date(str(row["trade_date"])),
-                "open": to_number(row["open"]),
-                "high": to_number(row["high"]),
-                "low": to_number(row["low"]),
-                "close": to_number(row["close"]),
+                "adjustment": adjustment,
+                "open": to_number(row["open_display"]),
+                "high": to_number(row["high_display"]),
+                "low": to_number(row["low_display"]),
+                "close": to_number(row["close_display"]),
+                "bfq": bfq,
+                "qfq": qfq,
                 "ma55": num_or_none(row["ma_delta"]),
                 "ma55_delta": num_or_none(row["ma_delta_change"]),
-                "adx14_6": num_or_none(row["adx14_6"]),
-                "atr14": num_or_none(row["atr14"]),
+                "adx14_6": num_or_none(row["adx_display"]),
+                "atr14": num_or_none(row["atr_display"]),
             }
         )
     return records
@@ -560,7 +744,7 @@ def write_json(out_dir: Path, code: str, payload: dict[str, Any]) -> Path:
 def parse_args() -> argparse.Namespace:
     default_dir = script_dir()
     parser = argparse.ArgumentParser(
-        description="读取 stock.txt，为每个代码（个股或 ETF）生成最新 21 个交易日的行情 JSON。",
+        description="读取 stock.txt，为每个代码（个股或 ETF）生成最新 20 个交易日的行情 JSON。",
     )
     parser.add_argument(
         "--key-file",
@@ -590,7 +774,7 @@ def parse_args() -> argparse.Namespace:
         "--fetch-days",
         type=int,
         default=160,
-        help="初始回看自然日天数，数据不足时会自动扩大，默认 160（约可覆盖 80 个交易日）。",
+        help="初始回看自然日天数，数据不足 80 个交易日时会自动扩大，默认 160。",
     )
     return parser.parse_args()
 
@@ -622,8 +806,9 @@ def main() -> int:
     print(f"代码数量: {len(entries)}")
     print(f"最新交易日候选: {display_date(t_date)}")
     print(
-        f"每个代码输出最新 {OUTPUT_BARS} 个交易日的 OHLC，"
-        f"并附 {MA_DELTA} 日均线日变化、DMI({DMI_DI_PERIOD}, {DMI_ADX_PERIOD}) 的 ADX 与 ATR({ATR_PERIOD})。"
+        f"每个代码从专业因子接口获取至少 {FACTOR_HISTORY_BARS} 个交易日，"
+        f"输出最新 {OUTPUT_BARS} 个交易日的 OHLC、{MA_DELTA} 日均线日变化、"
+        f"DMI({DMI_DI_PERIOD}, {DMI_ADX_PERIOD}) 的 ADX 与 ATR({ATR_PERIOD})。"
     )
     print(f"输出目录: {args.out_dir}")
 
@@ -633,8 +818,8 @@ def main() -> int:
         # 先用基础表判定类型，缺失时按代码段猜测，仍未知则两个接口都试。
         code_type = type_map.get(code) or guess_type_by_code(code)
         try:
-            fetch = fetch_price_data(
-                pro, code, t_date, args.fetch_days, endpoints_for_type(code_type)
+            fetch = fetch_factor_data(
+                pro, code, t_date, args.fetch_days, factor_endpoints_for_type(code_type)
             )
             anchor_date = resolve_anchor_date(fetch, t_date)
             records = build_records(fetch, anchor_date)
@@ -648,8 +833,8 @@ def main() -> int:
             continue
 
         # 实际命中的数据源更可靠：据此校正类型。
-        resolved_type = "etf" if fetch.source.startswith("fund_daily") else (
-            "stock" if fetch.source.startswith("daily") else (code_type or "unknown")
+        resolved_type = "etf" if fetch.source.startswith("fund_factor_pro") else (
+            "stock" if fetch.source.startswith("stk_factor_pro") else (code_type or "unknown")
         )
 
         payload = {
