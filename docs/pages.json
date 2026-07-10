@@ -17,7 +17,7 @@
     "id": "stock",
     "title": "股票行情图",
     "icon": "📈",
-    "description": "读取 stock/data 数据，绘制收盘价折线与高低点参考线",
+    "description": "浏览标的最近 20 日 K 线，点击查看当日涨跌幅",
     "path": "stock/index.html"
   }
 ]

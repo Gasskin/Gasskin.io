@@ -3,59 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>股票行情图</title>
+  <meta name="theme-color" content="#f4f5f0" />
+  <title>20 日 K 线</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="updatedBar" class="updated-bar">数据更新时间：加载中…</div>
-
-  <header class="hero">
-    <h1>📈 股票行情图</h1>
-    <details class="chart-guide" open>
-      <summary>图表说明</summary>
-      <div class="guide-body">
-        <p>
-          实心日 K 表示历史交易日，实体为开盘价到收盘价，影线为最高价到最低价，红涨绿跌。
-          当前图表展示最近 20 个交易日，包含最新交易日。
-        </p>
-        <p>
-          <span class="legend-dot red"></span>红点标识前 20 日最高价，
-          <span class="legend-dot green"></span>绿点标识前 10 日最低价，
-          <span class="legend-dot gray"></span>灰点标识前 5 日最低价，以上区间均包含最新交易日。
-        </p>
-        <p>
-          蓝色细线表示 55 日均线。<code>stock.txt</code> 中以「代码 买入价格」填写时，标题显示为橙色，
-          并在匹配的 K 线上用橙点和价格标出买入价；黄色细虚线表示止损价，计算方式为最近 14 日最高价 - 2 × ATR14。
-        </p>
-        <p>
-          第一幅副图柱状为 55 日均线较前一日的变化，红增绿减，向下为负。
-          下方两条曲线分别为 ADX(14,6) 和 ATR14，纵轴按当前展示周期内的最高值与最低值缩放。
-        </p>
-        <p>
-          点击任意 K 线、副图柱或指标曲线点，可在右侧查看当日数据。
-          未持仓但突破前 20 日高点的标的，名称与左侧导航显示为红色。
-        </p>
+  <main class="market-shell">
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">MARKET VIEW</p>
+        <h1>20 日 K 线</h1>
       </div>
-    </details>
-  </header>
+      <p class="page-hint">选择标的，点击 K 线查看当日涨跌幅</p>
+    </header>
 
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="sidebar-title">标的列表</div>
-      <nav id="stockNav" class="nav"></nav>
-    </aside>
-    <main class="content">
-      <div class="toolbar">
-        <button type="button" id="btnReload" class="ghost">↻ 重新加载</button>
-        <span id="status" class="status"></span>
-      </div>
-      <div id="grid" class="grid"></div>
-    </main>
-  </div>
+    <div class="workspace">
+      <aside class="stock-panel" aria-label="标的列表">
+        <p class="panel-label">标的</p>
+        <nav id="stockNav" class="stock-nav"></nav>
+      </aside>
 
-  <footer class="footer">
-    Gasskin.io · 股票行情图 · 数据由 <code>stock/gen_data.py</code> 生成
-  </footer>
+      <section id="chartPanel" class="chart-panel" aria-live="polite">
+        <div id="loading" class="loading">正在加载行情…</div>
+      </section>
+    </div>
+  </main>
 
   <script src="app.js"></script>
 </body>
