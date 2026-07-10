@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-为 stock.txt 中的每个代码（个股或 ETF）生成最新 20 个交易日的行情数据。
+为 stock.txt 中的每个代码（个股或 ETF）生成最新 120 个交易日的行情数据。
 
 通过 Tushare 专业因子接口拉取行情与指标，为每个代码在 data/ 目录下生成一个 ``<代码>.json``
-文件，记录最新 20 个交易日的开盘价、最高价、最低价、收盘价；并生成
+文件，记录最新 120 个交易日的开盘价、最高价、最低价、收盘价；并生成
 ``data/index.json`` 清单供前端发现标的。本脚本自包含，不依赖其它模块。
 
 代码可能是个股或 ETF，两者专业因子接口不同（个股 stk_factor_pro、
@@ -30,8 +30,8 @@ from typing import Any
 
 
 PRICE_FIELDS = "ts_code,trade_date,open,high,low,close"
-OUTPUT_BARS = 20          # 展示的交易日数量
-FACTOR_HISTORY_BARS = 80  # 专业因子接口至少获取的交易日数量
+OUTPUT_BARS = 120          # 前端可切换范围所需的最大交易日数量
+FACTOR_HISTORY_BARS = 180  # 额外历史用于计算 55 日均线及首日涨跌幅
 MA_DELTA = 55             # 副图展示的均线日变化周期
 DMI_DI_PERIOD = 14        # DMI(14, 6): DI/DX 计算周期
 DMI_ADX_PERIOD = 6        # DMI(14, 6): ADX 移动平均周期
@@ -687,6 +687,7 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
         full["dmi_adx_qfq"] if has_qfq and "dmi_adx_qfq" in full.columns else full["dmi_adx_bfq"]
     )
 
+    full["pct_chg_display"] = full["close_display"].pct_change() * 100
     full["ma_delta"] = full["close_display"].rolling(MA_DELTA).mean()
     full["ma_delta_change"] = full["ma_delta"].diff()
 
@@ -720,6 +721,7 @@ def build_records(fetch: Any, anchor_date: str) -> list[dict[str, Any]]:
                 "high": to_number(row["high_display"]),
                 "low": to_number(row["low_display"]),
                 "close": to_number(row["close_display"]),
+                "pct_chg": num_or_none(row["pct_chg_display"], digits=4),
                 "bfq": bfq,
                 "qfq": qfq,
                 "ma55": num_or_none(row["ma_delta"]),
@@ -753,7 +755,7 @@ def write_json(out_dir: Path, code: str, payload: dict[str, Any]) -> Path:
 def parse_args() -> argparse.Namespace:
     default_dir = script_dir()
     parser = argparse.ArgumentParser(
-        description="读取 stock.txt，为每个代码（个股或 ETF）生成最新 20 个交易日的行情 JSON。",
+        description="读取 stock.txt，为每个代码（个股或 ETF）生成最新 120 个交易日的行情 JSON。",
     )
     parser.add_argument(
         "--key-file",
@@ -782,8 +784,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--fetch-days",
         type=int,
-        default=160,
-        help="初始回看自然日天数，数据不足 80 个交易日时会自动扩大，默认 160。",
+        default=300,
+        help="初始回看自然日天数，数据不足 180 个交易日时会自动扩大，默认 300。",
     )
     return parser.parse_args()
 

@@ -184,7 +184,7 @@ h1 {
 }
 
 .day-change {
-  min-width: 152px;
+  min-width: 210px;
   padding: 12px 16px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -195,7 +195,7 @@ h1 {
 .change-date {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
   letter-spacing: 0.04em;
 }
@@ -212,6 +212,56 @@ h1 {
 
 .day-change.up .change-value { color: var(--red); }
 .day-change.down .change-value { color: var(--green); }
+
+.range-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.range-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.period-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.period-button {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.period-button:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.period-button.active {
+  color: var(--ink);
+  background: var(--active);
+}
+
+.period-button span { font-size: 12px; font-weight: 700; }
+.period-button small { color: inherit; font-size: 9px; opacity: 0.65; }
 
 .chart-wrap {
   position: relative;
@@ -298,7 +348,7 @@ h1 {
   .market-shell { padding-top: 28px; }
   .page-head { align-items: flex-start; flex-direction: column; gap: 12px; }
   .page-hint { font-size: 13px; }
-  .workspace { grid-template-columns: 1fr; border-radius: 20px; }
+  .workspace { grid-template-columns: minmax(0, 1fr); border-radius: 20px; }
   .stock-panel { overflow: hidden; padding: 16px; border-right: 0; border-bottom: 1px solid var(--line); }
   .panel-label { display: none; }
   .stock-nav {
@@ -312,12 +362,17 @@ h1 {
   .stock-nav::-webkit-scrollbar { display: none; }
   .stock-button { flex: 0 0 auto; width: auto; min-width: 132px; }
   .stock-button:hover { transform: none; }
-  .chart-panel { overflow: hidden; padding: 24px 16px 26px; }
+  .chart-panel { width: 100%; max-width: 100%; overflow: hidden; padding: 24px 16px 26px; }
   .chart-head { margin-bottom: 20px; }
+  .range-bar { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .range-label { padding-left: 2px; }
+  .period-switch { width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .period-switch::-webkit-scrollbar { display: none; }
+  .period-button { flex: 1 0 auto; justify-content: center; }
   .day-change { min-width: 126px; padding: 10px 12px; }
   .change-value { font-size: 20px; }
-  .k-chart { min-width: 620px; min-height: 0; }
-  .chart-wrap { width: 100%; max-width: 100%; overflow-x: auto; }
+  .k-chart { min-width: var(--chart-min-width, 620px); min-height: 0; }
+  .chart-wrap { width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; }
 }
 
 @media (max-width: 480px) {

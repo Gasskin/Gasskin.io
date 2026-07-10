@@ -1,12 +1,17 @@
 "use strict";
 
-const DISPLAY_DAYS = 20;
+const INTERVALS = [
+  { days: 1, label: "日K", detail: "1日" },
+  { days: 5, label: "周K", detail: "5日" },
+  { days: 20, label: "月K", detail: "20日" },
+];
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const stockNav = document.getElementById("stockNav");
 const chartPanel = document.getElementById("chartPanel");
 const payloadCache = new Map();
 let selectedCode = null;
+let selectedIntervalDays = 1;
 
 function svgEl(tag, attrs = {}) {
   const node = document.createElementNS(SVG_NS, tag);
@@ -19,7 +24,7 @@ function formatPrice(value) {
   return Number(value).toFixed(2);
 }
 
-function getDayChange(bars, index) {
+function getBarChange(bars, index) {
   const current = bars[index];
   const rawExplicit = current && (current.pct_chg ?? current.change_pct);
   const explicit = Number(rawExplicit);
@@ -30,6 +35,56 @@ function getDayChange(bars, index) {
   const currentClose = Number(current.close);
   if (!Number.isFinite(previousClose) || !Number.isFinite(currentClose) || previousClose === 0) return null;
   return ((currentClose - previousClose) / previousClose) * 100;
+}
+
+function aggregateBars(sourceBars, intervalDays) {
+  if (intervalDays === 1) {
+    return sourceBars.map((bar) => ({
+      ...bar,
+      startDate: bar.date,
+      endDate: bar.date,
+      dateLabel: bar.date,
+    }));
+  }
+
+  const result = [];
+  let cursor = 0;
+  let groupSize = sourceBars.length % intervalDays || intervalDays;
+
+  while (cursor < sourceBars.length) {
+    const group = sourceBars.slice(cursor, cursor + groupSize);
+    const first = group[0];
+    const last = group[group.length - 1];
+    const previousClose = result.length
+      ? Number(result[result.length - 1].close)
+      : (() => {
+          const firstPct = Number(first.pct_chg);
+          const firstClose = Number(first.close);
+          if (!Number.isFinite(firstPct) || !Number.isFinite(firstClose) || firstPct <= -100) return null;
+          return firstClose / (1 + firstPct / 100);
+        })();
+    const close = Number(last.close);
+    const pctChange = Number.isFinite(previousClose) && previousClose !== 0
+      ? ((close - previousClose) / previousClose) * 100
+      : null;
+
+    result.push({
+      date: last.date,
+      startDate: first.date,
+      endDate: last.date,
+      dateLabel: first.date === last.date ? first.date : `${first.date} 至 ${last.date}`,
+      open: Number(first.open),
+      high: Math.max(...group.map((bar) => Number(bar.high))),
+      low: Math.min(...group.map((bar) => Number(bar.low))),
+      close,
+      pct_chg: pctChange,
+    });
+
+    cursor += groupSize;
+    groupSize = intervalDays;
+  }
+
+  return result;
 }
 
 function formatChange(value) {
@@ -43,7 +98,7 @@ async function fetchJSON(url) {
   return response.json();
 }
 
-function createChart(bars, onSelect) {
+function createChart(bars, interval, onSelect) {
   const width = 1000;
   const height = 430;
   const pad = { top: 26, right: 28, bottom: 50, left: 68 };
@@ -58,7 +113,7 @@ function createChart(bars, onSelect) {
   const maxPrice = rawMax + breathingRoom;
   const priceRange = maxPrice - minPrice || 1;
   const slot = plotWidth / bars.length;
-  const candleWidth = Math.max(7, Math.min(22, slot * 0.52));
+  const candleWidth = Math.max(2.5, Math.min(22, slot * 0.56));
   const x = (index) => pad.left + slot * (index + 0.5);
   const y = (price) => pad.top + ((maxPrice - price) / priceRange) * plotHeight;
 
@@ -66,11 +121,12 @@ function createChart(bars, onSelect) {
     class: "k-chart",
     viewBox: `0 0 ${width} ${height}`,
     role: "img",
-    "aria-label": "最近 20 个交易日 K 线图",
+    "aria-label": `${interval.label}图，共 ${bars.length} 根 K 线`,
   });
+  svg.style.setProperty("--chart-min-width", `${Math.max(620, bars.length * 9)}px`);
 
   const title = svgEl("title");
-  title.textContent = "最近 20 个交易日 K 线图，点击任意 K 线查看当日涨跌幅";
+  title.textContent = `${interval.label}图，共 ${bars.length} 根，点击任意 K 线查看区间涨跌幅`;
   svg.appendChild(title);
 
   for (let i = 0; i < 5; i += 1) {
@@ -93,7 +149,12 @@ function createChart(bars, onSelect) {
     svg.appendChild(label);
   }
 
-  const dateIndexes = [...new Set([0, 4, 9, 14, bars.length - 1].filter((index) => index < bars.length))];
+  const tickCount = Math.min(5, bars.length);
+  const dateIndexes = [...new Set(
+    Array.from({ length: tickCount }, (_, index) => (
+      Math.round((index * (bars.length - 1)) / Math.max(1, tickCount - 1))
+    )),
+  )];
   for (const index of dateIndexes) {
     const label = svgEl("text", {
       x: x(index),
@@ -107,7 +168,7 @@ function createChart(bars, onSelect) {
   const candles = [];
   function selectCandle(index) {
     candles.forEach((candle, candleIndex) => candle.classList.toggle("selected", candleIndex === index));
-    onSelect(bars[index], getDayChange(bars, index));
+    onSelect(bars[index], getBarChange(bars, index));
   }
 
   bars.forEach((bar, index) => {
@@ -124,7 +185,7 @@ function createChart(bars, onSelect) {
       class: `candle ${direction}`,
       role: "button",
       tabindex: "0",
-      "aria-label": `${bar.date}，点击查看当日涨跌幅`,
+      "aria-label": `${bar.dateLabel || bar.date}，点击查看涨跌幅`,
     });
 
     group.appendChild(svgEl("line", {
@@ -166,7 +227,9 @@ function createChart(bars, onSelect) {
 }
 
 function renderPayload(payload) {
-  const bars = (Array.isArray(payload.data) ? payload.data : []).slice(-DISPLAY_DAYS);
+  const interval = INTERVALS.find((item) => item.days === selectedIntervalDays) || INTERVALS[0];
+  const sourceBars = Array.isArray(payload.data) ? payload.data.slice(-120) : [];
+  const bars = aggregateBars(sourceBars, interval.days);
   if (!bars.length) {
     chartPanel.innerHTML = '<div class="empty">暂无 K 线数据</div>';
     return;
@@ -183,8 +246,19 @@ function renderPayload(payload) {
         <span class="change-value">—</span>
       </div>
     </header>
+    <div class="range-bar">
+      <span class="range-label">K 线周期</span>
+      <div class="period-switch" role="group" aria-label="K 线周期">
+        ${INTERVALS.map((item) => `
+          <button type="button" class="period-button${item.days === selectedIntervalDays ? " active" : ""}"
+            data-days="${item.days}" aria-pressed="${item.days === selectedIntervalDays}">
+            <span>${item.label}</span><small>${item.detail}</small>
+          </button>
+        `).join("")}
+      </div>
+    </div>
     <div id="chartWrap" class="chart-wrap"></div>
-    <p class="chart-caption">红涨绿跌 · 共 20 个交易日</p>
+    <p class="chart-caption">红涨绿跌 · ${interval.label}${interval.days > 1 ? `（每 ${interval.days} 个交易日合成）` : ""} · 共 ${bars.length} 根</p>
   `;
 
   chartPanel.querySelector(".chart-name").textContent = payload.name || payload.code;
@@ -196,11 +270,20 @@ function renderPayload(payload) {
   const updateChange = (bar, value) => {
     dayChange.classList.remove("up", "down");
     if (Number.isFinite(value) && value !== 0) dayChange.classList.add(value > 0 ? "up" : "down");
-    dateEl.textContent = bar.date;
+    dateEl.textContent = bar.dateLabel || bar.date;
     valueEl.textContent = formatChange(value);
   };
 
-  document.getElementById("chartWrap").appendChild(createChart(bars, updateChange));
+  chartPanel.querySelectorAll(".period-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      const days = Number(button.dataset.days);
+      if (!Number.isFinite(days) || days === selectedIntervalDays) return;
+      selectedIntervalDays = days;
+      renderPayload(payload);
+    });
+  });
+
+  document.getElementById("chartWrap").appendChild(createChart(bars, interval, updateChange));
 }
 
 async function selectStock(item, button) {
