@@ -1,5 +1,12 @@
 ﻿[
   {
+    "id": "canvas",
+    "title": "画布",
+    "icon": "◫",
+    "description": "在无限画布中组织图片与生成节点",
+    "path": "canvas/index.html"
+  },
+  {
     "id": "seedance",
     "title": "Seedance 视频生成",
     "icon": "🎬",
@@ -12,13 +19,6 @@
     "icon": "🖼️",
     "description": "图片生成页面",
     "path": "image2/index.html"
-  },
-  {
-    "id": "stock",
-    "title": "股票行情图",
-    "icon": "📈",
-    "description": "浏览标的最近 20 日 K 线，点击查看当日涨跌幅",
-    "path": "stock/index.html"
   }
 ]
 

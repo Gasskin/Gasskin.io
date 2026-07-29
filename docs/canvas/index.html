@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>画布</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="workspace" aria-label="画布工作区">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>画布</h1>
+          <p>把灵感放到同一个空间</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="fitButton" class="action-button" type="button" title="将全部节点适应到当前屏幕">适应屏幕</button>
+        <button id="settingsButton" class="icon-button" type="button" aria-label="打开画布设置" title="设置">
+          <span aria-hidden="true">&#9881;&#xfe0e;</span>
+        </button>
+      </div>
+
+    </header>
+
+    <section id="canvasViewport" class="canvas-viewport" aria-label="无限画布" tabindex="0">
+      <div id="canvasPanLayer" class="canvas-pan-layer">
+        <div id="canvasSurface" class="canvas-surface">
+          <svg id="connectionLayer" class="connection-layer" aria-hidden="true">
+            <g id="connectionList"></g>
+            <path id="connectionDraft" class="connection-draft" d="" />
+          </svg>
+        </div>
+      </div>
+
+      <div id="emptyGuide" class="empty-guide" aria-hidden="true">
+        <div class="empty-icon"><span></span><span></span><span></span></div>
+        <p>右键创建节点，或拖入一张图片</p>
+        <small>滚轮缩放 · 拖动画布移动视野</small>
+      </div>
+
+      <div class="canvas-help" aria-hidden="true">
+        <span><kbd>右键</kbd> 创建节点</span>
+        <span><kbd>滚轮</kbd> 缩放</span>
+        <span><kbd>空格</kbd> + 拖动</span>
+      </div>
+
+      <div class="zoom-control" aria-label="缩放控制">
+        <button id="zoomOutButton" type="button" aria-label="缩小">−</button>
+        <button id="zoomResetButton" class="zoom-value" type="button" title="重置为 100%">100%</button>
+        <button id="zoomInButton" type="button" aria-label="放大">＋</button>
+      </div>
+
+      <div id="dropOverlay" class="drop-overlay" aria-hidden="true">
+        <div>
+          <span class="drop-symbol" aria-hidden="true">↓</span>
+          <strong>放开以创建图片节点</strong>
+          <small>支持同时拖入多张图片</small>
+        </div>
+      </div>
+    </section>
+
+    <div id="contextMenu" class="context-menu" role="menu" aria-hidden="true">
+      <p>创建节点</p>
+      <button id="createImageNodeButton" type="button" role="menuitem">
+        <span class="menu-icon" aria-hidden="true">▧</span>
+        <span><strong>图片节点</strong><small>上传或展示图片</small></span>
+      </button>
+      <button id="createImage2NodeButton" type="button" role="menuitem">
+        <span class="menu-icon image2" aria-hidden="true">I2</span>
+        <span><strong>生图 (Image2)</strong><small>连接图片并生成新图</small></span>
+      </button>
+      <div class="menu-coming-soon">更多节点即将加入</div>
+    </div>
+
+  </main>
+
+  <dialog id="previewDialog" class="preview-dialog">
+    <button id="previewCloseButton" class="preview-close" type="button" aria-label="关闭预览">×</button>
+    <figure>
+      <img id="previewImage" alt="图片预览" />
+      <figcaption id="previewCaption"></figcaption>
+    </figure>
+  </dialog>
+
+  <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
+    <div class="settings-shell">
+      <header class="settings-head">
+        <div>
+          <p class="settings-eyebrow">Canvas preferences</p>
+          <h2 id="settingsTitle">设置</h2>
+        </div>
+        <button id="settingsCloseButton" class="settings-close" type="button" aria-label="关闭设置">×</button>
+      </header>
+
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="设置栏目">
+          <button class="settings-nav-item active" type="button" aria-current="page">
+            <span class="settings-nav-icon" aria-hidden="true">I2</span>
+            <span><strong>Image2 API</strong><small>图片生成接口</small></span>
+          </button>
+        </nav>
+
+        <section class="settings-panel" aria-labelledby="image2SettingsTitle">
+          <div class="settings-panel-head">
+            <p>API connection</p>
+            <h3 id="image2SettingsTitle">Image2 API</h3>
+            <span>配置画布中图片生成节点使用的请求地址与鉴权 Token。</span>
+          </div>
+
+          <div class="settings-fields">
+            <label class="settings-field">
+              <span>请求网址</span>
+              <span class="settings-select-wrap">
+                <select id="image2BaseUrl">
+                  <option value="https://ai.input.im">https://ai.input.im</option>
+                  <option value="https://tokenshengsheng.com">https://tokenshengsheng.com</option>
+                </select>
+              </span>
+              <small>网址列表来自 <code>Image2-API.txt</code>。</small>
+            </label>
+
+            <label class="settings-field">
+              <span>Token</span>
+              <span class="settings-token-field">
+                <input id="image2Token" type="password" autocomplete="off" placeholder="请求鉴权 Token" />
+                <button id="image2TokenClear" type="button">清除</button>
+              </span>
+              <small>Token 仅在当前页面内存中使用，不会写入本地存储。</small>
+            </label>
+          </div>
+
+          <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
+        </section>
+      </div>
+
+      <footer class="settings-actions">
+        <button id="settingsCancelButton" class="settings-button secondary" type="button">取消</button>
+        <button id="settingsSaveButton" class="settings-button primary" type="button">保存设置</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <dialog id="generationDetailsDialog" class="details-dialog" aria-labelledby="generationDetailsTitle">
+    <div class="details-shell">
+      <header class="details-head">
+        <div>
+          <p>Image2 generation</p>
+          <h2 id="generationDetailsTitle">生成详情</h2>
+        </div>
+        <button id="generationDetailsClose" type="button" aria-label="关闭生成详情">×</button>
+      </header>
+      <div class="details-summary">
+        <div><span>状态</span><strong id="generationDetailsStatus">—</strong></div>
+        <div><span>花费时间</span><strong id="generationDetailsElapsed">—</strong></div>
+      </div>
+      <div class="details-code-head">
+        <span id="generationDetailsCodeLabel">本次调用</span>
+        <small>鉴权 Token 已隐藏</small>
+      </div>
+      <pre id="generationDetailsCode" class="details-code"></pre>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
