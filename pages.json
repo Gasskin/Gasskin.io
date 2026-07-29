@@ -5,20 +5,6 @@
     "icon": "◫",
     "description": "在无限画布中组织图片与生成节点",
     "path": "canvas/index.html"
-  },
-  {
-    "id": "seedance",
-    "title": "Seedance 视频生成",
-    "icon": "🎬",
-    "description": "基于火山方舟 Seedance 2.0 的视频生成工具",
-    "path": "seedance/index.html"
-  },
-  {
-    "id": "image2",
-    "title": "图片生成",
-    "icon": "🖼️",
-    "description": "图片生成页面",
-    "path": "image2/index.html"
   }
 ]
 
