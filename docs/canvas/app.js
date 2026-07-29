@@ -653,6 +653,7 @@ function buildImage2RequestUrl(baseUrl) {
 
 function setImage2Status(node, message, state = "") {
   node.status.textContent = message;
+  node.status.title = message;
   node.status.className = `image2-status${state ? ` ${state}` : ""}`;
 }
 
@@ -662,6 +663,26 @@ function updateImage2NodeSize(node) {
 
 function formatGenerationElapsed(milliseconds) {
   return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
+}
+
+function validateImage2Size(value) {
+  const match = /^\s*(\d+)\s*[xX×]\s*(\d+)\s*$/.exec(String(value || ""));
+  if (!match) {
+    return { error: "最终尺寸格式错误，请使用“宽x高”，例如 1920x1080。" };
+  }
+
+  const width = Number(match[1]);
+  const height = Number(match[2]);
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1) {
+    return { error: "最终尺寸的宽和高必须是大于 0 的整数。" };
+  }
+  if (width > MAX_IMAGE_EDGE || height > MAX_IMAGE_EDGE) {
+    return { error: `最终尺寸 ${width}x${height} 超出限制，单边最大为 ${MAX_IMAGE_EDGE}px。` };
+  }
+  if (width * height > MAX_IMAGE_PIXELS) {
+    return { error: `最终尺寸 ${width}x${height} 超出最大总像素，不能超过 3840x2160（${MAX_IMAGE_PIXELS.toLocaleString("zh-CN")} 像素）。` };
+  }
+  return { value: `${width}x${height}` };
 }
 
 function openGenerationDetails(node, errorOnly = false) {
@@ -721,6 +742,7 @@ async function generateWithImage2(node) {
   const sources = getConnectedImageNodes(node);
   const prompt = node.prompt.value.trim();
   const model = node.model.value.trim();
+  const sizeValidation = validateImage2Size(node.finalSize.value);
   const count = Math.max(1, Math.min(10, Number.parseInt(node.count.value, 10) || 1));
 
   if (!sources.length) {
@@ -736,13 +758,19 @@ async function generateWithImage2(node) {
     setImage2Status(node, "请填写模型名称。", "error");
     return;
   }
+  if (sizeValidation.error) {
+    setImage2Status(node, sizeValidation.error, "error");
+    node.finalSize.focus();
+    return;
+  }
   if (!image2Settings.baseUrl || !image2Settings.token) {
     setImage2Status(node, "请先在画布设置中配置 Image2 API。", "error");
     openSettings();
     return;
   }
 
-  updateImage2NodeSize(node);
+  const finalSize = sizeValidation.value;
+  node.finalSize.value = finalSize;
   node.count.value = String(count);
   node.generateButton.disabled = true;
   node.abortController?.abort();
@@ -760,7 +788,7 @@ async function generateWithImage2(node) {
     body: {
       model,
       prompt,
-      size: node.finalSize.value,
+      size: finalSize,
       quality: "high",
       output_format: "png",
       background: "auto",
@@ -777,7 +805,7 @@ async function generateWithImage2(node) {
   const form = new FormData();
   form.append("model", model);
   form.append("prompt", prompt);
-  form.append("size", node.finalSize.value);
+  form.append("size", finalSize);
   form.append("quality", "high");
   form.append("output_format", "png");
   form.append("background", "auto");
@@ -908,7 +936,7 @@ function createImage2Node({ x, y } = {}) {
       <label class="image2-field wide">模型<input class="image2-model" type="text" value="gpt-image-2" /></label>
       <label class="image2-field">尺寸档位<select class="image2-size-tier"><option value="1k" selected>1K</option><option value="2k">2K</option><option value="4k">4K</option></select></label>
       <label class="image2-field">图片比例<select class="image2-aspect"><option value="1:1">1:1</option><option value="3:2">3:2</option><option value="2:3">2:3</option><option value="4:3">4:3</option><option value="3:4">3:4</option><option value="16:9" selected>16:9</option><option value="9:16">9:16</option><option value="21:9">21:9</option><option value="9:21">9:21</option></select></label>
-      <label class="image2-field">最终尺寸<input class="image2-final-size" type="text" readonly /></label>
+      <label class="image2-field">最终尺寸<input class="image2-final-size" type="text" placeholder="例如 1360x768" title="可自定义；修改尺寸档位或图片比例后会自动重置" /></label>
       <label class="image2-field">图片数量<input class="image2-count" type="number" min="1" max="10" value="1" /></label>
       <label class="image2-field">质量<input type="text" value="high" disabled /></label>
       <label class="image2-field">输出格式<input type="text" value="png" disabled /></label>
