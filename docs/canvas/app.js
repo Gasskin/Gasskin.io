@@ -282,14 +282,14 @@ function refreshImage2Input(node) {
       node.inputPreview.appendChild(thumbnail);
     });
     node.inputPreview.title = "";
-    if (!node.generateButton.disabled) setImage2Status(node, `已连接 ${sources.length} 张输入图片`);
+    if (!node.generateButton.disabled) setImage2Status(node, `已连接 ${sources.length} 张输入图片 · 图生图模式`);
   } else {
     const empty = document.createElement("span");
     empty.className = "image2-input-empty";
-    empty.innerHTML = "<span>↦</span><strong>连接图片节点</strong><small>支持连接多张图片</small>";
-    node.inputPreview.title = "等待图片输入";
+    empty.innerHTML = "<span>↦</span><strong>可直接文生图</strong><small>连接图片后切换为图生图</small>";
+    node.inputPreview.title = "未连接图片时使用文生图模式";
     node.inputPreview.appendChild(empty);
-    if (!node.generateButton.disabled) setImage2Status(node, "等待图片输入");
+    if (!node.generateButton.disabled) setImage2Status(node, "未连接图片 · 文生图模式");
   }
 }
 
@@ -646,9 +646,10 @@ function calculateImage2Size(tier, ratioValue) {
   return `${width}x${height}`;
 }
 
-function buildImage2RequestUrl(baseUrl) {
+function buildImage2RequestUrl(baseUrl, isEdit) {
   const base = cleanBaseUrl(baseUrl);
-  return base.endsWith("/v1") ? `${base}/images/edits` : `${base}/v1/images/edits`;
+  const path = isEdit ? "images/edits" : "images/generations";
+  return base.endsWith("/v1") ? `${base}/${path}` : `${base}/v1/${path}`;
 }
 
 function setImage2Status(node, message, state = "") {
@@ -740,15 +741,12 @@ function base64ImageToFile(base64, index) {
 
 async function generateWithImage2(node) {
   const sources = getConnectedImageNodes(node);
+  const isEdit = sources.length > 0;
   const prompt = node.prompt.value.trim();
   const model = node.model.value.trim();
   const sizeValidation = validateImage2Size(node.finalSize.value);
   const count = Math.max(1, Math.min(10, Number.parseInt(node.count.value, 10) || 1));
 
-  if (!sources.length) {
-    setImage2Status(node, "请先连接至少一个已上传图片的图片节点。", "error");
-    return;
-  }
   if (!prompt) {
     setImage2Status(node, "请填写提示词。", "error");
     node.prompt.focus();
@@ -776,25 +774,29 @@ async function generateWithImage2(node) {
   node.abortController?.abort();
   node.abortController = new AbortController();
 
-  const endpoint = buildImage2RequestUrl(image2Settings.baseUrl);
+  const endpoint = buildImage2RequestUrl(image2Settings.baseUrl, isEdit);
+  const requestBody = {
+    model,
+    prompt,
+    size: finalSize,
+    quality: "high",
+    output_format: "png",
+    background: "auto",
+    n: count,
+  };
+  if (isEdit) requestBody["image[]"] = sources.map((source) => source.file.name);
   node.startedAt = performance.now();
   node.elapsedMs = null;
   node.callStatus = "生成中";
   node.lastError = "";
   node.callDetails = {
+    mode: isEdit ? "edit" : "generate",
     endpoint,
     method: "POST",
-    headers: { Authorization: "Bearer ***" },
-    body: {
-      model,
-      prompt,
-      size: finalSize,
-      quality: "high",
-      output_format: "png",
-      background: "auto",
-      n: count,
-      "image[]": sources.map((source) => source.file.name),
-    },
+    headers: isEdit
+      ? { Authorization: "Bearer ***" }
+      : { Authorization: "Bearer ***", "Content-Type": "application/json" },
+    body: requestBody,
   };
   setImage2RunActions(node);
   setImage2Status(node, "生成中 · 0 秒");
@@ -802,21 +804,29 @@ async function generateWithImage2(node) {
     setImage2Status(node, `生成中 · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
   }, 250);
 
-  const form = new FormData();
-  form.append("model", model);
-  form.append("prompt", prompt);
-  form.append("size", finalSize);
-  form.append("quality", "high");
-  form.append("output_format", "png");
-  form.append("background", "auto");
-  form.append("n", String(count));
-  sources.forEach((source) => form.append("image[]", source.file, source.file.name));
+  let body;
+  const headers = { Authorization: `Bearer ${image2Settings.token}` };
+  if (isEdit) {
+    const form = new FormData();
+    form.append("model", model);
+    form.append("prompt", prompt);
+    form.append("size", finalSize);
+    form.append("quality", "high");
+    form.append("output_format", "png");
+    form.append("background", "auto");
+    form.append("n", String(count));
+    sources.forEach((source) => form.append("image[]", source.file, source.file.name));
+    body = form;
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(requestBody);
+  }
 
   try {
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: { Authorization: `Bearer ${image2Settings.token}` },
-      body: form,
+      headers,
+      body,
       signal: node.abortController.signal,
     });
     const text = await response.text();
@@ -931,7 +941,7 @@ function createImage2Node({ x, y } = {}) {
   node.body.className = "node-body image2-body";
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
-    <textarea class="image2-prompt" placeholder="描述你希望如何基于输入图片进行生成…" aria-label="Image2 提示词"></textarea>
+    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接图片后可基于输入图编辑…" aria-label="Image2 提示词"></textarea>
     <div class="image2-config">
       <label class="image2-field wide">模型<input class="image2-model" type="text" value="gpt-image-2" /></label>
       <label class="image2-field">尺寸档位<select class="image2-size-tier"><option value="1k" selected>1K</option><option value="2k">2K</option><option value="4k">4K</option></select></label>
@@ -945,7 +955,7 @@ function createImage2Node({ x, y } = {}) {
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
-        <span class="image2-status">等待图片输入</span>
+        <span class="image2-status">未连接图片 · 文生图模式</span>
         <div class="image2-run-actions">
           <button class="image2-run-action image2-details hidden" type="button">调用详情</button>
           <button class="image2-run-action image2-error-info hidden" type="button">错误信息</button>
@@ -1086,6 +1096,7 @@ function showContextMenu(clientX, clientY) {
 }
 
 viewport.addEventListener("wheel", (event) => {
+  if (event.target instanceof Element && event.target.closest(".image2-prompt")) return;
   event.preventDefault();
   hideContextMenu();
   const factor = Math.exp(-event.deltaY * 0.0012);
