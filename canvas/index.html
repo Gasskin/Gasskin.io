@@ -36,15 +36,18 @@
         </div>
       </div>
 
+      <div id="selectionMarquee" class="selection-marquee" aria-hidden="true"></div>
+
       <div id="emptyGuide" class="empty-guide" aria-hidden="true">
         <div class="empty-icon"><span></span><span></span><span></span></div>
         <p>右键创建节点，或拖入一张图片</p>
-        <small>滚轮缩放 · 拖动画布移动视野</small>
+        <small>滚轮缩放 · 拖动框选 · 空格 + 拖动平移</small>
       </div>
 
       <div class="canvas-help" aria-hidden="true">
         <span><kbd>右键</kbd> 创建节点</span>
         <span><kbd>滚轮</kbd> 缩放</span>
+        <span><kbd>拖动</kbd> 框选</span>
         <span><kbd>空格</kbd> + 拖动</span>
       </div>
 
@@ -69,10 +72,31 @@
         <span class="menu-icon" aria-hidden="true">▧</span>
         <span><strong>图片节点</strong><small>上传或展示图片</small></span>
       </button>
-      <button id="createImage2NodeButton" type="button" role="menuitem">
-        <span class="menu-icon image2" aria-hidden="true">I2</span>
-        <span><strong>生图 (Image2)</strong><small>直接生成或连接图片编辑</small></span>
-      </button>
+      <div id="apimartMenuGroup" class="context-submenu-wrap">
+        <button id="apimartMenuButton" class="context-submenu-trigger" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
+          <span class="menu-icon image2" aria-hidden="true">API</span>
+          <span><strong>APIMart</strong><small>图片生成模型</small></span>
+          <span class="menu-arrow" aria-hidden="true">›</span>
+        </button>
+        <div id="apimartSubmenu" class="context-submenu" role="menu" aria-label="APIMart 节点">
+          <button id="createApimartImage2NodeButton" type="button" role="menuitem">
+            <span class="menu-icon image2" aria-hidden="true">I2</span>
+            <span><strong>Image2</strong><small>APIMart 标准渠道</small></span>
+          </button>
+          <button id="createApimartImage2OfficialNodeButton" type="button" role="menuitem">
+            <span class="menu-icon image2 official" aria-hidden="true">I2O</span>
+            <span><strong>Image2-Official</strong><small>OpenAI 官方渠道</small></span>
+          </button>
+          <button id="createApimartNanoBanana2NodeButton" type="button" role="menuitem">
+            <span class="menu-icon image2 nano-banana-2" aria-hidden="true">NB2</span>
+            <span><strong>Nano Banana 2</strong><small>搜索增强与极端比例</small></span>
+          </button>
+          <button id="createApimartNanoBananaProNodeButton" type="button" role="menuitem">
+            <span class="menu-icon image2 nano-banana-pro" aria-hidden="true">NBP</span>
+            <span><strong>Nano Banana Pro</strong><small>专业级高质量生图</small></span>
+          </button>
+        </div>
+      </div>
       <div class="menu-coming-soon">更多节点即将加入</div>
     </div>
 
@@ -102,9 +126,9 @@
             <span class="settings-nav-icon image" aria-hidden="true">▧</span>
             <span><strong>图片节点</strong><small>Image Node</small></span>
           </button>
-          <button class="settings-nav-item active" type="button" data-settings-section="image2" aria-controls="image2SettingsPanel" aria-current="page">
-            <span class="settings-nav-icon" aria-hidden="true">I2</span>
-            <span><strong>生图 (Image2)</strong><small>模型与接口配置</small></span>
+          <button class="settings-nav-item active" type="button" data-settings-section="apimart" aria-controls="apimartSettingsPanel" aria-current="page">
+            <span class="settings-nav-icon" aria-hidden="true">API</span>
+            <span><strong>APIMart</strong><small>服务配置</small></span>
           </button>
         </nav>
 
@@ -121,22 +145,36 @@
           </div>
         </section>
 
-        <section id="image2SettingsPanel" class="settings-panel" data-settings-panel="image2" aria-labelledby="image2SettingsTitle">
+        <section id="apimartSettingsPanel" class="settings-panel" data-settings-panel="apimart" aria-labelledby="apimartSettingsTitle">
           <div class="settings-panel-head">
-            <p>Node settings</p>
-            <h3 id="image2SettingsTitle">生图 (Image2)</h3>
-            <span>配置多组模型与接口。Image2 节点只能从这些配置中选择。</span>
+            <p>Provider settings</p>
+            <h3 id="apimartSettingsTitle">APIMart</h3>
+            <span>为 APIMart 下的图片生成节点配置共享的接口地址与 Token。</span>
           </div>
-
-          <div class="settings-profile-toolbar">
-            <div>
-              <strong>配置组</strong>
-              <small>保存后自动写入当前浏览器，下次打开页面会直接读取，不会上传到 GitHub。</small>
+          <section class="settings-service-card" aria-labelledby="apimartImage2SettingsTitle">
+            <header class="settings-service-head">
+              <span class="settings-service-icon" aria-hidden="true">I2</span>
+              <span class="settings-service-copy">
+                <strong id="apimartImage2SettingsTitle">Image2 设置</strong>
+                <small>适用于 APIMart 下的全部图片生成节点</small>
+              </span>
+            </header>
+            <div class="settings-fields">
+              <label class="settings-field">
+                <span>Image2 Token</span>
+                <span class="settings-token-field">
+                  <input id="apimartToken" type="password" autocomplete="off" placeholder="输入 APIMart Image2 Token" />
+                  <button id="apimartTokenClear" type="button">清除</button>
+                </span>
+                <small>仅保存在当前浏览器的 localStorage 中，不会随工作流导出。</small>
+              </label>
+              <label class="settings-field">
+                <span>API 基础网址</span>
+                <input id="apimartBaseUrl" type="url" placeholder="https://api.apimart.ai" />
+                <small>生图请求使用 <code>/v1/images/generations</code>，任务查询使用 <code>/v1/tasks/{task_id}</code>。</small>
+              </label>
             </div>
-            <button id="addImage2ProfileButton" type="button">＋ 新增配置</button>
-          </div>
-
-          <div id="image2ProfilesList" class="settings-profile-list"></div>
+          </section>
           <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
         </section>
       </div>
@@ -148,64 +186,11 @@
     </div>
   </dialog>
 
-  <template id="image2ProfileTemplate">
-    <article class="settings-profile-card">
-      <header class="settings-profile-head">
-        <div>
-          <span class="settings-profile-index"></span>
-          <strong class="settings-profile-title">未命名配置</strong>
-        </div>
-        <button class="settings-profile-delete" type="button" aria-label="删除配置">删除</button>
-      </header>
-      <div class="settings-profile-fields">
-        <label class="settings-field">
-          <span>配置名称</span>
-          <input data-profile-field="name" type="text" placeholder="例如：主力 Image2" />
-        </label>
-        <label class="settings-field">
-          <span>模型名称</span>
-          <input data-profile-field="model" type="text" placeholder="例如：gpt-image-2" />
-        </label>
-        <label class="settings-field wide">
-          <span>请求网址</span>
-          <input data-profile-field="baseUrl" type="url" placeholder="https://ai.input.im" />
-          <small>填写 API 基础地址，高级设置中的接口路径会拼接到此地址后。</small>
-        </label>
-        <label class="settings-field wide">
-          <span>请求 Token</span>
-          <span class="settings-token-field">
-            <input data-profile-field="token" type="password" autocomplete="off" placeholder="请求鉴权 Token" />
-            <button class="settings-token-clear" type="button">清除</button>
-          </span>
-        </label>
-        <label class="settings-advanced-toggle">
-          <input data-profile-field="advancedEnabled" type="checkbox" aria-expanded="false" />
-          <span><strong>高级设置</strong><small>自定义生图、编辑图片和任务查询接口路径</small></span>
-          <span class="settings-advanced-chevron" aria-hidden="true">⌄</span>
-        </label>
-        <div class="settings-advanced-panel" data-profile-advanced hidden>
-          <label class="settings-field wide">
-            <span>生图请求路径</span>
-            <input data-profile-field="generatePath" type="text" placeholder="v1/images/generations" />
-          </label>
-          <label class="settings-field wide">
-            <span>编辑图片请求路径</span>
-            <input data-profile-field="editPath" type="text" placeholder="v1/images/edits" />
-          </label>
-          <label class="settings-field wide">
-            <span>任务查询请求路径</span>
-            <input data-profile-field="queryPath" type="text" placeholder="v1/responses" />
-          </label>
-        </div>
-      </div>
-    </article>
-  </template>
-
   <dialog id="generationDetailsDialog" class="details-dialog" aria-labelledby="generationDetailsTitle">
     <div class="details-shell">
       <header class="details-head">
         <div>
-          <p>Image2 generation</p>
+          <p>APIMart image generation</p>
           <h2 id="generationDetailsTitle">生成详情</h2>
         </div>
         <button id="generationDetailsClose" type="button" aria-label="关闭生成详情">×</button>

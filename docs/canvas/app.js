@@ -12,50 +12,104 @@ const MAX_IMAGE_EDGE = 3840;
 const MAX_IMAGE_PIXELS = 3840 * 2160;
 const IMAGE_SIZE_MULTIPLE = 16;
 const IMAGE_TIER_PIXELS = {
+  "0.5k": 512 * 512,
   "1k": 1024 * 1024,
   "2k": 2048 * 2048,
   "4k": MAX_IMAGE_PIXELS,
 };
-const IMAGE2_SETTINGS_STORAGE_KEY = "canvas:image2-settings:v1";
-const IMAGE2_DEFAULT_PATHS = Object.freeze({
-  generate: "v1/images/generations",
-  edit: "v1/images/edits",
-  query: "v1/responses",
+const APIMART_SETTINGS_STORAGE_KEY = "canvas:apimart-settings:v1";
+const APIMART_GENERATE_PATH = "v1/images/generations";
+const APIMART_TASK_PATH = "v1/tasks";
+const APIMART_POLL_INTERVAL_MS = 2000;
+const APIMART_TASK_TIMEOUT_MS = 10 * 60 * 1000;
+const APIMART_USD_TO_CNY_RATE = 7;
+const DEFAULT_APIMART_SETTINGS = Object.freeze({
+  baseUrl: "https://api.apimart.ai",
+  token: "",
 });
-const DEFAULT_IMAGE2_PROFILES = [
-  {
-    id: "image2-ai-input",
-    name: "AI Input",
+const APIMART_NODE_SPECS = Object.freeze({
+  "apimart-image2": Object.freeze({
+    label: "APIMart/Image2",
     model: "gpt-image-2",
-    baseUrl: "https://ai.input.im",
-    advancedEnabled: false,
-    generatePath: IMAGE2_DEFAULT_PATHS.generate,
-    editPath: IMAGE2_DEFAULT_PATHS.edit,
-    queryPath: IMAGE2_DEFAULT_PATHS.query,
-    token: "",
-  },
-  {
-    id: "image2-tokenshengsheng",
-    name: "Token 生生",
-    model: "gpt-image-2",
-    baseUrl: "https://tokenshengsheng.com",
-    advancedEnabled: false,
-    generatePath: IMAGE2_DEFAULT_PATHS.generate,
-    editPath: IMAGE2_DEFAULT_PATHS.edit,
-    queryPath: IMAGE2_DEFAULT_PATHS.query,
-    token: "",
-  },
-];
+    official: false,
+    maxCount: 1,
+    maxReferenceImages: 16,
+    resolutions: ["1k", "2k", "4k"],
+    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
+    priceUsdByResolution: Object.freeze({ "1k": 0.0085, "2k": 0.014, "4k": 0.021 }),
+  }),
+  "apimart-image2-official": Object.freeze({
+    label: "APIMart/Image2-Official",
+    model: "gpt-image-2-official",
+    official: true,
+    maxCount: 4,
+    maxReferenceImages: 16,
+    resolutions: ["1k", "2k", "4k"],
+    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
+    priceCeiling: true,
+    priceUsdByQuality: Object.freeze({
+      low: Object.freeze({ "1k": 0.0048, "2k": 0.0096, "4k": 0.0159 }),
+      medium: Object.freeze({ "1k": 0.042, "2k": 0.085, "4k": 0.142 }),
+      high: Object.freeze({ "1k": 0.168, "2k": 0.342, "4k": 0.569 }),
+    }),
+  }),
+  "apimart-nano-banana-2": Object.freeze({
+    label: "APIMart/Nano Banana 2",
+    model: "nano-banana-2-ext",
+    modelOptions: Object.freeze([
+      Object.freeze({ value: "nano-banana-2-ext", label: "nano-banana-2-ext（标准）" }),
+      Object.freeze({ value: "nano-banana-2", label: "nano-banana-2（Official）" }),
+    ]),
+    officialModels: Object.freeze(["nano-banana-2"]),
+    official: false,
+    maxCount: 1,
+    maxReferenceImages: 14,
+    resolutions: ["0.5K", "1K", "2K", "4K"],
+    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "21:9", "1:4", "4:1", "1:8", "8:1"],
+    supportsGoogleSearch: true,
+    nodeClass: "apimart-nano-banana-2",
+    priceUsdByModel: Object.freeze({
+      "nano-banana-2-ext": Object.freeze({ "0.5k": 0.03, "1k": 0.03, "2k": 0.04, "4k": 0.06 }),
+      "nano-banana-2": Object.freeze({ "0.5k": 0.0536, "1k": 0.0536, "2k": 0.0808, "4k": 0.1208 }),
+    }),
+  }),
+  "apimart-nano-banana-pro": Object.freeze({
+    label: "APIMart/Nano Banana Pro",
+    model: "nano-banana-pro-ext",
+    modelOptions: Object.freeze([
+      Object.freeze({ value: "nano-banana-pro-ext", label: "nano-banana-pro-ext（标准）" }),
+      Object.freeze({ value: "nano-banana-pro", label: "nano-banana-pro（Official）" }),
+    ]),
+    officialModels: Object.freeze(["nano-banana-pro"]),
+    official: false,
+    maxCount: 1,
+    maxReferenceImages: 14,
+    resolutions: ["1K", "2K", "4K"],
+    ratios: ["auto", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+    nodeClass: "apimart-nano-banana-pro",
+    priceUsdByModel: Object.freeze({
+      "nano-banana-pro-ext": Object.freeze({ "1k": 0.04, "2k": 0.04, "4k": 0.065 }),
+      "nano-banana-pro": Object.freeze({ "1k": 0.1072, "2k": 0.1072, "4k": 0.192 }),
+    }),
+  }),
+});
 
 const viewport = document.getElementById("canvasViewport");
 const panLayer = document.getElementById("canvasPanLayer");
 const surface = document.getElementById("canvasSurface");
 const emptyGuide = document.getElementById("emptyGuide");
+const connectionLayer = document.getElementById("connectionLayer");
 const connectionList = document.getElementById("connectionList");
 const connectionDraft = document.getElementById("connectionDraft");
+const selectionMarquee = document.getElementById("selectionMarquee");
 const contextMenu = document.getElementById("contextMenu");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
-const createImage2NodeButton = document.getElementById("createImage2NodeButton");
+const apimartMenuGroup = document.getElementById("apimartMenuGroup");
+const apimartMenuButton = document.getElementById("apimartMenuButton");
+const createApimartImage2NodeButton = document.getElementById("createApimartImage2NodeButton");
+const createApimartImage2OfficialNodeButton = document.getElementById("createApimartImage2OfficialNodeButton");
+const createApimartNanoBanana2NodeButton = document.getElementById("createApimartNanoBanana2NodeButton");
+const createApimartNanoBananaProNodeButton = document.getElementById("createApimartNanoBananaProNodeButton");
 const fitButton = document.getElementById("fitButton");
 const settingsButton = document.getElementById("settingsButton");
 const zoomOutButton = document.getElementById("zoomOutButton");
@@ -72,9 +126,9 @@ const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
 const settingsNavItems = Array.from(document.querySelectorAll("[data-settings-section]"));
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
-const addImage2ProfileButton = document.getElementById("addImage2ProfileButton");
-const image2ProfilesList = document.getElementById("image2ProfilesList");
-const image2ProfileTemplate = document.getElementById("image2ProfileTemplate");
+const apimartBaseUrl = document.getElementById("apimartBaseUrl");
+const apimartToken = document.getElementById("apimartToken");
+const apimartTokenClear = document.getElementById("apimartTokenClear");
 const settingsMessage = document.getElementById("settingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
@@ -91,13 +145,13 @@ let nodeSequence = 0;
 let connectionSequence = 0;
 let highestLayer = 1;
 let selectedNodeId = null;
+const selectedNodeIds = new Set();
 let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
 let isSpacePressed = false;
 let dragDepth = 0;
-let profileSequence = 0;
-let image2Profiles = DEFAULT_IMAGE2_PROFILES.map((profile) => ({ ...profile }));
+let apimartSettings = { ...DEFAULT_APIMART_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -108,112 +162,40 @@ function cleanBaseUrl(value) {
   return String(value || "").trim().replace(/\/+$/, "");
 }
 
-function cleanImage2RequestPath(value, fallback = "") {
-  const path = String(value || "").trim();
-  if (!path) return fallback;
-  if (/^https?:\/\//i.test(path)) return cleanBaseUrl(path);
-  return path.replace(/^\/+|\/+$/g, "");
+function joinApiUrl(baseUrl, path) {
+  const base = cleanBaseUrl(baseUrl);
+  const normalizedPath = String(path || "").replace(/^\/+/, "");
+  const joinedPath = base.endsWith("/v1") && normalizedPath.startsWith("v1/")
+    ? normalizedPath.slice(3)
+    : normalizedPath;
+  return `${base}/${joinedPath}`;
 }
 
-function makeImage2ProfileId() {
-  profileSequence += 1;
-  return `image2-profile-${Date.now()}-${profileSequence}`;
-}
-
-function normalizeImage2Profiles(value) {
-  const source = Array.isArray(value) ? value : value?.profiles;
-  if (!Array.isArray(source)) return [];
-  const usedIds = new Set();
-  return source.map((profile, index) => {
-    let id = String(profile?.id || `image2-profile-${index + 1}`).trim();
-    if (!id || usedIds.has(id)) id = makeImage2ProfileId();
-    usedIds.add(id);
-    return {
-      id,
-      name: String(profile?.name || "").trim(),
-      model: String(profile?.model || "").trim(),
-      baseUrl: cleanBaseUrl(profile?.baseUrl),
-      advancedEnabled: Boolean(profile?.advancedEnabled),
-      generatePath: cleanImage2RequestPath(profile?.generatePath, IMAGE2_DEFAULT_PATHS.generate),
-      editPath: cleanImage2RequestPath(profile?.editPath, IMAGE2_DEFAULT_PATHS.edit),
-      queryPath: cleanImage2RequestPath(profile?.queryPath, IMAGE2_DEFAULT_PATHS.query),
-      token: String(profile?.token || "").trim(),
-    };
-  });
-}
-
-function getImage2Profile(profileId) {
-  return image2Profiles.find((profile) => profile.id === profileId) || null;
-}
-
-function isCompleteImage2Profile(profile) {
-  return Boolean(
-    profile?.name
-    && profile?.model
-    && profile?.baseUrl
-    && profile?.generatePath
-    && profile?.editPath
-    && profile?.queryPath
-    && profile?.token
-    && isValidHttpUrl(profile.baseUrl)
-    && isValidImage2RequestPath(profile.generatePath)
-    && isValidImage2RequestPath(profile.editPath)
-    && isValidImage2RequestPath(profile.queryPath),
-  );
-}
-
-function renderImage2ModelOptions(node, preferredProfileId = node.model?.value) {
-  if (!node.model) return;
-  node.model.replaceChildren();
-  if (!image2Profiles.length) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "请先在设置中新增配置";
-    node.model.appendChild(option);
-    node.model.disabled = true;
-    return;
-  }
-
-  image2Profiles.forEach((profile) => {
-    const option = document.createElement("option");
-    option.value = profile.id;
-    option.textContent = `${profile.name || "未命名配置"} · ${profile.model || "未配置模型"}`;
-    node.model.appendChild(option);
-  });
-  node.model.disabled = false;
-  node.model.value = image2Profiles.some((profile) => profile.id === preferredProfileId)
-    ? preferredProfileId
-    : image2Profiles[0].id;
-}
-
-function refreshImage2ModelOptions() {
-  nodes.forEach((node) => {
-    if (node.type === "image2") renderImage2ModelOptions(node);
-  });
+function isApimartImageNode(node) {
+  return Boolean(APIMART_NODE_SPECS[node?.type]);
 }
 
 function updateSettingsButtonState() {
-  const completeCount = image2Profiles.filter(isCompleteImage2Profile).length;
-  settingsButton.classList.toggle("configured", completeCount > 0);
-  settingsButton.title = completeCount > 0
-    ? `Image2 已配置 ${completeCount} 组模型`
-    : "设置（Image2 配置尚未完成）";
+  const configured = isValidHttpUrl(apimartSettings.baseUrl) && Boolean(apimartSettings.token);
+  settingsButton.classList.toggle("configured", configured);
+  settingsButton.title = configured ? "APIMart API 已配置" : "设置（APIMart API 尚未配置）";
 }
 
-function loadImage2Settings() {
-  let loadedProfiles = DEFAULT_IMAGE2_PROFILES.map((profile) => ({ ...profile }));
+function loadApimartSettings() {
+  let loaded = { ...DEFAULT_APIMART_SETTINGS };
   try {
-    const stored = window.localStorage.getItem(IMAGE2_SETTINGS_STORAGE_KEY);
+    const stored = window.localStorage.getItem(APIMART_SETTINGS_STORAGE_KEY);
     if (stored) {
-      const profiles = normalizeImage2Profiles(JSON.parse(stored));
-      if (profiles.length) loadedProfiles = profiles;
+      const parsed = JSON.parse(stored);
+      loaded = {
+        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_APIMART_SETTINGS.baseUrl,
+        token: String(parsed?.token || "").trim(),
+      };
     }
   } catch {
-    // Ignore malformed or unavailable browser storage and use the file defaults.
+    // Ignore malformed or unavailable browser storage and keep the defaults.
   }
-
-  image2Profiles = loadedProfiles;
-  refreshImage2ModelOptions();
+  apimartSettings = loaded;
   updateSettingsButtonState();
 }
 
@@ -269,14 +251,29 @@ function updateEmptyState() {
   emptyGuide.classList.toggle("hidden", nodes.size > 0);
 }
 
-function selectNode(id) {
-  selectedNodeId = id;
+function setSelectedNodes(ids, primaryId = null) {
+  selectedNodeIds.clear();
+  ids.forEach((id) => {
+    if (nodes.has(id)) selectedNodeIds.add(id);
+  });
+  selectedNodeId = primaryId && selectedNodeIds.has(primaryId)
+    ? primaryId
+    : (selectedNodeIds.values().next().value || null);
   selectedConnectionId = null;
   connections.forEach((connection) => connection.group.classList.remove("selected"));
   nodes.forEach((node, nodeId) => {
-    node.element.classList.toggle("selected", nodeId === id);
+    node.element.classList.toggle("selected", selectedNodeIds.has(nodeId));
   });
+}
+
+function selectNode(id, { additive = false, toggle = false } = {}) {
+  const nextIds = additive ? new Set(selectedNodeIds) : new Set();
   if (id && nodes.has(id)) {
+    if (toggle && nextIds.has(id)) nextIds.delete(id);
+    else nextIds.add(id);
+  }
+  setSelectedNodes(nextIds, nextIds.has(id) ? id : null);
+  if (id && selectedNodeIds.has(id)) {
     highestLayer += 1;
     nodes.get(id).element.style.zIndex = String(highestLayer);
   }
@@ -285,6 +282,7 @@ function selectNode(id) {
 function selectConnection(id) {
   selectedConnectionId = id;
   selectedNodeId = null;
+  selectedNodeIds.clear();
   nodes.forEach((node) => node.element.classList.remove("selected"));
   connections.forEach((connection, connectionId) => {
     connection.group.classList.toggle("selected", connectionId === id);
@@ -337,14 +335,15 @@ function getConnectedImageNodes(targetNode) {
     .filter((connection) => connection.toNodeId === targetNode.id)
     .map((connection) => nodes.get(connection.fromNodeId))
     .filter((node) => {
-      if (node?.type !== "image" || !node.objectUrl || !node.file || seen.has(node.id)) return false;
+      const usableSource = node?.file || /^https?:\/\//i.test(node?.objectUrl || "") || /^data:image\//i.test(node?.objectUrl || "");
+      if (node?.type !== "image" || !node.objectUrl || !usableSource || seen.has(node.id)) return false;
       seen.add(node.id);
       return true;
     });
 }
 
 function refreshImage2Input(node) {
-  if (node.type !== "image2" || !node.inputPreview) return;
+  if (!isApimartImageNode(node) || !node.inputPreview) return;
   const sources = getConnectedImageNodes(node);
   node.inputSourceIds = sources.map((source) => source.id);
   node.inputPreview.replaceChildren();
@@ -384,7 +383,7 @@ function refreshImage2Input(node) {
 
 function refreshNodeInput(nodeId) {
   const node = nodes.get(nodeId);
-  if (node?.type === "image2") refreshImage2Input(node);
+  if (isApimartImageNode(node)) refreshImage2Input(node);
 }
 
 function refreshConsumers(sourceNodeId) {
@@ -432,13 +431,14 @@ function connectNodes(fromNodeId, toNodeId) {
   refreshNodeInput(toNodeId);
 }
 
-function findConnectionTarget(clientX, clientY, sourceNodeId) {
+function findConnectionTarget(clientX, clientY, sourceNodeIds) {
   const rect = viewport.getBoundingClientRect();
+  const excludedIds = sourceNodeIds instanceof Set ? sourceNodeIds : new Set([sourceNodeIds]);
   let nearest = null;
   let nearestDistance = CONNECTION_SNAP_RADIUS;
 
   nodes.forEach((candidate) => {
-    if (candidate.id === sourceNodeId) return;
+    if (excludedIds.has(candidate.id)) return;
     const point = getPortPoint(candidate, "input");
     const screenX = rect.left + view.x + point.x * view.scale;
     const screenY = rect.top + view.y + point.y * view.scale;
@@ -455,23 +455,36 @@ function startConnectionDrag(node, event) {
   if (event.button !== 0) return;
   event.preventDefault();
   event.stopPropagation();
-  selectNode(node.id);
+  if (!selectedNodeIds.has(node.id)) selectNode(node.id);
+  const batchSourceIds = node.type === "image"
+    ? new Set(Array.from(selectedNodeIds).filter((id) => {
+      const candidate = nodes.get(id);
+      return candidate?.type === "image" && Boolean(candidate.objectUrl);
+    }))
+    : new Set([node.id]);
+  if (!batchSourceIds.size) batchSourceIds.add(node.id);
   const start = getPortPoint(node, "output");
   nodes.forEach((candidate) => {
-    if (candidate.id !== node.id) candidate.inputPort?.classList.add("compatible");
+    if (!batchSourceIds.has(candidate.id)) candidate.inputPort?.classList.add("compatible");
   });
 
   const onMove = (moveEvent) => {
     nodes.forEach((candidate) => candidate.inputPort?.classList.remove("snap-target"));
-    const target = findConnectionTarget(moveEvent.clientX, moveEvent.clientY, node.id);
+    const target = findConnectionTarget(moveEvent.clientX, moveEvent.clientY, batchSourceIds);
     if (target) target.node.inputPort?.classList.add("snap-target");
     const end = target?.point || screenToCanvas(moveEvent.clientX, moveEvent.clientY);
     connectionDraft.setAttribute("d", makeConnectionPath(start, end));
   };
   const onUp = (upEvent) => {
-    const target = findConnectionTarget(upEvent.clientX, upEvent.clientY, node.id);
+    const target = findConnectionTarget(upEvent.clientX, upEvent.clientY, batchSourceIds);
     const targetNodeId = target?.node.id;
-    if (targetNodeId && targetNodeId !== node.id) connectNodes(node.id, targetNodeId);
+    if (targetNodeId) {
+      if (batchSourceIds.size > 1 && isApimartImageNode(target.node)) {
+        batchSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, targetNodeId));
+      } else {
+        connectNodes(node.id, targetNodeId);
+      }
+    }
     connectionDraft.setAttribute("d", "");
     nodes.forEach((candidate) => candidate.inputPort?.classList.remove("compatible", "snap-target"));
     window.removeEventListener("pointermove", onMove);
@@ -516,8 +529,16 @@ function removeNode(id) {
   node.abortController?.abort();
   node.element.remove();
   nodes.delete(id);
-  if (selectedNodeId === id) selectedNodeId = null;
+  selectedNodeIds.delete(id);
+  if (selectedNodeId === id) selectedNodeId = selectedNodeIds.values().next().value || null;
   updateEmptyState();
+}
+
+function removeNodeOrSelection(id) {
+  const ids = selectedNodeIds.has(id) && selectedNodeIds.size > 1
+    ? Array.from(selectedNodeIds)
+    : [id];
+  ids.forEach((nodeId) => removeNode(nodeId));
 }
 
 function openPreviewSource(src, name) {
@@ -530,6 +551,80 @@ function openPreviewSource(src, name) {
 
 function openPreview(node) {
   openPreviewSource(node.objectUrl, node.name);
+}
+
+function imageDownloadTimestamp(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+}
+
+function imageDownloadExtension(src, mimeType = "") {
+  const normalizedType = String(mimeType).toLowerCase().split(";")[0];
+  const extensionsByType = {
+    "image/avif": "avif",
+    "image/gif": "gif",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/svg+xml": "svg",
+    "image/webp": "webp",
+  };
+  if (extensionsByType[normalizedType]) return extensionsByType[normalizedType];
+
+  const dataType = String(src).match(/^data:(image\/[^;,]+)/i)?.[1]?.toLowerCase();
+  if (dataType && extensionsByType[dataType]) return extensionsByType[dataType];
+  try {
+    const extension = new URL(src, window.location.href).pathname.match(/\.([a-z0-9]{2,5})$/i)?.[1]?.toLowerCase();
+    if (["avif", "gif", "jpeg", "jpg", "png", "svg", "webp"].includes(extension)) {
+      return extension === "jpeg" ? "jpg" : extension;
+    }
+  } catch {
+    // Blob and data URLs may not have a pathname extension.
+  }
+  return "png";
+}
+
+async function downloadGeneratedImage(node, button) {
+  if (!node.isGeneratedImage || !node.objectUrl) return;
+  const idleText = button.textContent;
+  const idleTitle = button.title;
+  button.disabled = true;
+  button.textContent = "下载中…";
+
+  try {
+    const response = await fetch(node.objectUrl, { mode: "cors", cache: "no-store" });
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    const blob = await response.blob();
+    if (!blob.size) throw new Error("图片内容为空");
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `${imageDownloadTimestamp()}.${imageDownloadExtension(node.objectUrl, blob.type)}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    button.textContent = idleText;
+    button.title = idleTitle;
+  } catch (error) {
+    console.warn("图片直接下载失败：", error);
+    button.textContent = "下载失败";
+    button.title = "图片服务器未允许跨域读取，浏览器无法直接保存";
+    button.classList.add("download-error");
+    window.setTimeout(() => {
+      button.textContent = idleText;
+      button.title = idleTitle;
+      button.classList.remove("download-error");
+    }, 3500);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function setNodeImageSource(node, { src, name, file = null, revokeOnRemove = false }) {
@@ -574,30 +669,45 @@ function attachNodeDrag(node) {
     if (event.button !== 0 || isSpacePressed) return;
     if (event.target instanceof Element && event.target.closest("button, input, textarea, select, option")) return;
     event.stopPropagation();
-    selectNode(node.id);
+    if (event.ctrlKey || event.metaKey) {
+      selectNode(node.id, { additive: true, toggle: true });
+      if (!selectedNodeIds.has(node.id)) return;
+    } else if (event.shiftKey) {
+      selectNode(node.id, { additive: true });
+    } else if (!selectedNodeIds.has(node.id)) {
+      selectNode(node.id);
+    }
 
     const start = screenToCanvas(event.clientX, event.clientY);
-    const origin = { x: node.x, y: node.y };
+    const draggedNodes = Array.from(selectedNodeIds).map((id) => nodes.get(id)).filter(Boolean);
+    const origins = new Map(draggedNodes.map((selectedNode) => (
+      [selectedNode.id, { x: selectedNode.x, y: selectedNode.y }]
+    )));
     let moved = false;
 
     const onMove = (moveEvent) => {
       if (!moved && Math.hypot(moveEvent.clientX - event.clientX, moveEvent.clientY - event.clientY) > 3) {
         moved = true;
         node.wasDragged = true;
-        node.element.classList.add("dragging");
+        draggedNodes.forEach((selectedNode) => selectedNode.element.classList.add("dragging"));
       }
       if (!moved) return;
       moveEvent.preventDefault();
       const point = screenToCanvas(moveEvent.clientX, moveEvent.clientY);
-      node.x = origin.x + point.x - start.x;
-      node.y = origin.y + point.y - start.y;
-      node.element.style.left = `${node.x}px`;
-      node.element.style.top = `${node.y}px`;
-      updateConnectionsForNode(node.id);
+      const deltaX = point.x - start.x;
+      const deltaY = point.y - start.y;
+      draggedNodes.forEach((selectedNode) => {
+        const origin = origins.get(selectedNode.id);
+        selectedNode.x = origin.x + deltaX;
+        selectedNode.y = origin.y + deltaY;
+        selectedNode.element.style.left = `${selectedNode.x}px`;
+        selectedNode.element.style.top = `${selectedNode.y}px`;
+        updateConnectionsForNode(selectedNode.id);
+      });
     };
 
     const onUp = () => {
-      node.element.classList.remove("dragging");
+      draggedNodes.forEach((selectedNode) => selectedNode.element.classList.remove("dragging"));
       window.setTimeout(() => { node.wasDragged = false; }, 0);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
@@ -625,6 +735,7 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
     file: null,
     objectUrl: null,
     revokeObjectUrl: false,
+    isGeneratedImage: Boolean(source?.generated),
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
@@ -652,14 +763,32 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
   deleteButton.className = "node-delete";
   deleteButton.type = "button";
   deleteButton.textContent = "×";
-  deleteButton.title = "删除节点";
+  deleteButton.title = "删除节点（多选时批量删除）";
   deleteButton.setAttribute("aria-label", `删除${node.name}`);
   deleteButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   deleteButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    removeNode(id);
+    removeNodeOrSelection(id);
   });
-  header.append(titleWrap, deleteButton);
+
+  const headerActions = document.createElement("div");
+  headerActions.className = "node-header-actions";
+  if (node.isGeneratedImage) {
+    const downloadButton = document.createElement("button");
+    downloadButton.className = "node-tool-button image-download";
+    downloadButton.type = "button";
+    downloadButton.textContent = "下载";
+    downloadButton.title = "下载生成图片";
+    downloadButton.setAttribute("aria-label", `下载${node.name}`);
+    downloadButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+    downloadButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      void downloadGeneratedImage(node, downloadButton);
+    });
+    headerActions.appendChild(downloadButton);
+  }
+  headerActions.appendChild(deleteButton);
+  header.append(titleWrap, headerActions);
 
   node.body.className = "node-body";
   const placeholder = document.createElement("button");
@@ -709,9 +838,10 @@ function floorImageDimension(value) {
 }
 
 function calculateImage2Size(tier, ratioValue) {
+  if (ratioValue === "auto") return "服务端自动选择";
   const [ratioWidth, ratioHeight] = String(ratioValue).split(":").map(Number);
   const ratio = ratioWidth / ratioHeight || 1;
-  const targetPixels = IMAGE_TIER_PIXELS[tier] || IMAGE_TIER_PIXELS["1k"];
+  const targetPixels = IMAGE_TIER_PIXELS[String(tier).toLowerCase()] || IMAGE_TIER_PIXELS["1k"];
   let width = Math.sqrt(targetPixels * ratio);
   let height = width / ratio;
 
@@ -735,16 +865,6 @@ function calculateImage2Size(tier, ratioValue) {
   return `${width}x${height}`;
 }
 
-function buildImage2RequestUrl(baseUrl, requestPath) {
-  const base = cleanBaseUrl(baseUrl);
-  const path = cleanImage2RequestPath(requestPath);
-  if (/^https?:\/\//i.test(path)) return path;
-  const joinedPath = base.endsWith("/v1") && path.startsWith("v1/")
-    ? path.slice(3)
-    : path;
-  return `${base}/${joinedPath}`;
-}
-
 function setImage2Status(node, message, state = "") {
   node.status.textContent = message;
   node.status.title = message;
@@ -752,31 +872,58 @@ function setImage2Status(node, message, state = "") {
 }
 
 function updateImage2NodeSize(node) {
-  node.finalSize.value = calculateImage2Size(node.sizeTier.value, node.aspectRatio.value);
+  node.finalSize.value = calculateImage2Size(node.resolution.value, node.aspectRatio.value);
+}
+
+function updateApimartModelControls(node) {
+  if (!node.officialFallback) return;
+  const usesOfficialModel = node.spec.officialModels?.includes(node.model.value) || false;
+  node.officialFallback.disabled = usesOfficialModel;
+  if (usesOfficialModel) node.officialFallback.value = "false";
+  node.officialFallback.title = usesOfficialModel ? "Official 模型不使用官方渠道兜底参数" : "";
+}
+
+function formatEstimatedCny(value) {
+  return value.toFixed(2);
+}
+
+function resolveApimartUnitPrice(node) {
+  const resolution = node.resolution.value.toLowerCase();
+  if (node.spec.priceUsdByQuality) {
+    const selectedQuality = node.quality.value;
+    const pricedQuality = selectedQuality === "auto" ? "high" : selectedQuality;
+    return {
+      usd: node.spec.priceUsdByQuality[pricedQuality]?.[resolution],
+      ceiling: true,
+      autoQuality: selectedQuality === "auto",
+    };
+  }
+  const modelPrices = node.spec.priceUsdByModel?.[node.model.value];
+  return {
+    usd: modelPrices?.[resolution] ?? node.spec.priceUsdByResolution?.[resolution],
+    ceiling: Boolean(node.spec.priceCeiling),
+    autoQuality: false,
+  };
+}
+
+function updateApimartEstimatedCost(node) {
+  if (!node.estimatedCost) return;
+  const price = resolveApimartUnitPrice(node);
+  if (!Number.isFinite(price.usd)) {
+    node.estimatedCost.textContent = "预估费用 —";
+    node.estimatedCost.title = "当前配置暂无价格数据";
+    return;
+  }
+
+  const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
+  const totalCny = price.usd * APIMART_USD_TO_CNY_RATE * count;
+  const prefix = price.ceiling ? "≤" : "";
+  node.estimatedCost.textContent = `${price.autoQuality ? "最高预估" : "预估费用"} ${prefix}¥${formatEstimatedCny(totalCny)}`;
+  node.estimatedCost.title = `${price.autoQuality ? "auto 按高质量上限估算；" : ""}单张 $${price.usd} × 汇率 ${APIMART_USD_TO_CNY_RATE} × ${count} 张`;
 }
 
 function formatGenerationElapsed(milliseconds) {
   return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
-}
-
-function validateImage2Size(value) {
-  const match = /^\s*(\d+)\s*[xX×]\s*(\d+)\s*$/.exec(String(value || ""));
-  if (!match) {
-    return { error: "最终尺寸格式错误，请使用“宽x高”，例如 1920x1080。" };
-  }
-
-  const width = Number(match[1]);
-  const height = Number(match[2]);
-  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1) {
-    return { error: "最终尺寸的宽和高必须是大于 0 的整数。" };
-  }
-  if (width > MAX_IMAGE_EDGE || height > MAX_IMAGE_EDGE) {
-    return { error: `最终尺寸 ${width}x${height} 超出限制，单边最大为 ${MAX_IMAGE_EDGE}px。` };
-  }
-  if (width * height > MAX_IMAGE_PIXELS) {
-    return { error: `最终尺寸 ${width}x${height} 超出最大总像素，不能超过 3840x2160（${MAX_IMAGE_PIXELS.toLocaleString("zh-CN")} 像素）。` };
-  }
-  return { value: `${width}x${height}` };
 }
 
 function openGenerationDetails(node, errorOnly = false) {
@@ -815,153 +962,187 @@ function createImage2Results(node, results) {
         name: `生成图片 ${index + 1}`,
         file: result.file || null,
         revokeOnRemove: false,
+        generated: true,
       },
     });
     connectNodes(node.id, imageNode.id);
   });
 }
 
-function base64ImageToFile(base64, index) {
-  try {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    return new File([bytes], `image2-${Date.now()}-${index + 1}.png`, { type: "image/png" });
-  } catch {
-    return null;
-  }
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "")), { once: true });
+    reader.addEventListener("error", () => reject(reader.error || new Error(`无法读取图片：${file.name}`)), { once: true });
+    reader.readAsDataURL(file);
+  });
 }
 
-async function generateWithImage2(node) {
+async function waitForApimartPoll(signal) {
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+  await new Promise((resolve, reject) => {
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, APIMART_POLL_INTERVAL_MS);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+async function fetchApimartJson(url, options) {
+  const response = await fetch(url, options);
+  const text = await response.text();
+  let payload = null;
+  try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
+  if (!response.ok || (Number(payload?.code) >= 400)) {
+    throw new Error(payload?.error?.message || payload?.message || text || `${response.status} ${response.statusText}`);
+  }
+  return payload;
+}
+
+function extractApimartResults(taskPayload) {
+  const task = taskPayload?.data || taskPayload;
+  const images = Array.isArray(task?.result?.images) ? task.result.images : [];
+  const urls = images.flatMap((image) => {
+    if (Array.isArray(image?.url)) return image.url;
+    return image?.url ? [image.url] : [];
+  });
+  return urls.filter(Boolean).map((url, index) => ({
+    src: url,
+    name: `生成图片 ${index + 1}`,
+    responseDetails: { index: index + 1, url },
+  }));
+}
+
+async function pollApimartTask(node, taskId, requestConfig) {
+  const queryEndpoint = `${joinApiUrl(requestConfig.baseUrl, APIMART_TASK_PATH)}/${encodeURIComponent(taskId)}`;
+  const deadline = Date.now() + APIMART_TASK_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await waitForApimartPoll(node.abortController.signal);
+    const payload = await fetchApimartJson(queryEndpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${requestConfig.token}` },
+      signal: node.abortController.signal,
+    });
+    const task = payload?.data || payload;
+    const status = String(task?.status || "unknown");
+    const progress = Number.isFinite(Number(task?.progress)) ? ` ${Number(task.progress)}%` : "";
+    node.progressLabel = status === "submitted" ? "任务已提交" : `任务 ${status}${progress}`;
+    node.callDetails.task = {
+      id: taskId,
+      status,
+      progress: task?.progress ?? null,
+      query_endpoint: queryEndpoint,
+    };
+
+    if (status === "completed") return { payload, results: extractApimartResults(payload) };
+    if (status === "failed") {
+      throw new Error(task?.error?.message || task?.error || "APIMart 图片生成任务失败。");
+    }
+  }
+  throw new Error("APIMart 任务查询超时（10 分钟）。");
+}
+
+async function generateWithApimartImage2(node) {
   const sources = getConnectedImageNodes(node);
-  const isEdit = sources.length > 0;
   const prompt = node.prompt.value.trim();
-  const profile = getImage2Profile(node.model.value);
-  const sizeValidation = validateImage2Size(node.finalSize.value);
-  const count = Math.max(1, Math.min(10, Number.parseInt(node.count.value, 10) || 1));
+  const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
+  const selectedModel = node.model.value;
 
   if (!prompt) {
     setImage2Status(node, "请填写提示词。", "error");
     node.prompt.focus();
     return;
   }
-  if (!profile) {
-    setImage2Status(node, "请先在设置中新增并选择 Image2 配置。", "error");
-    openSettings("image2");
+  if (sources.length > node.spec.maxReferenceImages) {
+    setImage2Status(node, `${node.spec.label} 最多支持 ${node.spec.maxReferenceImages} 张参考图。`, "error");
     return;
   }
-  if (sizeValidation.error) {
-    setImage2Status(node, sizeValidation.error, "error");
-    node.finalSize.focus();
-    return;
-  }
-  if (!isCompleteImage2Profile(profile)) {
-    setImage2Status(node, `配置“${profile.name || "未命名配置"}”不完整，请补全模型、网址和 Token。`, "error");
-    openSettings("image2");
+  if (!isValidHttpUrl(apimartSettings.baseUrl) || !apimartSettings.token) {
+    setImage2Status(node, "请先在设置中配置 APIMart API 地址和 API Key。", "error");
+    openSettings("apimart");
     return;
   }
 
-  const model = profile.model;
-  const finalSize = sizeValidation.value;
-  node.finalSize.value = finalSize;
   node.count.value = String(count);
   node.generateButton.disabled = true;
   node.abortController?.abort();
   node.abortController = new AbortController();
 
-  const requestPath = isEdit ? profile.editPath : profile.generatePath;
-  const endpoint = buildImage2RequestUrl(profile.baseUrl, requestPath);
-  const queryEndpoint = buildImage2RequestUrl(profile.baseUrl, profile.queryPath);
+  const requestConfig = { ...apimartSettings };
+  const endpoint = joinApiUrl(requestConfig.baseUrl, APIMART_GENERATE_PATH);
   const requestBody = {
-    model,
+    model: selectedModel,
     prompt,
-    size: finalSize,
-    quality: "high",
-    output_format: "png",
-    background: "auto",
+    size: node.aspectRatio.value,
+    resolution: node.resolution.value,
     n: count,
   };
-  if (isEdit) requestBody["image[]"] = sources.map((source) => source.file.name);
+  if (node.spec.official) {
+    requestBody.quality = node.quality.value;
+    requestBody.background = "auto";
+    requestBody.moderation = "low";
+    requestBody.output_format = "png";
+  } else if (!node.spec.officialModels?.includes(selectedModel)) {
+    requestBody.official_fallback = node.officialFallback.value === "true";
+  }
+  if (node.spec.supportsGoogleSearch) {
+    requestBody.google_search = node.googleSearch.value === "true";
+    requestBody.google_image_search = node.googleImageSearch.value === "true";
+  }
   node.startedAt = performance.now();
   node.elapsedMs = null;
-  node.callStatus = "生成中";
+  node.callStatus = "提交中";
   node.lastError = "";
+  node.progressLabel = "提交中";
   node.callDetails = {
     configuration: {
-      name: profile.name,
-      model: profile.model,
-      base_url: profile.baseUrl,
-      advanced_enabled: profile.advancedEnabled,
-      generate_path: profile.generatePath,
-      edit_path: profile.editPath,
-      query_path: profile.queryPath,
-      query_endpoint: queryEndpoint,
+      provider: "APIMart",
+      node: node.spec.label,
+      model: selectedModel,
+      base_url: requestConfig.baseUrl,
     },
-    mode: isEdit ? "edit" : "generate",
+    mode: sources.length ? "image-to-image" : "text-to-image",
     endpoint,
     method: "POST",
-    headers: isEdit
-      ? { Authorization: "Bearer ***" }
-      : { Authorization: "Bearer ***", "Content-Type": "application/json" },
-    body: requestBody,
+    headers: { Authorization: "Bearer ***", "Content-Type": "application/json" },
+    body: { ...requestBody },
   };
   setImage2RunActions(node);
-  setImage2Status(node, "生成中 · 0 秒");
+  setImage2Status(node, "提交中 · 0 秒");
   node.timerId = window.setInterval(() => {
-    setImage2Status(node, `生成中 · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
+    setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
   }, 250);
 
-  let body;
-  const headers = { Authorization: `Bearer ${profile.token}` };
-  if (isEdit) {
-    const form = new FormData();
-    form.append("model", model);
-    form.append("prompt", prompt);
-    form.append("size", finalSize);
-    form.append("quality", "high");
-    form.append("output_format", "png");
-    form.append("background", "auto");
-    form.append("n", String(count));
-    sources.forEach((source) => form.append("image[]", source.file, source.file.name));
-    body = form;
-  } else {
-    headers["Content-Type"] = "application/json";
-    body = JSON.stringify(requestBody);
-  }
-
   try {
-    const response = await fetch(endpoint, {
+    if (sources.length) {
+      node.progressLabel = "正在读取参考图";
+      requestBody.image_urls = await Promise.all(sources.map((source) => (
+        source.file ? fileToDataUrl(source.file) : source.objectUrl
+      )));
+      node.callDetails.body.image_urls = requestBody.image_urls.map((url, index) => (
+        url.startsWith("data:") ? `[参考图 ${index + 1}：base64 data URI]` : url
+      ));
+    }
+    const submitPayload = await fetchApimartJson(endpoint, {
       method: "POST",
-      headers,
-      body,
+      headers: {
+        Authorization: `Bearer ${requestConfig.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
       signal: node.abortController.signal,
     });
-    const text = await response.text();
-    let payload = null;
-    try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
-    if (!response.ok) {
-      throw new Error(payload?.error?.message || payload?.message || text || `${response.status} ${response.statusText}`);
-    }
-
-    const images = Array.isArray(payload?.data) ? payload.data : [];
-    const results = images
-      .map((image, index) => {
-        const responseDetails = {
-          index: index + 1,
-          revised_prompt: image?.revised_prompt || null,
-          url: image?.url || null,
-          has_b64_json: Boolean(image?.b64_json),
-        };
-        if (image?.b64_json) return {
-          src: `data:image/png;base64,${image.b64_json}`,
-          name: `生成图片 ${index + 1}`,
-          file: base64ImageToFile(image.b64_json, index),
-          responseDetails,
-        };
-        if (image?.url) return { src: image.url, name: `生成图片 ${index + 1}`, responseDetails };
-        return null;
-      })
-      .filter(Boolean);
+    const taskId = submitPayload?.data?.[0]?.task_id || submitPayload?.data?.task_id || submitPayload?.task_id;
+    if (!taskId) throw new Error("APIMart 接口未返回 task_id。");
+    node.callDetails.submit_response = submitPayload;
+    node.progressLabel = "任务已提交";
+    node.callStatus = "查询中";
+    const { payload: taskPayload, results } = await pollApimartTask(node, taskId, requestConfig);
     if (!results.length) throw new Error("接口返回成功，但没有找到生成图片。");
 
     stopImage2Timer(node);
@@ -969,6 +1150,7 @@ async function generateWithImage2(node) {
     node.callDetails = {
       ...node.callDetails,
       response: {
+        task: taskPayload?.data || taskPayload,
         image_count: results.length,
         images: results.map((result) => result.responseDetails),
       },
@@ -979,7 +1161,7 @@ async function generateWithImage2(node) {
   } catch (error) {
     stopImage2Timer(node);
     let failureMessage;
-    if (error.name === "AbortError") {
+    if (error?.name === "AbortError") {
       failureMessage = "生成已停止。";
     } else if (error instanceof TypeError) {
       failureMessage = "请求失败，请检查网络、网址或 CORS 设置。";
@@ -997,25 +1179,56 @@ async function generateWithImage2(node) {
   }
 }
 
-function createImage2Node({ x, y } = {}) {
+function cloneApimartImage2Node(node) {
+  if (!isApimartImageNode(node)) return null;
+  const inputSourceIds = Array.from(connections.values())
+    .filter((connection) => connection.toNodeId === node.id && nodes.get(connection.fromNodeId)?.type === "image")
+    .map((connection) => connection.fromNodeId);
+  const clone = createApimartImage2Node(node.type, {
+    x: node.x + 52,
+    y: node.y + 52,
+  });
+  if (!clone) return null;
+
+  clone.prompt.value = node.prompt.value;
+  clone.model.value = node.model.value;
+  clone.resolution.value = node.resolution.value;
+  clone.aspectRatio.value = node.aspectRatio.value;
+  clone.count.value = node.count.value;
+  if (clone.quality && node.quality) clone.quality.value = node.quality.value;
+  if (clone.officialFallback && node.officialFallback) clone.officialFallback.value = node.officialFallback.value;
+  if (clone.googleSearch && node.googleSearch) clone.googleSearch.value = node.googleSearch.value;
+  if (clone.googleImageSearch && node.googleImageSearch) clone.googleImageSearch.value = node.googleImageSearch.value;
+  updateApimartModelControls(clone);
+  updateImage2NodeSize(clone);
+  updateApimartEstimatedCost(clone);
+  inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
+  selectNode(clone.id);
+  return clone;
+}
+
+function createApimartImage2Node(type, { x, y } = {}) {
+  const spec = APIMART_NODE_SPECS[type];
+  if (!spec) return null;
   nodeSequence += 1;
-  const id = `image2-${nodeSequence}`;
+  const id = `${type}-${nodeSequence}`;
   const center = canvasCenter();
   const node = {
     id,
-    type: "image2",
+    type,
+    spec,
     x: Number.isFinite(x) ? x : center.x - IMAGE2_NODE_WIDTH / 2,
     y: Number.isFinite(y) ? y : center.y - IMAGE2_NODE_HEIGHT / 2,
     width: IMAGE2_NODE_WIDTH,
     height: IMAGE2_NODE_HEIGHT,
-    name: `生图 (Image2) ${nodeSequence}`,
+    name: `${spec.label} ${nodeSequence}`,
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
     body: document.createElement("div"),
   };
 
-  node.element.className = "canvas-node image2-node";
+  node.element.className = `canvas-node image2-node ${spec.nodeClass || (spec.official ? "apimart-official" : "apimart-standard")}`;
   node.element.dataset.nodeId = id;
   node.element.style.left = `${node.x}px`;
   node.element.style.top = `${node.y}px`;
@@ -1036,29 +1249,60 @@ function createImage2Node({ x, y } = {}) {
   deleteButton.className = "node-delete";
   deleteButton.type = "button";
   deleteButton.textContent = "×";
-  deleteButton.title = "删除节点";
+  deleteButton.title = "删除节点（多选时批量删除）";
   deleteButton.setAttribute("aria-label", `删除${node.name}`);
   deleteButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   deleteButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    removeNode(id);
+    removeNodeOrSelection(id);
   });
-  header.append(titleWrap, deleteButton);
+
+  const cloneButton = document.createElement("button");
+  cloneButton.className = "node-tool-button";
+  cloneButton.type = "button";
+  cloneButton.textContent = "克隆";
+  cloneButton.title = "克隆节点并复制图片引用";
+  cloneButton.setAttribute("aria-label", `克隆${node.name}`);
+  cloneButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+  cloneButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    cloneApimartImage2Node(node);
+  });
+
+  const headerActions = document.createElement("div");
+  headerActions.className = "node-header-actions";
+  headerActions.append(cloneButton, deleteButton);
+  header.append(titleWrap, headerActions);
 
   node.body.className = "node-body image2-body";
+  const ratioOptions = spec.ratios
+    .map((ratio) => `<option value="${ratio}"${ratio === "16:9" ? " selected" : ""}>${ratio}</option>`)
+    .join("");
+  const resolutionOptions = spec.resolutions
+    .map((resolution) => `<option value="${resolution}"${resolution.toLowerCase() === "1k" ? " selected" : ""}>${resolution}</option>`)
+    .join("");
+  const modelControl = spec.modelOptions ? `
+      <select class="image2-model">${spec.modelOptions.map((option) => (
+        `<option value="${option.value}"${option.value === spec.model ? " selected" : ""}>${option.label}</option>`
+      )).join("")}</select>` : `
+      <input class="image2-model" type="text" value="${spec.model}" disabled />`;
+  const providerFields = spec.official ? `
+      <label class="image2-field">质量<select class="image2-quality"><option value="low">low</option><option value="medium" selected>medium</option><option value="high">high</option><option value="auto">auto</option></select></label>` : `
+      <label class="image2-field">官方渠道兜底<select class="image2-official-fallback"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>`;
+  const searchFields = spec.supportsGoogleSearch ? `
+      <label class="image2-field">Google 文字搜索<select class="image2-google-search"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>
+      <label class="image2-field">Google 图片搜索<select class="image2-google-image-search"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>` : "";
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
-    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接图片后可基于输入图编辑…" aria-label="Image2 提示词"></textarea>
+    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接图片后通过 image_urls 进行图生图…" aria-label="${spec.label} 提示词"></textarea>
     <div class="image2-config">
-      <label class="image2-field wide">配置模型<select class="image2-model" aria-label="选择 Image2 配置模型"></select></label>
-      <label class="image2-field">尺寸档位<select class="image2-size-tier"><option value="1k" selected>1K</option><option value="2k">2K</option><option value="4k">4K</option></select></label>
-      <label class="image2-field">图片比例<select class="image2-aspect"><option value="1:1">1:1</option><option value="3:2">3:2</option><option value="2:3">2:3</option><option value="4:3">4:3</option><option value="3:4">3:4</option><option value="16:9" selected>16:9</option><option value="9:16">9:16</option><option value="21:9">21:9</option><option value="9:21">9:21</option></select></label>
-      <label class="image2-field">最终尺寸<input class="image2-final-size" type="text" placeholder="例如 1360x768" title="可自定义；修改尺寸档位或图片比例后会自动重置" /></label>
-      <label class="image2-field">图片数量<input class="image2-count" type="number" min="1" max="10" value="1" /></label>
-      <label class="image2-field">质量<input type="text" value="high" disabled /></label>
-      <label class="image2-field">输出格式<input type="text" value="png" disabled /></label>
-      <label class="image2-field">背景<input type="text" value="auto" disabled /></label>
-      <label class="image2-field">输出压缩<input type="text" value="PNG 不适用" disabled /></label>
+      <label class="image2-field wide">模型${modelControl}</label>
+      <label class="image2-field">分辨率<select class="image2-resolution">${resolutionOptions}</select></label>
+      <label class="image2-field">图片比例<select class="image2-aspect">${ratioOptions}</select></label>
+      <label class="image2-field">预计输出<input class="image2-final-size" type="text" disabled /></label>
+      <label class="image2-field">图片数量<input class="image2-count" type="number" min="1" max="${spec.maxCount}" value="1"${spec.maxCount === 1 ? " disabled" : ""} /></label>
+      ${providerFields}
+      ${searchFields}
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
@@ -1068,27 +1312,50 @@ function createImage2Node({ x, y } = {}) {
           <button class="image2-run-action image2-error-info hidden" type="button">错误信息</button>
         </div>
       </div>
-      <button class="image2-generate" type="button">生成图片</button>
+      <div class="image2-generate-actions">
+        <span class="image2-estimated-cost" title="预估费用"></span>
+        <button class="image2-generate" type="button">生成图片</button>
+      </div>
     </div>
   `;
 
   node.inputPreview = node.body.querySelector(".image2-input-preview");
   node.prompt = node.body.querySelector(".image2-prompt");
   node.model = node.body.querySelector(".image2-model");
-  node.sizeTier = node.body.querySelector(".image2-size-tier");
+  node.resolution = node.body.querySelector(".image2-resolution");
   node.aspectRatio = node.body.querySelector(".image2-aspect");
   node.finalSize = node.body.querySelector(".image2-final-size");
   node.count = node.body.querySelector(".image2-count");
+  node.quality = node.body.querySelector(".image2-quality");
+  node.officialFallback = node.body.querySelector(".image2-official-fallback");
+  node.googleSearch = node.body.querySelector(".image2-google-search");
+  node.googleImageSearch = node.body.querySelector(".image2-google-image-search");
   node.status = node.body.querySelector(".image2-status");
   node.detailsButton = node.body.querySelector(".image2-details");
   node.errorButton = node.body.querySelector(".image2-error-info");
+  node.estimatedCost = node.body.querySelector(".image2-estimated-cost");
   node.generateButton = node.body.querySelector(".image2-generate");
 
-  renderImage2ModelOptions(node);
-  node.sizeTier.addEventListener("change", () => updateImage2NodeSize(node));
+  node.resolution.addEventListener("change", () => {
+    updateImage2NodeSize(node);
+    updateApimartEstimatedCost(node);
+  });
   node.aspectRatio.addEventListener("change", () => updateImage2NodeSize(node));
+  node.model.addEventListener("change", () => {
+    updateApimartModelControls(node);
+    updateApimartEstimatedCost(node);
+  });
   node.count.addEventListener("change", () => {
-    node.count.value = String(Math.max(1, Math.min(10, Number.parseInt(node.count.value, 10) || 1)));
+    node.count.value = String(Math.max(1, Math.min(spec.maxCount, Number.parseInt(node.count.value, 10) || 1)));
+    updateApimartEstimatedCost(node);
+  });
+  node.count.addEventListener("input", () => updateApimartEstimatedCost(node));
+  node.quality?.addEventListener("change", () => updateApimartEstimatedCost(node));
+  node.googleImageSearch?.addEventListener("change", () => {
+    if (node.googleImageSearch.value === "true") node.googleSearch.value = "true";
+  });
+  node.googleSearch?.addEventListener("change", () => {
+    if (node.googleSearch.value === "false") node.googleImageSearch.value = "false";
   });
   node.detailsButton.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1098,13 +1365,15 @@ function createImage2Node({ x, y } = {}) {
     event.stopPropagation();
     openGenerationDetails(node, true);
   });
-  node.generateButton.addEventListener("click", () => void generateWithImage2(node));
+  node.generateButton.addEventListener("click", () => void generateWithApimartImage2(node));
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
   attachNodeDrag(node);
   surface.appendChild(node.element);
   nodes.set(id, node);
+  updateApimartModelControls(node);
+  updateApimartEstimatedCost(node);
   refreshImage2Input(node);
   updateImage2NodeSize(node);
   selectNode(id);
@@ -1163,82 +1432,6 @@ function showSettingsSection(section) {
   });
 }
 
-function renumberImage2ProfileCards() {
-  Array.from(image2ProfilesList.children).forEach((card, index) => {
-    card.querySelector(".settings-profile-index").textContent = `配置 ${index + 1}`;
-  });
-}
-
-function createImage2ProfileCard(profile) {
-  const card = image2ProfileTemplate.content.firstElementChild.cloneNode(true);
-  card.dataset.profileId = profile.id || makeImage2ProfileId();
-  const nameInput = card.querySelector('[data-profile-field="name"]');
-  const modelInput = card.querySelector('[data-profile-field="model"]');
-  const baseUrlInput = card.querySelector('[data-profile-field="baseUrl"]');
-  const advancedToggle = card.querySelector('[data-profile-field="advancedEnabled"]');
-  const advancedPanel = card.querySelector("[data-profile-advanced]");
-  const generatePathInput = card.querySelector('[data-profile-field="generatePath"]');
-  const editPathInput = card.querySelector('[data-profile-field="editPath"]');
-  const queryPathInput = card.querySelector('[data-profile-field="queryPath"]');
-  const tokenInput = card.querySelector('[data-profile-field="token"]');
-  const title = card.querySelector(".settings-profile-title");
-  const deleteButton = card.querySelector(".settings-profile-delete");
-  const clearButton = card.querySelector(".settings-token-clear");
-
-  nameInput.value = profile.name || "";
-  modelInput.value = profile.model || "";
-  baseUrlInput.value = profile.baseUrl || "";
-  advancedToggle.checked = Boolean(profile.advancedEnabled);
-  generatePathInput.value = profile.generatePath || IMAGE2_DEFAULT_PATHS.generate;
-  editPathInput.value = profile.editPath || IMAGE2_DEFAULT_PATHS.edit;
-  queryPathInput.value = profile.queryPath || IMAGE2_DEFAULT_PATHS.query;
-  tokenInput.value = profile.token || "";
-  title.textContent = profile.name || "未命名配置";
-
-  const updateAdvancedPanel = () => {
-    advancedPanel.hidden = !advancedToggle.checked;
-    advancedToggle.setAttribute("aria-expanded", String(advancedToggle.checked));
-  };
-  updateAdvancedPanel();
-
-  nameInput.addEventListener("input", () => {
-    title.textContent = nameInput.value.trim() || "未命名配置";
-  });
-  advancedToggle.addEventListener("change", updateAdvancedPanel);
-  clearButton.addEventListener("click", () => {
-    tokenInput.value = "";
-    tokenInput.focus();
-  });
-  deleteButton.addEventListener("click", () => {
-    card.remove();
-    renumberImage2ProfileCards();
-    settingsMessage.textContent = "";
-  });
-  return card;
-}
-
-function renderImage2ProfileEditor() {
-  image2ProfilesList.replaceChildren();
-  image2Profiles.forEach((profile) => {
-    image2ProfilesList.appendChild(createImage2ProfileCard(profile));
-  });
-  renumberImage2ProfileCards();
-}
-
-function collectImage2Profiles() {
-  return Array.from(image2ProfilesList.children).map((card) => ({
-    id: card.dataset.profileId || makeImage2ProfileId(),
-    name: card.querySelector('[data-profile-field="name"]').value.trim(),
-    model: card.querySelector('[data-profile-field="model"]').value.trim(),
-    baseUrl: cleanBaseUrl(card.querySelector('[data-profile-field="baseUrl"]').value),
-    advancedEnabled: card.querySelector('[data-profile-field="advancedEnabled"]').checked,
-    generatePath: cleanImage2RequestPath(card.querySelector('[data-profile-field="generatePath"]').value),
-    editPath: cleanImage2RequestPath(card.querySelector('[data-profile-field="editPath"]').value),
-    queryPath: cleanImage2RequestPath(card.querySelector('[data-profile-field="queryPath"]').value),
-    token: card.querySelector('[data-profile-field="token"]').value.trim(),
-  }));
-}
-
 function isValidHttpUrl(value) {
   try {
     const url = new URL(value);
@@ -1248,14 +1441,9 @@ function isValidHttpUrl(value) {
   }
 }
 
-function isValidImage2RequestPath(value) {
-  const path = cleanImage2RequestPath(value);
-  if (!path || /\s/.test(path) || path.startsWith("//")) return false;
-  return !/^https?:\/\//i.test(path) || isValidHttpUrl(path);
-}
-
-function openSettings(section = "image2") {
-  renderImage2ProfileEditor();
+function openSettings(section = "apimart") {
+  apimartBaseUrl.value = apimartSettings.baseUrl;
+  apimartToken.value = apimartSettings.token;
   settingsMessage.textContent = "";
   showSettingsSection(section);
   settingsDialog.showModal();
@@ -1266,69 +1454,30 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  const profiles = collectImage2Profiles();
-  if (!profiles.length) {
-    showSettingsSection("image2");
-    settingsMessage.textContent = "请至少保留一组 Image2 配置。";
+  const baseUrl = cleanBaseUrl(apimartBaseUrl.value);
+  const token = apimartToken.value.trim();
+  if (!isValidHttpUrl(baseUrl)) {
+    showSettingsSection("apimart");
+    settingsMessage.textContent = "请输入有效的 APIMart API 基础网址。";
+    apimartBaseUrl.focus();
+    return;
+  }
+  if (!token) {
+    showSettingsSection("apimart");
+    settingsMessage.textContent = "请输入 APIMart API Key。";
+    apimartToken.focus();
     return;
   }
 
-  const names = new Set();
-  for (let index = 0; index < profiles.length; index += 1) {
-    const profile = profiles[index];
-    const card = image2ProfilesList.children[index];
-    if (!profile.name || !profile.model || !profile.baseUrl || !profile.token) {
-      showSettingsSection("image2");
-      settingsMessage.textContent = `请补全配置 ${index + 1} 的名称、模型、请求网址和 Token。`;
-      card.querySelector("input:placeholder-shown")?.focus();
-      return;
-    }
-    if (!isValidHttpUrl(profile.baseUrl)) {
-      showSettingsSection("image2");
-      settingsMessage.textContent = `配置“${profile.name}”的请求网址无效。`;
-      card.querySelector('[data-profile-field="baseUrl"]').focus();
-      return;
-    }
-    const requestPathFields = [
-      ["generatePath", profile.generatePath, "生图请求"],
-      ["editPath", profile.editPath, "编辑图片请求"],
-      ["queryPath", profile.queryPath, "任务查询请求"],
-    ];
-    const invalidPath = requestPathFields.find(([, value]) => !isValidImage2RequestPath(value));
-    if (invalidPath) {
-      showSettingsSection("image2");
-      const advancedToggle = card.querySelector('[data-profile-field="advancedEnabled"]');
-      advancedToggle.checked = true;
-      advancedToggle.setAttribute("aria-expanded", "true");
-      card.querySelector("[data-profile-advanced]").hidden = false;
-      settingsMessage.textContent = `配置“${profile.name}”的${invalidPath[2]}路径无效。`;
-      card.querySelector(`[data-profile-field="${invalidPath[0]}"]`).focus();
-      return;
-    }
-    const normalizedName = profile.name.toLocaleLowerCase("zh-CN");
-    if (names.has(normalizedName)) {
-      showSettingsSection("image2");
-      settingsMessage.textContent = `配置名称“${profile.name}”重复，请使用不同名称。`;
-      card.querySelector('[data-profile-field="name"]').focus();
-      return;
-    }
-    names.add(normalizedName);
-  }
-
   try {
-    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({
-      version: 2,
-      nodeType: "image2",
-      profiles,
-    }));
+    window.localStorage.setItem(APIMART_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, token }));
   } catch {
-    showSettingsSection("image2");
+    showSettingsSection("apimart");
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
 
-  image2Profiles = profiles;
-  refreshImage2ModelOptions();
+  apimartSettings = { baseUrl, token };
   updateSettingsButtonState();
   closeSettings();
 }
@@ -1336,6 +1485,8 @@ function saveSettings() {
 function hideContextMenu() {
   contextMenu.classList.remove("open");
   contextMenu.setAttribute("aria-hidden", "true");
+  apimartMenuGroup.classList.remove("open");
+  apimartMenuButton.setAttribute("aria-expanded", "false");
 }
 
 function showContextMenu(clientX, clientY) {
@@ -1349,6 +1500,7 @@ function showContextMenu(clientX, clientY) {
   const height = contextMenu.offsetHeight;
   contextMenu.style.left = `${clamp(clientX, margin, window.innerWidth - width - margin)}px`;
   contextMenu.style.top = `${clamp(clientY, margin, window.innerHeight - height - margin)}px`;
+  apimartMenuGroup.classList.toggle("submenu-left", clientX + width + 258 > window.innerWidth);
   createImageNodeButton.focus();
 }
 
@@ -1361,25 +1513,77 @@ viewport.addEventListener("wheel", (event) => {
 }, { passive: false });
 
 viewport.addEventListener("pointerdown", (event) => {
-  const shouldPan = event.button === 1 || (event.button === 0 && (isSpacePressed || event.target === viewport || event.target === panLayer || event.target === surface));
-  if (!shouldPan) return;
+  if (event.button !== 0) return;
+  const isBackground = event.target === viewport
+    || event.target === panLayer
+    || event.target === surface
+    || event.target === connectionLayer
+    || event.target === connectionList;
+  if (!isSpacePressed && !isBackground) return;
   event.preventDefault();
   event.stopPropagation();
   hideContextMenu();
-  selectNode(null);
-  viewport.classList.add("panning");
 
+  if (isSpacePressed) {
+    viewport.classList.add("panning");
+    const start = { x: event.clientX, y: event.clientY };
+    const origin = { x: view.x, y: view.y };
+
+    const onMove = (moveEvent) => {
+      view.x = origin.x + moveEvent.clientX - start.x;
+      view.y = origin.y + moveEvent.clientY - start.y;
+      applyView();
+    };
+
+    const onUp = () => {
+      viewport.classList.remove("panning");
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return;
+  }
+
+  const viewportRect = viewport.getBoundingClientRect();
   const start = { x: event.clientX, y: event.clientY };
-  const origin = { x: view.x, y: view.y };
+  const initialSelection = (event.shiftKey || event.ctrlKey || event.metaKey)
+    ? new Set(selectedNodeIds)
+    : new Set();
+  let moved = false;
 
   const onMove = (moveEvent) => {
-    view.x = origin.x + moveEvent.clientX - start.x;
-    view.y = origin.y + moveEvent.clientY - start.y;
-    applyView();
+    moved = moved || Math.hypot(moveEvent.clientX - start.x, moveEvent.clientY - start.y) > 3;
+    const currentX = clamp(moveEvent.clientX, viewportRect.left, viewportRect.right);
+    const currentY = clamp(moveEvent.clientY, viewportRect.top, viewportRect.bottom);
+    const left = Math.min(start.x, currentX);
+    const top = Math.min(start.y, currentY);
+    const right = Math.max(start.x, currentX);
+    const bottom = Math.max(start.y, currentY);
+    selectionMarquee.classList.toggle("active", moved);
+    selectionMarquee.style.left = `${left - viewportRect.left}px`;
+    selectionMarquee.style.top = `${top - viewportRect.top}px`;
+    selectionMarquee.style.width = `${right - left}px`;
+    selectionMarquee.style.height = `${bottom - top}px`;
+
+    const nextSelection = new Set(initialSelection);
+    if (moved) {
+      nodes.forEach((node) => {
+        const rect = node.element.getBoundingClientRect();
+        const intersects = rect.right >= left && rect.left <= right && rect.bottom >= top && rect.top <= bottom;
+        if (intersects) nextSelection.add(node.id);
+      });
+    }
+    setSelectedNodes(nextSelection);
   };
 
   const onUp = () => {
-    viewport.classList.remove("panning");
+    if (!moved) setSelectedNodes(initialSelection);
+    selectionMarquee.classList.remove("active");
+    selectionMarquee.removeAttribute("style");
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("pointercancel", onUp);
@@ -1432,8 +1636,40 @@ createImageNodeButton.addEventListener("click", () => {
   hideContextMenu();
 });
 
-createImage2NodeButton.addEventListener("click", () => {
-  createImage2Node({
+apimartMenuButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const open = !apimartMenuGroup.classList.contains("open");
+  apimartMenuGroup.classList.toggle("open", open);
+  apimartMenuButton.setAttribute("aria-expanded", String(open));
+  if (open) createApimartImage2NodeButton.focus();
+});
+
+createApimartImage2NodeButton.addEventListener("click", () => {
+  createApimartImage2Node("apimart-image2", {
+    x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
+});
+
+createApimartImage2OfficialNodeButton.addEventListener("click", () => {
+  createApimartImage2Node("apimart-image2-official", {
+    x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
+});
+
+createApimartNanoBanana2NodeButton.addEventListener("click", () => {
+  createApimartImage2Node("apimart-nano-banana-2", {
+    x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
+});
+
+createApimartNanoBananaProNodeButton.addEventListener("click", () => {
+  createApimartImage2Node("apimart-nano-banana-pro", {
     x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
     y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
   });
@@ -1444,30 +1680,16 @@ zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
-settingsButton.addEventListener("click", () => openSettings("image2"));
+settingsButton.addEventListener("click", () => openSettings("apimart"));
 settingsCloseButton.addEventListener("click", closeSettings);
 settingsCancelButton.addEventListener("click", closeSettings);
 settingsSaveButton.addEventListener("click", saveSettings);
 settingsNavItems.forEach((item) => {
   item.addEventListener("click", () => showSettingsSection(item.dataset.settingsSection));
 });
-addImage2ProfileButton.addEventListener("click", () => {
-  const card = createImage2ProfileCard({
-    id: makeImage2ProfileId(),
-    name: `Image2 配置 ${image2ProfilesList.children.length + 1}`,
-    model: "gpt-image-2",
-    baseUrl: "https://ai.input.im",
-    advancedEnabled: false,
-    generatePath: IMAGE2_DEFAULT_PATHS.generate,
-    editPath: IMAGE2_DEFAULT_PATHS.edit,
-    queryPath: IMAGE2_DEFAULT_PATHS.query,
-    token: "",
-  });
-  image2ProfilesList.appendChild(card);
-  renumberImage2ProfileCards();
-  settingsMessage.textContent = "";
-  card.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  card.querySelector('[data-profile-field="name"]').select();
+apimartTokenClear.addEventListener("click", () => {
+  apimartToken.value = "";
+  apimartToken.focus();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -1487,9 +1709,9 @@ document.addEventListener("keydown", (event) => {
     isSpacePressed = true;
     viewport.classList.add("space-ready");
   }
-  if ((event.key === "Delete" || event.key === "Backspace") && selectedNodeId && !editable && !previewDialog.open) {
+  if ((event.key === "Delete" || event.key === "Backspace") && selectedNodeIds.size && !editable && !previewDialog.open) {
     event.preventDefault();
-    removeNode(selectedNodeId);
+    Array.from(selectedNodeIds).forEach((nodeId) => removeNode(nodeId));
   }
   if ((event.key === "Delete" || event.key === "Backspace") && selectedConnectionId && !editable) {
     event.preventDefault();
@@ -1497,6 +1719,7 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape") {
     hideContextMenu();
+    selectNode(null);
     if (previewDialog.open) previewDialog.close();
   }
 });
@@ -1540,4 +1763,4 @@ window.addEventListener("beforeunload", () => {
 
 resetView();
 updateEmptyState();
-loadImage2Settings();
+loadApimartSettings();
