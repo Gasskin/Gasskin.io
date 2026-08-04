@@ -169,6 +169,7 @@
         <label class="settings-field wide">
           <span>请求网址</span>
           <input data-profile-field="baseUrl" type="url" placeholder="https://ai.input.im" />
+          <small>填写 API 基础地址，高级设置中的接口路径会拼接到此地址后。</small>
         </label>
         <label class="settings-field wide">
           <span>请求 Token</span>
@@ -177,6 +178,25 @@
             <button class="settings-token-clear" type="button">清除</button>
           </span>
         </label>
+        <label class="settings-advanced-toggle">
+          <input data-profile-field="advancedEnabled" type="checkbox" aria-expanded="false" />
+          <span><strong>高级设置</strong><small>自定义生图、编辑图片和任务查询接口路径</small></span>
+          <span class="settings-advanced-chevron" aria-hidden="true">⌄</span>
+        </label>
+        <div class="settings-advanced-panel" data-profile-advanced hidden>
+          <label class="settings-field wide">
+            <span>生图请求路径</span>
+            <input data-profile-field="generatePath" type="text" placeholder="v1/images/generations" />
+          </label>
+          <label class="settings-field wide">
+            <span>编辑图片请求路径</span>
+            <input data-profile-field="editPath" type="text" placeholder="v1/images/edits" />
+          </label>
+          <label class="settings-field wide">
+            <span>任务查询请求路径</span>
+            <input data-profile-field="queryPath" type="text" placeholder="v1/responses" />
+          </label>
+        </div>
       </div>
     </article>
   </template>

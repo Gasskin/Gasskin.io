@@ -17,12 +17,21 @@ const IMAGE_TIER_PIXELS = {
   "4k": MAX_IMAGE_PIXELS,
 };
 const IMAGE2_SETTINGS_STORAGE_KEY = "canvas:image2-settings:v1";
+const IMAGE2_DEFAULT_PATHS = Object.freeze({
+  generate: "v1/images/generations",
+  edit: "v1/images/edits",
+  query: "v1/responses",
+});
 const DEFAULT_IMAGE2_PROFILES = [
   {
     id: "image2-ai-input",
     name: "AI Input",
     model: "gpt-image-2",
     baseUrl: "https://ai.input.im",
+    advancedEnabled: false,
+    generatePath: IMAGE2_DEFAULT_PATHS.generate,
+    editPath: IMAGE2_DEFAULT_PATHS.edit,
+    queryPath: IMAGE2_DEFAULT_PATHS.query,
     token: "",
   },
   {
@@ -30,6 +39,10 @@ const DEFAULT_IMAGE2_PROFILES = [
     name: "Token 生生",
     model: "gpt-image-2",
     baseUrl: "https://tokenshengsheng.com",
+    advancedEnabled: false,
+    generatePath: IMAGE2_DEFAULT_PATHS.generate,
+    editPath: IMAGE2_DEFAULT_PATHS.edit,
+    queryPath: IMAGE2_DEFAULT_PATHS.query,
     token: "",
   },
 ];
@@ -95,6 +108,13 @@ function cleanBaseUrl(value) {
   return String(value || "").trim().replace(/\/+$/, "");
 }
 
+function cleanImage2RequestPath(value, fallback = "") {
+  const path = String(value || "").trim();
+  if (!path) return fallback;
+  if (/^https?:\/\//i.test(path)) return cleanBaseUrl(path);
+  return path.replace(/^\/+|\/+$/g, "");
+}
+
 function makeImage2ProfileId() {
   profileSequence += 1;
   return `image2-profile-${Date.now()}-${profileSequence}`;
@@ -113,6 +133,10 @@ function normalizeImage2Profiles(value) {
       name: String(profile?.name || "").trim(),
       model: String(profile?.model || "").trim(),
       baseUrl: cleanBaseUrl(profile?.baseUrl),
+      advancedEnabled: Boolean(profile?.advancedEnabled),
+      generatePath: cleanImage2RequestPath(profile?.generatePath, IMAGE2_DEFAULT_PATHS.generate),
+      editPath: cleanImage2RequestPath(profile?.editPath, IMAGE2_DEFAULT_PATHS.edit),
+      queryPath: cleanImage2RequestPath(profile?.queryPath, IMAGE2_DEFAULT_PATHS.query),
       token: String(profile?.token || "").trim(),
     };
   });
@@ -127,8 +151,14 @@ function isCompleteImage2Profile(profile) {
     profile?.name
     && profile?.model
     && profile?.baseUrl
+    && profile?.generatePath
+    && profile?.editPath
+    && profile?.queryPath
     && profile?.token
-    && isValidHttpUrl(profile.baseUrl),
+    && isValidHttpUrl(profile.baseUrl)
+    && isValidImage2RequestPath(profile.generatePath)
+    && isValidImage2RequestPath(profile.editPath)
+    && isValidImage2RequestPath(profile.queryPath),
   );
 }
 
@@ -705,10 +735,14 @@ function calculateImage2Size(tier, ratioValue) {
   return `${width}x${height}`;
 }
 
-function buildImage2RequestUrl(baseUrl, isEdit) {
+function buildImage2RequestUrl(baseUrl, requestPath) {
   const base = cleanBaseUrl(baseUrl);
-  const path = isEdit ? "images/edits" : "images/generations";
-  return base.endsWith("/v1") ? `${base}/${path}` : `${base}/v1/${path}`;
+  const path = cleanImage2RequestPath(requestPath);
+  if (/^https?:\/\//i.test(path)) return path;
+  const joinedPath = base.endsWith("/v1") && path.startsWith("v1/")
+    ? path.slice(3)
+    : path;
+  return `${base}/${joinedPath}`;
 }
 
 function setImage2Status(node, message, state = "") {
@@ -835,7 +869,9 @@ async function generateWithImage2(node) {
   node.abortController?.abort();
   node.abortController = new AbortController();
 
-  const endpoint = buildImage2RequestUrl(profile.baseUrl, isEdit);
+  const requestPath = isEdit ? profile.editPath : profile.generatePath;
+  const endpoint = buildImage2RequestUrl(profile.baseUrl, requestPath);
+  const queryEndpoint = buildImage2RequestUrl(profile.baseUrl, profile.queryPath);
   const requestBody = {
     model,
     prompt,
@@ -855,6 +891,11 @@ async function generateWithImage2(node) {
       name: profile.name,
       model: profile.model,
       base_url: profile.baseUrl,
+      advanced_enabled: profile.advancedEnabled,
+      generate_path: profile.generatePath,
+      edit_path: profile.editPath,
+      query_path: profile.queryPath,
+      query_endpoint: queryEndpoint,
     },
     mode: isEdit ? "edit" : "generate",
     endpoint,
@@ -1134,6 +1175,11 @@ function createImage2ProfileCard(profile) {
   const nameInput = card.querySelector('[data-profile-field="name"]');
   const modelInput = card.querySelector('[data-profile-field="model"]');
   const baseUrlInput = card.querySelector('[data-profile-field="baseUrl"]');
+  const advancedToggle = card.querySelector('[data-profile-field="advancedEnabled"]');
+  const advancedPanel = card.querySelector("[data-profile-advanced]");
+  const generatePathInput = card.querySelector('[data-profile-field="generatePath"]');
+  const editPathInput = card.querySelector('[data-profile-field="editPath"]');
+  const queryPathInput = card.querySelector('[data-profile-field="queryPath"]');
   const tokenInput = card.querySelector('[data-profile-field="token"]');
   const title = card.querySelector(".settings-profile-title");
   const deleteButton = card.querySelector(".settings-profile-delete");
@@ -1142,12 +1188,23 @@ function createImage2ProfileCard(profile) {
   nameInput.value = profile.name || "";
   modelInput.value = profile.model || "";
   baseUrlInput.value = profile.baseUrl || "";
+  advancedToggle.checked = Boolean(profile.advancedEnabled);
+  generatePathInput.value = profile.generatePath || IMAGE2_DEFAULT_PATHS.generate;
+  editPathInput.value = profile.editPath || IMAGE2_DEFAULT_PATHS.edit;
+  queryPathInput.value = profile.queryPath || IMAGE2_DEFAULT_PATHS.query;
   tokenInput.value = profile.token || "";
   title.textContent = profile.name || "未命名配置";
+
+  const updateAdvancedPanel = () => {
+    advancedPanel.hidden = !advancedToggle.checked;
+    advancedToggle.setAttribute("aria-expanded", String(advancedToggle.checked));
+  };
+  updateAdvancedPanel();
 
   nameInput.addEventListener("input", () => {
     title.textContent = nameInput.value.trim() || "未命名配置";
   });
+  advancedToggle.addEventListener("change", updateAdvancedPanel);
   clearButton.addEventListener("click", () => {
     tokenInput.value = "";
     tokenInput.focus();
@@ -1174,6 +1231,10 @@ function collectImage2Profiles() {
     name: card.querySelector('[data-profile-field="name"]').value.trim(),
     model: card.querySelector('[data-profile-field="model"]').value.trim(),
     baseUrl: cleanBaseUrl(card.querySelector('[data-profile-field="baseUrl"]').value),
+    advancedEnabled: card.querySelector('[data-profile-field="advancedEnabled"]').checked,
+    generatePath: cleanImage2RequestPath(card.querySelector('[data-profile-field="generatePath"]').value),
+    editPath: cleanImage2RequestPath(card.querySelector('[data-profile-field="editPath"]').value),
+    queryPath: cleanImage2RequestPath(card.querySelector('[data-profile-field="queryPath"]').value),
     token: card.querySelector('[data-profile-field="token"]').value.trim(),
   }));
 }
@@ -1185,6 +1246,12 @@ function isValidHttpUrl(value) {
   } catch {
     return false;
   }
+}
+
+function isValidImage2RequestPath(value) {
+  const path = cleanImage2RequestPath(value);
+  if (!path || /\s/.test(path) || path.startsWith("//")) return false;
+  return !/^https?:\/\//i.test(path) || isValidHttpUrl(path);
 }
 
 function openSettings(section = "image2") {
@@ -1222,6 +1289,22 @@ function saveSettings() {
       card.querySelector('[data-profile-field="baseUrl"]').focus();
       return;
     }
+    const requestPathFields = [
+      ["generatePath", profile.generatePath, "生图请求"],
+      ["editPath", profile.editPath, "编辑图片请求"],
+      ["queryPath", profile.queryPath, "任务查询请求"],
+    ];
+    const invalidPath = requestPathFields.find(([, value]) => !isValidImage2RequestPath(value));
+    if (invalidPath) {
+      showSettingsSection("image2");
+      const advancedToggle = card.querySelector('[data-profile-field="advancedEnabled"]');
+      advancedToggle.checked = true;
+      advancedToggle.setAttribute("aria-expanded", "true");
+      card.querySelector("[data-profile-advanced]").hidden = false;
+      settingsMessage.textContent = `配置“${profile.name}”的${invalidPath[2]}路径无效。`;
+      card.querySelector(`[data-profile-field="${invalidPath[0]}"]`).focus();
+      return;
+    }
     const normalizedName = profile.name.toLocaleLowerCase("zh-CN");
     if (names.has(normalizedName)) {
       showSettingsSection("image2");
@@ -1234,7 +1317,7 @@ function saveSettings() {
 
   try {
     window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({
-      version: 1,
+      version: 2,
       nodeType: "image2",
       profiles,
     }));
@@ -1374,6 +1457,10 @@ addImage2ProfileButton.addEventListener("click", () => {
     name: `Image2 配置 ${image2ProfilesList.children.length + 1}`,
     model: "gpt-image-2",
     baseUrl: "https://ai.input.im",
+    advancedEnabled: false,
+    generatePath: IMAGE2_DEFAULT_PATHS.generate,
+    editPath: IMAGE2_DEFAULT_PATHS.edit,
+    queryPath: IMAGE2_DEFAULT_PATHS.query,
     token: "",
   });
   image2ProfilesList.appendChild(card);

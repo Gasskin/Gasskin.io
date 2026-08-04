@@ -1136,6 +1136,46 @@ kbd {
 
 .settings-profile-fields .settings-field.wide { grid-column: 1 / -1; }
 
+.settings-advanced-toggle {
+  display: flex;
+  min-height: 54px;
+  padding: 9px 12px;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  color: #d9dbe0;
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+}
+
+.settings-advanced-toggle > input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.settings-advanced-toggle > span:not(.settings-advanced-chevron) { display: grid; min-width: 0; flex: 1; gap: 3px; }
+.settings-advanced-toggle strong { font-size: 13px; }
+.settings-advanced-toggle small { color: #858a94; font-size: 11px; font-weight: 450; }
+.settings-advanced-chevron { color: #858a94; font-size: 16px; transition: transform 160ms ease; }
+.settings-advanced-toggle:has(input:checked) .settings-advanced-chevron { transform: rotate(180deg); }
+
+.settings-advanced-panel {
+  display: grid;
+  padding: 13px;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid rgba(216, 255, 87, 0.16);
+  border-radius: 10px;
+  background: rgba(216, 255, 87, 0.025);
+}
+
+.settings-advanced-panel[hidden] { display: none; }
+
 .settings-field {
   display: grid;
   gap: 8px;
