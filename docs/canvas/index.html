@@ -98,41 +98,45 @@
 
       <div class="settings-layout">
         <nav class="settings-nav" aria-label="设置栏目">
-          <button class="settings-nav-item active" type="button" aria-current="page">
+          <button class="settings-nav-item" type="button" data-settings-section="image" aria-controls="imageNodeSettingsPanel">
+            <span class="settings-nav-icon image" aria-hidden="true">▧</span>
+            <span><strong>图片节点</strong><small>Image Node</small></span>
+          </button>
+          <button class="settings-nav-item active" type="button" data-settings-section="image2" aria-controls="image2SettingsPanel" aria-current="page">
             <span class="settings-nav-icon" aria-hidden="true">I2</span>
-            <span><strong>Image2 API</strong><small>图片生成接口</small></span>
+            <span><strong>生图 (Image2)</strong><small>模型与接口配置</small></span>
           </button>
         </nav>
 
-        <section class="settings-panel" aria-labelledby="image2SettingsTitle">
+        <section id="imageNodeSettingsPanel" class="settings-panel" data-settings-panel="image" aria-labelledby="imageNodeSettingsTitle" hidden>
           <div class="settings-panel-head">
-            <p>API connection</p>
-            <h3 id="image2SettingsTitle">Image2 API</h3>
-            <span>配置画布中图片生成节点使用的请求地址与鉴权 Token。</span>
+            <p>Node settings</p>
+            <h3 id="imageNodeSettingsTitle">图片节点</h3>
+            <span>图片节点当前没有需要配置的选项。</span>
+          </div>
+          <div class="settings-empty-state">
+            <span aria-hidden="true">▧</span>
+            <strong>暂无设置</strong>
+            <small>以后新增的图片节点选项会显示在这里。</small>
+          </div>
+        </section>
+
+        <section id="image2SettingsPanel" class="settings-panel" data-settings-panel="image2" aria-labelledby="image2SettingsTitle">
+          <div class="settings-panel-head">
+            <p>Node settings</p>
+            <h3 id="image2SettingsTitle">生图 (Image2)</h3>
+            <span>配置多组模型与接口。Image2 节点只能从这些配置中选择。</span>
           </div>
 
-          <div class="settings-fields">
-            <label class="settings-field">
-              <span>请求网址</span>
-              <span class="settings-select-wrap">
-                <select id="image2BaseUrl">
-                  <option value="https://ai.input.im">https://ai.input.im</option>
-                  <option value="https://tokenshengsheng.com">https://tokenshengsheng.com</option>
-                </select>
-              </span>
-              <small>网址列表来自 <code>Image2-API.txt</code>。</small>
-            </label>
-
-            <label class="settings-field">
-              <span>Token</span>
-              <span class="settings-token-field">
-                <input id="image2Token" type="password" autocomplete="off" placeholder="请求鉴权 Token" />
-                <button id="image2TokenClear" type="button">清除</button>
-              </span>
-              <small>Token 仅在当前页面内存中使用，不会写入本地存储。</small>
-            </label>
+          <div class="settings-profile-toolbar">
+            <div>
+              <strong>配置组</strong>
+              <small>保存后自动写入当前浏览器，下次打开页面会直接读取，不会上传到 GitHub。</small>
+            </div>
+            <button id="addImage2ProfileButton" type="button">＋ 新增配置</button>
           </div>
 
+          <div id="image2ProfilesList" class="settings-profile-list"></div>
           <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
         </section>
       </div>
@@ -143,6 +147,39 @@
       </footer>
     </div>
   </dialog>
+
+  <template id="image2ProfileTemplate">
+    <article class="settings-profile-card">
+      <header class="settings-profile-head">
+        <div>
+          <span class="settings-profile-index"></span>
+          <strong class="settings-profile-title">未命名配置</strong>
+        </div>
+        <button class="settings-profile-delete" type="button" aria-label="删除配置">删除</button>
+      </header>
+      <div class="settings-profile-fields">
+        <label class="settings-field">
+          <span>配置名称</span>
+          <input data-profile-field="name" type="text" placeholder="例如：主力 Image2" />
+        </label>
+        <label class="settings-field">
+          <span>模型名称</span>
+          <input data-profile-field="model" type="text" placeholder="例如：gpt-image-2" />
+        </label>
+        <label class="settings-field wide">
+          <span>请求网址</span>
+          <input data-profile-field="baseUrl" type="url" placeholder="https://ai.input.im" />
+        </label>
+        <label class="settings-field wide">
+          <span>请求 Token</span>
+          <span class="settings-token-field">
+            <input data-profile-field="token" type="password" autocomplete="off" placeholder="请求鉴权 Token" />
+            <button class="settings-token-clear" type="button">清除</button>
+          </span>
+        </label>
+      </div>
+    </article>
+  </template>
 
   <dialog id="generationDetailsDialog" class="details-dialog" aria-labelledby="generationDetailsTitle">
     <div class="details-shell">

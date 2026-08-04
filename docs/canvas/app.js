@@ -16,10 +16,22 @@ const IMAGE_TIER_PIXELS = {
   "2k": 2048 * 2048,
   "4k": MAX_IMAGE_PIXELS,
 };
-const IMAGE2_API_LIST_PATH = "Image2-API.txt";
-const DEFAULT_IMAGE2_API_URLS = [
-  "https://ai.input.im",
-  "https://tokenshengsheng.com",
+const IMAGE2_SETTINGS_STORAGE_KEY = "canvas:image2-settings:v1";
+const DEFAULT_IMAGE2_PROFILES = [
+  {
+    id: "image2-ai-input",
+    name: "AI Input",
+    model: "gpt-image-2",
+    baseUrl: "https://ai.input.im",
+    token: "",
+  },
+  {
+    id: "image2-tokenshengsheng",
+    name: "Token 生生",
+    model: "gpt-image-2",
+    baseUrl: "https://tokenshengsheng.com",
+    token: "",
+  },
 ];
 
 const viewport = document.getElementById("canvasViewport");
@@ -45,9 +57,11 @@ const settingsDialog = document.getElementById("settingsDialog");
 const settingsCloseButton = document.getElementById("settingsCloseButton");
 const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
-const image2BaseUrl = document.getElementById("image2BaseUrl");
-const image2Token = document.getElementById("image2Token");
-const image2TokenClear = document.getElementById("image2TokenClear");
+const settingsNavItems = Array.from(document.querySelectorAll("[data-settings-section]"));
+const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
+const addImage2ProfileButton = document.getElementById("addImage2ProfileButton");
+const image2ProfilesList = document.getElementById("image2ProfilesList");
+const image2ProfileTemplate = document.getElementById("image2ProfileTemplate");
 const settingsMessage = document.getElementById("settingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
@@ -69,11 +83,8 @@ let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
 let isSpacePressed = false;
 let dragDepth = 0;
-let image2ApiUrls = [...DEFAULT_IMAGE2_API_URLS];
-const image2Settings = {
-  baseUrl: DEFAULT_IMAGE2_API_URLS[0],
-  token: "",
-};
+let profileSequence = 0;
+let image2Profiles = DEFAULT_IMAGE2_PROFILES.map((profile) => ({ ...profile }));
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -84,48 +95,96 @@ function cleanBaseUrl(value) {
   return String(value || "").trim().replace(/\/+$/, "");
 }
 
-function parseImage2ApiUrls(text) {
-  return Array.from(new Set(
-    String(text || "")
-      .split(/\r?\n/)
-      .map((line) => cleanBaseUrl(line))
-      .filter((line) => {
-        if (!line || line.startsWith("#")) return false;
-        try {
-          const url = new URL(line);
-          return url.protocol === "https:" || url.protocol === "http:";
-        } catch {
-          return false;
-        }
-      }),
-  ));
+function makeImage2ProfileId() {
+  profileSequence += 1;
+  return `image2-profile-${Date.now()}-${profileSequence}`;
 }
 
-function renderImage2ApiOptions() {
-  image2BaseUrl.replaceChildren();
-  image2ApiUrls.forEach((url) => {
-    const option = document.createElement("option");
-    option.value = url;
-    option.textContent = url;
-    image2BaseUrl.appendChild(option);
+function normalizeImage2Profiles(value) {
+  const source = Array.isArray(value) ? value : value?.profiles;
+  if (!Array.isArray(source)) return [];
+  const usedIds = new Set();
+  return source.map((profile, index) => {
+    let id = String(profile?.id || `image2-profile-${index + 1}`).trim();
+    if (!id || usedIds.has(id)) id = makeImage2ProfileId();
+    usedIds.add(id);
+    return {
+      id,
+      name: String(profile?.name || "").trim(),
+      model: String(profile?.model || "").trim(),
+      baseUrl: cleanBaseUrl(profile?.baseUrl),
+      token: String(profile?.token || "").trim(),
+    };
   });
-  image2BaseUrl.value = image2ApiUrls.includes(image2Settings.baseUrl)
-    ? image2Settings.baseUrl
-    : image2ApiUrls[0];
 }
 
-async function loadImage2ApiUrls() {
+function getImage2Profile(profileId) {
+  return image2Profiles.find((profile) => profile.id === profileId) || null;
+}
+
+function isCompleteImage2Profile(profile) {
+  return Boolean(
+    profile?.name
+    && profile?.model
+    && profile?.baseUrl
+    && profile?.token
+    && isValidHttpUrl(profile.baseUrl),
+  );
+}
+
+function renderImage2ModelOptions(node, preferredProfileId = node.model?.value) {
+  if (!node.model) return;
+  node.model.replaceChildren();
+  if (!image2Profiles.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "请先在设置中新增配置";
+    node.model.appendChild(option);
+    node.model.disabled = true;
+    return;
+  }
+
+  image2Profiles.forEach((profile) => {
+    const option = document.createElement("option");
+    option.value = profile.id;
+    option.textContent = `${profile.name || "未命名配置"} · ${profile.model || "未配置模型"}`;
+    node.model.appendChild(option);
+  });
+  node.model.disabled = false;
+  node.model.value = image2Profiles.some((profile) => profile.id === preferredProfileId)
+    ? preferredProfileId
+    : image2Profiles[0].id;
+}
+
+function refreshImage2ModelOptions() {
+  nodes.forEach((node) => {
+    if (node.type === "image2") renderImage2ModelOptions(node);
+  });
+}
+
+function updateSettingsButtonState() {
+  const completeCount = image2Profiles.filter(isCompleteImage2Profile).length;
+  settingsButton.classList.toggle("configured", completeCount > 0);
+  settingsButton.title = completeCount > 0
+    ? `Image2 已配置 ${completeCount} 组模型`
+    : "设置（Image2 配置尚未完成）";
+}
+
+function loadImage2Settings() {
+  let loadedProfiles = DEFAULT_IMAGE2_PROFILES.map((profile) => ({ ...profile }));
   try {
-    const response = await fetch(IMAGE2_API_LIST_PATH, { cache: "no-store" });
-    if (response.ok) {
-      const urls = parseImage2ApiUrls(await response.text());
-      if (urls.length) image2ApiUrls = urls;
+    const stored = window.localStorage.getItem(IMAGE2_SETTINGS_STORAGE_KEY);
+    if (stored) {
+      const profiles = normalizeImage2Profiles(JSON.parse(stored));
+      if (profiles.length) loadedProfiles = profiles;
     }
   } catch {
-    // Keep the built-in defaults when the configuration file is unavailable.
+    // Ignore malformed or unavailable browser storage and use the file defaults.
   }
-  if (!image2ApiUrls.includes(image2Settings.baseUrl)) image2Settings.baseUrl = image2ApiUrls[0];
-  renderImage2ApiOptions();
+
+  image2Profiles = loadedProfiles;
+  refreshImage2ModelOptions();
+  updateSettingsButtonState();
 }
 
 function screenToCanvas(clientX, clientY) {
@@ -743,7 +802,7 @@ async function generateWithImage2(node) {
   const sources = getConnectedImageNodes(node);
   const isEdit = sources.length > 0;
   const prompt = node.prompt.value.trim();
-  const model = node.model.value.trim();
+  const profile = getImage2Profile(node.model.value);
   const sizeValidation = validateImage2Size(node.finalSize.value);
   const count = Math.max(1, Math.min(10, Number.parseInt(node.count.value, 10) || 1));
 
@@ -752,8 +811,9 @@ async function generateWithImage2(node) {
     node.prompt.focus();
     return;
   }
-  if (!model) {
-    setImage2Status(node, "请填写模型名称。", "error");
+  if (!profile) {
+    setImage2Status(node, "请先在设置中新增并选择 Image2 配置。", "error");
+    openSettings("image2");
     return;
   }
   if (sizeValidation.error) {
@@ -761,12 +821,13 @@ async function generateWithImage2(node) {
     node.finalSize.focus();
     return;
   }
-  if (!image2Settings.baseUrl || !image2Settings.token) {
-    setImage2Status(node, "请先在画布设置中配置 Image2 API。", "error");
-    openSettings();
+  if (!isCompleteImage2Profile(profile)) {
+    setImage2Status(node, `配置“${profile.name || "未命名配置"}”不完整，请补全模型、网址和 Token。`, "error");
+    openSettings("image2");
     return;
   }
 
+  const model = profile.model;
   const finalSize = sizeValidation.value;
   node.finalSize.value = finalSize;
   node.count.value = String(count);
@@ -774,7 +835,7 @@ async function generateWithImage2(node) {
   node.abortController?.abort();
   node.abortController = new AbortController();
 
-  const endpoint = buildImage2RequestUrl(image2Settings.baseUrl, isEdit);
+  const endpoint = buildImage2RequestUrl(profile.baseUrl, isEdit);
   const requestBody = {
     model,
     prompt,
@@ -790,6 +851,11 @@ async function generateWithImage2(node) {
   node.callStatus = "生成中";
   node.lastError = "";
   node.callDetails = {
+    configuration: {
+      name: profile.name,
+      model: profile.model,
+      base_url: profile.baseUrl,
+    },
     mode: isEdit ? "edit" : "generate",
     endpoint,
     method: "POST",
@@ -805,7 +871,7 @@ async function generateWithImage2(node) {
   }, 250);
 
   let body;
-  const headers = { Authorization: `Bearer ${image2Settings.token}` };
+  const headers = { Authorization: `Bearer ${profile.token}` };
   if (isEdit) {
     const form = new FormData();
     form.append("model", model);
@@ -943,7 +1009,7 @@ function createImage2Node({ x, y } = {}) {
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
     <textarea class="image2-prompt" placeholder="描述要生成的图片；连接图片后可基于输入图编辑…" aria-label="Image2 提示词"></textarea>
     <div class="image2-config">
-      <label class="image2-field wide">模型<input class="image2-model" type="text" value="gpt-image-2" /></label>
+      <label class="image2-field wide">配置模型<select class="image2-model" aria-label="选择 Image2 配置模型"></select></label>
       <label class="image2-field">尺寸档位<select class="image2-size-tier"><option value="1k" selected>1K</option><option value="2k">2K</option><option value="4k">4K</option></select></label>
       <label class="image2-field">图片比例<select class="image2-aspect"><option value="1:1">1:1</option><option value="3:2">3:2</option><option value="2:3">2:3</option><option value="4:3">4:3</option><option value="3:4">3:4</option><option value="16:9" selected>16:9</option><option value="9:16">9:16</option><option value="21:9">21:9</option><option value="9:21">9:21</option></select></label>
       <label class="image2-field">最终尺寸<input class="image2-final-size" type="text" placeholder="例如 1360x768" title="可自定义；修改尺寸档位或图片比例后会自动重置" /></label>
@@ -977,6 +1043,7 @@ function createImage2Node({ x, y } = {}) {
   node.errorButton = node.body.querySelector(".image2-error-info");
   node.generateButton = node.body.querySelector(".image2-generate");
 
+  renderImage2ModelOptions(node);
   node.sizeTier.addEventListener("change", () => updateImage2NodeSize(node));
   node.aspectRatio.addEventListener("change", () => updateImage2NodeSize(node));
   node.count.addEventListener("change", () => {
@@ -1043,11 +1110,87 @@ function fitToNodes() {
   applyView();
 }
 
-function openSettings() {
-  renderImage2ApiOptions();
-  image2BaseUrl.value = image2Settings.baseUrl;
-  image2Token.value = image2Settings.token;
+function showSettingsSection(section) {
+  settingsNavItems.forEach((item) => {
+    const active = item.dataset.settingsSection === section;
+    item.classList.toggle("active", active);
+    if (active) item.setAttribute("aria-current", "page");
+    else item.removeAttribute("aria-current");
+  });
+  settingsPanels.forEach((panel) => {
+    panel.hidden = panel.dataset.settingsPanel !== section;
+  });
+}
+
+function renumberImage2ProfileCards() {
+  Array.from(image2ProfilesList.children).forEach((card, index) => {
+    card.querySelector(".settings-profile-index").textContent = `配置 ${index + 1}`;
+  });
+}
+
+function createImage2ProfileCard(profile) {
+  const card = image2ProfileTemplate.content.firstElementChild.cloneNode(true);
+  card.dataset.profileId = profile.id || makeImage2ProfileId();
+  const nameInput = card.querySelector('[data-profile-field="name"]');
+  const modelInput = card.querySelector('[data-profile-field="model"]');
+  const baseUrlInput = card.querySelector('[data-profile-field="baseUrl"]');
+  const tokenInput = card.querySelector('[data-profile-field="token"]');
+  const title = card.querySelector(".settings-profile-title");
+  const deleteButton = card.querySelector(".settings-profile-delete");
+  const clearButton = card.querySelector(".settings-token-clear");
+
+  nameInput.value = profile.name || "";
+  modelInput.value = profile.model || "";
+  baseUrlInput.value = profile.baseUrl || "";
+  tokenInput.value = profile.token || "";
+  title.textContent = profile.name || "未命名配置";
+
+  nameInput.addEventListener("input", () => {
+    title.textContent = nameInput.value.trim() || "未命名配置";
+  });
+  clearButton.addEventListener("click", () => {
+    tokenInput.value = "";
+    tokenInput.focus();
+  });
+  deleteButton.addEventListener("click", () => {
+    card.remove();
+    renumberImage2ProfileCards();
+    settingsMessage.textContent = "";
+  });
+  return card;
+}
+
+function renderImage2ProfileEditor() {
+  image2ProfilesList.replaceChildren();
+  image2Profiles.forEach((profile) => {
+    image2ProfilesList.appendChild(createImage2ProfileCard(profile));
+  });
+  renumberImage2ProfileCards();
+}
+
+function collectImage2Profiles() {
+  return Array.from(image2ProfilesList.children).map((card) => ({
+    id: card.dataset.profileId || makeImage2ProfileId(),
+    name: card.querySelector('[data-profile-field="name"]').value.trim(),
+    model: card.querySelector('[data-profile-field="model"]').value.trim(),
+    baseUrl: cleanBaseUrl(card.querySelector('[data-profile-field="baseUrl"]').value),
+    token: card.querySelector('[data-profile-field="token"]').value.trim(),
+  }));
+}
+
+function isValidHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function openSettings(section = "image2") {
+  renderImage2ProfileEditor();
   settingsMessage.textContent = "";
+  showSettingsSection(section);
   settingsDialog.showModal();
 }
 
@@ -1056,23 +1199,54 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  const baseUrl = cleanBaseUrl(image2BaseUrl.value);
-  const token = image2Token.value.trim();
-
-  if (!baseUrl || !image2ApiUrls.includes(baseUrl)) {
-    settingsMessage.textContent = "请选择有效的 Image2 API 请求网址。";
-    return;
-  }
-  if (!token) {
-    settingsMessage.textContent = "请填写与请求网址对应的 Token。";
-    image2Token.focus();
+  const profiles = collectImage2Profiles();
+  if (!profiles.length) {
+    showSettingsSection("image2");
+    settingsMessage.textContent = "请至少保留一组 Image2 配置。";
     return;
   }
 
-  image2Settings.baseUrl = baseUrl;
-  image2Settings.token = token;
-  settingsButton.classList.add("configured");
-  settingsButton.title = `Image2 API 已配置：${baseUrl}`;
+  const names = new Set();
+  for (let index = 0; index < profiles.length; index += 1) {
+    const profile = profiles[index];
+    const card = image2ProfilesList.children[index];
+    if (!profile.name || !profile.model || !profile.baseUrl || !profile.token) {
+      showSettingsSection("image2");
+      settingsMessage.textContent = `请补全配置 ${index + 1} 的名称、模型、请求网址和 Token。`;
+      card.querySelector("input:placeholder-shown")?.focus();
+      return;
+    }
+    if (!isValidHttpUrl(profile.baseUrl)) {
+      showSettingsSection("image2");
+      settingsMessage.textContent = `配置“${profile.name}”的请求网址无效。`;
+      card.querySelector('[data-profile-field="baseUrl"]').focus();
+      return;
+    }
+    const normalizedName = profile.name.toLocaleLowerCase("zh-CN");
+    if (names.has(normalizedName)) {
+      showSettingsSection("image2");
+      settingsMessage.textContent = `配置名称“${profile.name}”重复，请使用不同名称。`;
+      card.querySelector('[data-profile-field="name"]').focus();
+      return;
+    }
+    names.add(normalizedName);
+  }
+
+  try {
+    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      nodeType: "image2",
+      profiles,
+    }));
+  } catch {
+    showSettingsSection("image2");
+    settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
+    return;
+  }
+
+  image2Profiles = profiles;
+  refreshImage2ModelOptions();
+  updateSettingsButtonState();
   closeSettings();
 }
 
@@ -1187,13 +1361,26 @@ zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
-settingsButton.addEventListener("click", openSettings);
+settingsButton.addEventListener("click", () => openSettings("image2"));
 settingsCloseButton.addEventListener("click", closeSettings);
 settingsCancelButton.addEventListener("click", closeSettings);
 settingsSaveButton.addEventListener("click", saveSettings);
-image2TokenClear.addEventListener("click", () => {
-  image2Token.value = "";
-  image2Token.focus();
+settingsNavItems.forEach((item) => {
+  item.addEventListener("click", () => showSettingsSection(item.dataset.settingsSection));
+});
+addImage2ProfileButton.addEventListener("click", () => {
+  const card = createImage2ProfileCard({
+    id: makeImage2ProfileId(),
+    name: `Image2 配置 ${image2ProfilesList.children.length + 1}`,
+    model: "gpt-image-2",
+    baseUrl: "https://ai.input.im",
+    token: "",
+  });
+  image2ProfilesList.appendChild(card);
+  renumberImage2ProfileCards();
+  settingsMessage.textContent = "";
+  card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  card.querySelector('[data-profile-field="name"]').select();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -1266,4 +1453,4 @@ window.addEventListener("beforeunload", () => {
 
 resetView();
 updateEmptyState();
-void loadImage2ApiUrls();
+loadImage2Settings();
