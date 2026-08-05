@@ -481,14 +481,14 @@ kbd {
   cursor: wait;
 }
 
-.image-download:hover {
+.image-save:hover {
   color: var(--accent);
   border-color: rgba(216, 255, 87, 0.42);
   background: rgba(216, 255, 87, 0.08);
 }
 
-.image-download.download-error,
-.image-download.download-error:hover {
+.image-save.save-error,
+.image-save.save-error:hover {
   color: var(--danger);
   border-color: rgba(255, 107, 104, 0.45);
   background: rgba(255, 107, 104, 0.12);

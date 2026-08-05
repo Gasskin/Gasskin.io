@@ -590,37 +590,78 @@ function imageDownloadExtension(src, mimeType = "") {
   return "png";
 }
 
-async function downloadGeneratedImage(node, button) {
+function getImageSavePickerWindow() {
+  try {
+    const hostWindow = window.top && window.top.location.origin === window.location.origin
+      ? window.top
+      : window;
+    return typeof hostWindow.showSaveFilePicker === "function" ? hostWindow : null;
+  } catch {
+    return typeof window.showSaveFilePicker === "function" ? window : null;
+  }
+}
+
+function openGeneratedImageInNewTab(node) {
+  const link = document.createElement("a");
+  link.href = node.objectUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function resolveGeneratedImageBlob(node) {
+  if (node.file instanceof Blob && node.file.size) return node.file;
+  const response = await fetch(node.objectUrl, { mode: "cors", cache: "no-store" });
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  const blob = await response.blob();
+  if (!blob.size) throw new Error("图片内容为空");
+  return blob;
+}
+
+async function saveGeneratedImage(node, button) {
   if (!node.isGeneratedImage || !node.objectUrl) return;
   const idleText = button.textContent;
   const idleTitle = button.title;
-  button.disabled = true;
-  button.textContent = "下载中…";
+  const extension = imageDownloadExtension(node.objectUrl, node.file?.type);
+  const suggestedName = `${imageDownloadTimestamp()}.${extension}`;
+  const pickerWindow = getImageSavePickerWindow();
 
-  try {
-    const response = await fetch(node.objectUrl, { mode: "cors", cache: "no-store" });
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-    const blob = await response.blob();
-    if (!blob.size) throw new Error("图片内容为空");
-    const downloadUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `${imageDownloadTimestamp()}.${imageDownloadExtension(node.objectUrl, blob.type)}`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-    button.textContent = idleText;
-    button.title = idleTitle;
-  } catch (error) {
-    console.warn("图片直接下载失败：", error);
-    button.textContent = "下载失败";
-    button.title = "图片服务器未允许跨域读取，浏览器无法直接保存";
-    button.classList.add("download-error");
+  if (!pickerWindow) {
+    openGeneratedImageInNewTab(node);
+    button.textContent = "已打开原图";
+    button.title = "当前浏览器不支持另存为选择器，请在原图页面中保存";
     window.setTimeout(() => {
       button.textContent = idleText;
       button.title = idleTitle;
-      button.classList.remove("download-error");
+    }, 2500);
+    return;
+  }
+
+  try {
+    const fileHandle = await pickerWindow.showSaveFilePicker({ suggestedName });
+    button.disabled = true;
+    button.textContent = "保存中…";
+    const blob = await resolveGeneratedImageBlob(node);
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    button.textContent = "已保存";
+    window.setTimeout(() => {
+      button.textContent = idleText;
+      button.title = idleTitle;
+    }, 1600);
+  } catch (error) {
+    if (error?.name === "AbortError") return;
+    console.warn("图片保存失败：", error);
+    button.textContent = "保存失败";
+    button.title = "图片服务器未允许跨域读取；请打开原图后手动另存为";
+    button.classList.add("save-error");
+    window.setTimeout(() => {
+      button.textContent = idleText;
+      button.title = idleTitle;
+      button.classList.remove("save-error");
     }, 3500);
   } finally {
     button.disabled = false;
@@ -774,18 +815,18 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
   const headerActions = document.createElement("div");
   headerActions.className = "node-header-actions";
   if (node.isGeneratedImage) {
-    const downloadButton = document.createElement("button");
-    downloadButton.className = "node-tool-button image-download";
-    downloadButton.type = "button";
-    downloadButton.textContent = "下载";
-    downloadButton.title = "下载生成图片";
-    downloadButton.setAttribute("aria-label", `下载${node.name}`);
-    downloadButton.addEventListener("pointerdown", (event) => event.stopPropagation());
-    downloadButton.addEventListener("click", (event) => {
+    const saveButton = document.createElement("button");
+    saveButton.className = "node-tool-button image-save";
+    saveButton.type = "button";
+    saveButton.textContent = "保存";
+    saveButton.title = "将生成图片另存为文件";
+    saveButton.setAttribute("aria-label", `保存${node.name}`);
+    saveButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+    saveButton.addEventListener("click", (event) => {
       event.stopPropagation();
-      void downloadGeneratedImage(node, downloadButton);
+      void saveGeneratedImage(node, saveButton);
     });
-    headerActions.appendChild(downloadButton);
+    headerActions.appendChild(saveButton);
   }
   headerActions.appendChild(deleteButton);
   header.append(titleWrap, headerActions);
