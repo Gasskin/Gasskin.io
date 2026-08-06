@@ -149,7 +149,7 @@ const selectedNodeIds = new Set();
 let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
-let isSpacePressed = false;
+let suppressContextMenuUntil = 0;
 let dragDepth = 0;
 let apimartSettings = { ...DEFAULT_APIMART_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
@@ -553,121 +553,6 @@ function openPreview(node) {
   openPreviewSource(node.objectUrl, node.name);
 }
 
-function imageDownloadTimestamp(date = new Date()) {
-  const pad = (value) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join("");
-}
-
-function imageDownloadExtension(src, mimeType = "") {
-  const normalizedType = String(mimeType).toLowerCase().split(";")[0];
-  const extensionsByType = {
-    "image/avif": "avif",
-    "image/gif": "gif",
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/svg+xml": "svg",
-    "image/webp": "webp",
-  };
-  if (extensionsByType[normalizedType]) return extensionsByType[normalizedType];
-
-  const dataType = String(src).match(/^data:(image\/[^;,]+)/i)?.[1]?.toLowerCase();
-  if (dataType && extensionsByType[dataType]) return extensionsByType[dataType];
-  try {
-    const extension = new URL(src, window.location.href).pathname.match(/\.([a-z0-9]{2,5})$/i)?.[1]?.toLowerCase();
-    if (["avif", "gif", "jpeg", "jpg", "png", "svg", "webp"].includes(extension)) {
-      return extension === "jpeg" ? "jpg" : extension;
-    }
-  } catch {
-    // Blob and data URLs may not have a pathname extension.
-  }
-  return "png";
-}
-
-function getImageSavePickerWindow() {
-  try {
-    const hostWindow = window.top && window.top.location.origin === window.location.origin
-      ? window.top
-      : window;
-    return typeof hostWindow.showSaveFilePicker === "function" ? hostWindow : null;
-  } catch {
-    return typeof window.showSaveFilePicker === "function" ? window : null;
-  }
-}
-
-function openGeneratedImageInNewTab(node) {
-  const link = document.createElement("a");
-  link.href = node.objectUrl;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-}
-
-async function resolveGeneratedImageBlob(node) {
-  if (node.file instanceof Blob && node.file.size) return node.file;
-  const response = await fetch(node.objectUrl, { mode: "cors", cache: "no-store" });
-  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-  const blob = await response.blob();
-  if (!blob.size) throw new Error("图片内容为空");
-  return blob;
-}
-
-async function saveGeneratedImage(node, button) {
-  if (!node.isGeneratedImage || !node.objectUrl) return;
-  const idleText = button.textContent;
-  const idleTitle = button.title;
-  const extension = imageDownloadExtension(node.objectUrl, node.file?.type);
-  const suggestedName = `${imageDownloadTimestamp()}.${extension}`;
-  const pickerWindow = getImageSavePickerWindow();
-
-  if (!pickerWindow) {
-    openGeneratedImageInNewTab(node);
-    button.textContent = "已打开原图";
-    button.title = "当前浏览器不支持另存为选择器，请在原图页面中保存";
-    window.setTimeout(() => {
-      button.textContent = idleText;
-      button.title = idleTitle;
-    }, 2500);
-    return;
-  }
-
-  try {
-    const fileHandle = await pickerWindow.showSaveFilePicker({ suggestedName });
-    button.disabled = true;
-    button.textContent = "保存中…";
-    const blob = await resolveGeneratedImageBlob(node);
-    const writable = await fileHandle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-    button.textContent = "已保存";
-    window.setTimeout(() => {
-      button.textContent = idleText;
-      button.title = idleTitle;
-    }, 1600);
-  } catch (error) {
-    if (error?.name === "AbortError") return;
-    console.warn("图片保存失败：", error);
-    button.textContent = "保存失败";
-    button.title = "图片服务器未允许跨域读取；请打开原图后手动另存为";
-    button.classList.add("save-error");
-    window.setTimeout(() => {
-      button.textContent = idleText;
-      button.title = idleTitle;
-      button.classList.remove("save-error");
-    }, 3500);
-  } finally {
-    button.disabled = false;
-  }
-}
-
 function setNodeImageSource(node, { src, name, file = null, revokeOnRemove = false }) {
   if (!src) return;
   if (node.objectUrl && node.revokeObjectUrl) URL.revokeObjectURL(node.objectUrl);
@@ -707,7 +592,7 @@ function setNodeImage(node, file) {
 
 function attachNodeDrag(node) {
   node.element.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || isSpacePressed) return;
+    if (event.button !== 0) return;
     if (event.target instanceof Element && event.target.closest("button, input, textarea, select, option")) return;
     event.stopPropagation();
     if (event.ctrlKey || event.metaKey) {
@@ -776,7 +661,6 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
     file: null,
     objectUrl: null,
     revokeObjectUrl: false,
-    isGeneratedImage: Boolean(source?.generated),
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
@@ -814,20 +698,6 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
 
   const headerActions = document.createElement("div");
   headerActions.className = "node-header-actions";
-  if (node.isGeneratedImage) {
-    const saveButton = document.createElement("button");
-    saveButton.className = "node-tool-button image-save";
-    saveButton.type = "button";
-    saveButton.textContent = "保存";
-    saveButton.title = "将生成图片另存为文件";
-    saveButton.setAttribute("aria-label", `保存${node.name}`);
-    saveButton.addEventListener("pointerdown", (event) => event.stopPropagation());
-    saveButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      void saveGeneratedImage(node, saveButton);
-    });
-    headerActions.appendChild(saveButton);
-  }
   headerActions.appendChild(deleteButton);
   header.append(titleWrap, headerActions);
 
@@ -1003,7 +873,6 @@ function createImage2Results(node, results) {
         name: `生成图片 ${index + 1}`,
         file: result.file || null,
         revokeOnRemove: false,
-        generated: true,
       },
     });
     connectNodes(node.id, imageNode.id);
@@ -1554,23 +1423,22 @@ viewport.addEventListener("wheel", (event) => {
 }, { passive: false });
 
 viewport.addEventListener("pointerdown", (event) => {
-  if (event.button !== 0) return;
-  const isBackground = event.target === viewport
-    || event.target === panLayer
-    || event.target === surface
-    || event.target === connectionLayer
-    || event.target === connectionList;
-  if (!isSpacePressed && !isBackground) return;
-  event.preventDefault();
-  event.stopPropagation();
-  hideContextMenu();
-
-  if (isSpacePressed) {
-    viewport.classList.add("panning");
+  if (event.button === 2) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideContextMenu();
     const start = { x: event.clientX, y: event.clientY };
     const origin = { x: view.x, y: view.y };
+    let moved = false;
 
     const onMove = (moveEvent) => {
+      if (!moved && Math.hypot(moveEvent.clientX - start.x, moveEvent.clientY - start.y) > 3) {
+        moved = true;
+        hideContextMenu();
+        viewport.classList.add("panning");
+      }
+      if (!moved) return;
+      moveEvent.preventDefault();
       view.x = origin.x + moveEvent.clientX - start.x;
       view.y = origin.y + moveEvent.clientY - start.y;
       applyView();
@@ -1578,6 +1446,7 @@ viewport.addEventListener("pointerdown", (event) => {
 
     const onUp = () => {
       viewport.classList.remove("panning");
+      if (moved) suppressContextMenuUntil = performance.now() + 400;
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -1588,6 +1457,17 @@ viewport.addEventListener("pointerdown", (event) => {
     window.addEventListener("pointercancel", onUp);
     return;
   }
+
+  if (event.button !== 0) return;
+  const isBackground = event.target === viewport
+    || event.target === panLayer
+    || event.target === surface
+    || event.target === connectionLayer
+    || event.target === connectionList;
+  if (!isBackground) return;
+  event.preventDefault();
+  event.stopPropagation();
+  hideContextMenu();
 
   const viewportRect = viewport.getBoundingClientRect();
   const start = { x: event.clientX, y: event.clientY };
@@ -1637,6 +1517,7 @@ viewport.addEventListener("pointerdown", (event) => {
 
 viewport.addEventListener("contextmenu", (event) => {
   event.preventDefault();
+  if (performance.now() < suppressContextMenuUntil) return;
   showContextMenu(event.clientX, event.clientY);
 });
 
@@ -1745,11 +1626,6 @@ document.addEventListener("keydown", (event) => {
   const editable = event.target instanceof HTMLInputElement
     || event.target instanceof HTMLTextAreaElement
     || event.target instanceof HTMLSelectElement;
-  if (event.code === "Space" && !editable) {
-    event.preventDefault();
-    isSpacePressed = true;
-    viewport.classList.add("space-ready");
-  }
   if ((event.key === "Delete" || event.key === "Backspace") && selectedNodeIds.size && !editable && !previewDialog.open) {
     event.preventDefault();
     Array.from(selectedNodeIds).forEach((nodeId) => removeNode(nodeId));
@@ -1763,18 +1639,6 @@ document.addEventListener("keydown", (event) => {
     selectNode(null);
     if (previewDialog.open) previewDialog.close();
   }
-});
-
-document.addEventListener("keyup", (event) => {
-  if (event.code === "Space") {
-    isSpacePressed = false;
-    viewport.classList.remove("space-ready");
-  }
-});
-
-window.addEventListener("blur", () => {
-  isSpacePressed = false;
-  viewport.classList.remove("space-ready");
 });
 
 previewCloseButton.addEventListener("click", () => previewDialog.close());

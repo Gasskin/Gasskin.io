@@ -171,7 +171,6 @@ button { color: inherit; }
 }
 
 .canvas-viewport.panning { cursor: grabbing; }
-.canvas-viewport.space-ready { cursor: grab; }
 
 .selection-marquee {
   position: absolute;
@@ -479,19 +478,6 @@ kbd {
 .node-tool-button:disabled {
   opacity: 0.55;
   cursor: wait;
-}
-
-.image-save:hover {
-  color: var(--accent);
-  border-color: rgba(216, 255, 87, 0.42);
-  background: rgba(216, 255, 87, 0.08);
-}
-
-.image-save.save-error,
-.image-save.save-error:hover {
-  color: var(--danger);
-  border-color: rgba(255, 107, 104, 0.45);
-  background: rgba(255, 107, 104, 0.12);
 }
 
 .node-delete {
