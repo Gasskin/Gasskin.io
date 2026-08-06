@@ -366,12 +366,33 @@ function describeImage2Inputs(imageSources, textSources) {
   return `${imageSummary} · ${textSummary} · ${imageSources.length ? "图生图模式" : "文生图模式"}`;
 }
 
+function syncImage2PromptFromTextNodes(node, textSources) {
+  if (!node.prompt) return;
+  const hasTextSources = textSources.length > 0;
+  if (hasTextSources) {
+    if (!node.prompt.readOnly) node.localPromptValue = node.prompt.value;
+    node.prompt.value = textSources.map((source) => source.textInput.value).join("\n\n");
+  } else if (node.prompt.readOnly) {
+    node.prompt.value = node.localPromptValue || "";
+  }
+  node.prompt.readOnly = hasTextSources;
+  node.prompt.classList.toggle("linked-text", hasTextSources);
+  node.prompt.setAttribute("aria-readonly", String(hasTextSources));
+  node.prompt.placeholder = hasTextSources
+    ? "提示词由已连接的文本节点提供，请在文本节点中输入内容。"
+    : "描述要生成的图片；连接文本节点后会在生成时同步文本，连接图片后进行图生图…";
+  node.prompt.title = hasTextSources
+    ? "当前提示词跟随已连接的文本节点，不能在此编辑。"
+    : "";
+}
+
 function refreshImage2Input(node) {
   if (!isApimartImageNode(node) || !node.inputPreview) return;
   const sources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
   node.inputSourceIds = sources.map((source) => source.id);
   node.textInputSourceIds = textSources.map((source) => source.id);
+  syncImage2PromptFromTextNodes(node, textSources);
   node.inputPreview.replaceChildren();
   node.inputPreview.classList.toggle("has-image", sources.length > 0);
 
@@ -818,6 +839,13 @@ function createTextNode({ x, y, text = "" } = {}) {
   header.append(titleWrap, headerActions);
 
   node.body.className = "node-body text-node-body";
+  const contentHeader = document.createElement("div");
+  contentHeader.className = "text-node-content-header";
+  const contentTitle = document.createElement("strong");
+  contentTitle.textContent = "文本内容";
+  const dragHint = document.createElement("span");
+  dragHint.textContent = "拖动此处移动节点";
+  contentHeader.append(contentTitle, dragHint);
   node.textInput = document.createElement("textarea");
   node.textInput.className = "text-node-input";
   node.textInput.value = text;
@@ -828,7 +856,7 @@ function createTextNode({ x, y, text = "" } = {}) {
     if (!selectedNodeIds.has(id)) selectNode(id);
   });
   node.textInput.addEventListener("input", () => refreshConsumers(id));
-  node.body.appendChild(node.textInput);
+  node.body.append(contentHeader, node.textInput);
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
@@ -1064,8 +1092,9 @@ async function generateWithApimartImage2(node) {
   const linkedPromptParts = textSources
     .map((source) => source.textInput.value.trim())
     .filter(Boolean);
-  const localPrompt = node.prompt.value.trim();
-  const prompt = [...linkedPromptParts, localPrompt].filter(Boolean).join("\n\n");
+  const prompt = textSources.length
+    ? linkedPromptParts.join("\n\n")
+    : node.prompt.value.trim();
   const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
   const selectedModel = node.model.value;
 
@@ -1211,7 +1240,8 @@ function cloneApimartImage2Node(node) {
   });
   if (!clone) return null;
 
-  clone.prompt.value = node.prompt.value;
+  clone.localPromptValue = node.localPromptValue ?? (node.prompt.readOnly ? "" : node.prompt.value);
+  clone.prompt.value = clone.localPromptValue;
   clone.model.value = node.model.value;
   clone.resolution.value = node.resolution.value;
   clone.aspectRatio.value = node.aspectRatio.value;
@@ -1315,7 +1345,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
       <label class="image2-field">Google 图片搜索<select class="image2-google-image-search"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>` : "";
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
-    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接文本节点后会在生成时合并文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
+    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接文本节点后会在生成时同步文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
     <div class="image2-config">
       <label class="image2-field wide">模型${modelControl}</label>
       <label class="image2-field">分辨率<select class="image2-resolution">${resolutionOptions}</select></label>
@@ -1342,6 +1372,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
 
   node.inputPreview = node.body.querySelector(".image2-input-preview");
   node.prompt = node.body.querySelector(".image2-prompt");
+  node.localPromptValue = "";
   node.model = node.body.querySelector(".image2-model");
   node.resolution = node.body.querySelector(".image2-resolution");
   node.aspectRatio = node.body.querySelector(".image2-aspect");
@@ -1356,6 +1387,10 @@ function createApimartImage2Node(type, { x, y } = {}) {
   node.errorButton = node.body.querySelector(".image2-error-info");
   node.estimatedCost = node.body.querySelector(".image2-estimated-cost");
   node.generateButton = node.body.querySelector(".image2-generate");
+
+  node.prompt.addEventListener("input", () => {
+    if (!node.prompt.readOnly) node.localPromptValue = node.prompt.value;
+  });
 
   node.resolution.addEventListener("change", () => {
     updateImage2NodeSize(node);

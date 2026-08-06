@@ -570,10 +570,36 @@ kbd {
 .canvas-node.dragging .node-image { cursor: grabbing; }
 
 .text-node-body {
-  padding: 14px;
+  display: grid;
+  padding: 12px;
+  grid-template-rows: 42px minmax(0, 1fr);
+  gap: 8px;
   background:
     linear-gradient(135deg, rgba(141, 181, 255, 0.045), transparent 52%),
     #111317;
+}
+
+.text-node-content-header {
+  display: flex;
+  min-width: 0;
+  padding: 0 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid rgba(141, 181, 255, 0.18);
+  border-radius: 10px;
+  color: #dce7fb;
+  background: rgba(141, 181, 255, 0.055);
+  cursor: move;
+}
+
+.text-node-content-header strong { font-size: 15px; }
+.text-node-content-header span {
+  overflow: hidden;
+  color: #7f8998;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .text-node-input {
@@ -695,6 +721,20 @@ kbd {
 }
 
 .image2-prompt:focus { border-color: rgba(216, 255, 87, 0.54); box-shadow: 0 0 0 3px rgba(216, 255, 87, 0.06); }
+
+.image2-prompt.linked-text {
+  border-color: rgba(141, 181, 255, 0.38);
+  color: #dce7fb;
+  background:
+    linear-gradient(135deg, rgba(141, 181, 255, 0.055), transparent 58%),
+    #0c0e12;
+  cursor: text;
+}
+
+.image2-prompt.linked-text:focus {
+  border-color: rgba(141, 181, 255, 0.62);
+  box-shadow: 0 0 0 3px rgba(141, 181, 255, 0.08);
+}
 
 .image2-config {
   display: grid;
