@@ -1704,6 +1704,14 @@ createImageNodeButton.addEventListener("click", () => {
   hideContextMenu();
 });
 
+createTextNodeButton.addEventListener("click", () => {
+  createTextNode({
+    x: contextCanvasPoint.x - TEXT_NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - TEXT_NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
+});
+
 apimartMenuButton.addEventListener("click", (event) => {
   event.stopPropagation();
   const open = !apimartMenuGroup.classList.contains("open");
@@ -1785,14 +1793,6 @@ document.addEventListener("keydown", (event) => {
     selectNode(null);
     if (previewDialog.open) previewDialog.close();
   }
-});
-
-createTextNodeButton.addEventListener("click", () => {
-  createTextNode({
-    x: contextCanvasPoint.x - TEXT_NODE_WIDTH / 2,
-    y: contextCanvasPoint.y - TEXT_NODE_HEIGHT / 2,
-  });
-  hideContextMenu();
 });
 
 previewCloseButton.addEventListener("click", () => previewDialog.close());
