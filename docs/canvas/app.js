@@ -4,6 +4,8 @@ const NODE_WIDTH = 360;
 const NODE_HEIGHT = NODE_WIDTH * 9 / 16;
 const IMAGE2_NODE_WIDTH = 800;
 const IMAGE2_NODE_HEIGHT = IMAGE2_NODE_WIDTH * 9 / 16;
+const TEXT_NODE_WIDTH = 560;
+const TEXT_NODE_HEIGHT = TEXT_NODE_WIDTH * 9 / 16;
 const CONNECTION_SNAP_RADIUS = 44;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 32;
@@ -104,6 +106,7 @@ const connectionDraft = document.getElementById("connectionDraft");
 const selectionMarquee = document.getElementById("selectionMarquee");
 const contextMenu = document.getElementById("contextMenu");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
+const createTextNodeButton = document.getElementById("createTextNodeButton");
 const apimartMenuGroup = document.getElementById("apimartMenuGroup");
 const apimartMenuButton = document.getElementById("apimartMenuButton");
 const createApimartImage2NodeButton = document.getElementById("createApimartImage2NodeButton");
@@ -341,10 +344,34 @@ function getConnectedImageNodes(targetNode) {
     });
 }
 
+function getConnectedTextNodes(targetNode) {
+  const seen = new Set();
+  return Array.from(connections.values())
+    .filter((connection) => connection.toNodeId === targetNode.id)
+    .map((connection) => nodes.get(connection.fromNodeId))
+    .filter((node) => {
+      if (node?.type !== "text" || !node.textInput || seen.has(node.id)) return false;
+      seen.add(node.id);
+      return true;
+    });
+}
+
+function describeImage2Inputs(imageSources, textSources) {
+  const imageSummary = imageSources.length
+    ? `已连接 ${imageSources.length} 张输入图片`
+    : "未连接图片";
+  const textSummary = textSources.length
+    ? `已连接 ${textSources.length} 个 TEXT`
+    : "未连接 TEXT";
+  return `${imageSummary} · ${textSummary} · ${imageSources.length ? "图生图模式" : "文生图模式"}`;
+}
+
 function refreshImage2Input(node) {
   if (!isApimartImageNode(node) || !node.inputPreview) return;
   const sources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
   node.inputSourceIds = sources.map((source) => source.id);
+  node.textInputSourceIds = textSources.map((source) => source.id);
   node.inputPreview.replaceChildren();
   node.inputPreview.classList.toggle("has-image", sources.length > 0);
 
@@ -369,15 +396,14 @@ function refreshImage2Input(node) {
       node.inputPreview.appendChild(thumbnail);
     });
     node.inputPreview.title = "";
-    if (!node.generateButton.disabled) setImage2Status(node, `已连接 ${sources.length} 张输入图片 · 图生图模式`);
   } else {
     const empty = document.createElement("span");
     empty.className = "image2-input-empty";
-    empty.innerHTML = "<span>↦</span><strong>可直接文生图</strong><small>连接图片后切换为图生图</small>";
+    empty.innerHTML = "<span>↦</span><strong>可直接文生图</strong><small>可连接图片或 TEXT 节点作为输入</small>";
     node.inputPreview.title = "未连接图片时使用文生图模式";
     node.inputPreview.appendChild(empty);
-    if (!node.generateButton.disabled) setImage2Status(node, "未连接图片 · 文生图模式");
   }
+  if (!node.generateButton.disabled) setImage2Status(node, describeImage2Inputs(sources, textSources));
 }
 
 function refreshNodeInput(nodeId) {
@@ -739,6 +765,82 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
   return node;
 }
 
+function createTextNode({ x, y, text = "" } = {}) {
+  nodeSequence += 1;
+  const id = `text-${nodeSequence}`;
+  const center = canvasCenter();
+  const node = {
+    id,
+    type: "text",
+    x: Number.isFinite(x) ? x : center.x - TEXT_NODE_WIDTH / 2,
+    y: Number.isFinite(y) ? y : center.y - TEXT_NODE_HEIGHT / 2,
+    width: TEXT_NODE_WIDTH,
+    height: TEXT_NODE_HEIGHT,
+    name: `TEXT ${nodeSequence}`,
+    wasDragged: false,
+    element: document.createElement("article"),
+    title: document.createElement("span"),
+    body: document.createElement("div"),
+  };
+
+  node.element.className = "canvas-node text-node";
+  node.element.dataset.nodeId = id;
+  node.element.style.left = `${node.x}px`;
+  node.element.style.top = `${node.y}px`;
+  node.element.style.zIndex = String(++highestLayer);
+  node.element.setAttribute("aria-label", node.name);
+
+  const header = document.createElement("header");
+  header.className = "node-header";
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "node-title";
+  const typeDot = document.createElement("span");
+  typeDot.className = "node-type-dot";
+  node.title.className = "node-title-text";
+  node.title.textContent = node.name;
+  titleWrap.append(typeDot, node.title);
+
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "node-delete";
+  deleteButton.type = "button";
+  deleteButton.textContent = "×";
+  deleteButton.title = "删除节点（多选时批量删除）";
+  deleteButton.setAttribute("aria-label", `删除${node.name}`);
+  deleteButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+  deleteButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    removeNodeOrSelection(id);
+  });
+
+  const headerActions = document.createElement("div");
+  headerActions.className = "node-header-actions";
+  headerActions.appendChild(deleteButton);
+  header.append(titleWrap, headerActions);
+
+  node.body.className = "node-body text-node-body";
+  node.textInput = document.createElement("textarea");
+  node.textInput.className = "text-node-input";
+  node.textInput.value = text;
+  node.textInput.placeholder = "在这里输入文本。连接到生图节点后，文本会作为生成提示词的一部分。";
+  node.textInput.setAttribute("aria-label", `${node.name}文本内容`);
+  node.textInput.spellcheck = true;
+  node.textInput.addEventListener("pointerdown", () => {
+    if (!selectedNodeIds.has(id)) selectNode(id);
+  });
+  node.textInput.addEventListener("input", () => refreshConsumers(id));
+  node.body.appendChild(node.textInput);
+
+  node.element.append(header, node.body);
+  attachConnectionPorts(node);
+  attachNodeDrag(node);
+  surface.appendChild(node.element);
+  nodes.set(id, node);
+  selectNode(id);
+  updateEmptyState();
+  window.setTimeout(() => node.textInput.focus(), 0);
+  return node;
+}
+
 function roundImageDimension(value) {
   return Math.max(IMAGE_SIZE_MULTIPLE, Math.round(value / IMAGE_SIZE_MULTIPLE) * IMAGE_SIZE_MULTIPLE);
 }
@@ -958,13 +1060,19 @@ async function pollApimartTask(node, taskId, requestConfig) {
 
 async function generateWithApimartImage2(node) {
   const sources = getConnectedImageNodes(node);
-  const prompt = node.prompt.value.trim();
+  const textSources = getConnectedTextNodes(node);
+  const linkedPromptParts = textSources
+    .map((source) => source.textInput.value.trim())
+    .filter(Boolean);
+  const localPrompt = node.prompt.value.trim();
+  const prompt = [...linkedPromptParts, localPrompt].filter(Boolean).join("\n\n");
   const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
   const selectedModel = node.model.value;
 
   if (!prompt) {
-    setImage2Status(node, "请填写提示词。", "error");
-    node.prompt.focus();
+    setImage2Status(node, "请在本节点或已连接的 TEXT 节点中填写提示词。", "error");
+    const emptyTextSource = textSources.find((source) => !source.textInput.value.trim());
+    (emptyTextSource?.textInput || node.prompt).focus();
     return;
   }
   if (sources.length > node.spec.maxReferenceImages) {
@@ -1015,6 +1123,7 @@ async function generateWithApimartImage2(node) {
       model: selectedModel,
       base_url: requestConfig.baseUrl,
     },
+    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
     mode: sources.length ? "image-to-image" : "text-to-image",
     endpoint,
     method: "POST",
@@ -1091,7 +1200,10 @@ async function generateWithApimartImage2(node) {
 function cloneApimartImage2Node(node) {
   if (!isApimartImageNode(node)) return null;
   const inputSourceIds = Array.from(connections.values())
-    .filter((connection) => connection.toNodeId === node.id && nodes.get(connection.fromNodeId)?.type === "image")
+    .filter((connection) => {
+      const sourceType = nodes.get(connection.fromNodeId)?.type;
+      return connection.toNodeId === node.id && (sourceType === "image" || sourceType === "text");
+    })
     .map((connection) => connection.fromNodeId);
   const clone = createApimartImage2Node(node.type, {
     x: node.x + 52,
@@ -1170,7 +1282,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
   cloneButton.className = "node-tool-button";
   cloneButton.type = "button";
   cloneButton.textContent = "克隆";
-  cloneButton.title = "克隆节点并复制图片引用";
+  cloneButton.title = "克隆节点并复制输入连接";
   cloneButton.setAttribute("aria-label", `克隆${node.name}`);
   cloneButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   cloneButton.addEventListener("click", (event) => {
@@ -1203,7 +1315,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
       <label class="image2-field">Google 图片搜索<select class="image2-google-image-search"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>` : "";
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
-    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接图片后通过 image_urls 进行图生图…" aria-label="${spec.label} 提示词"></textarea>
+    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接 TEXT 后会在生成时合并文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
     <div class="image2-config">
       <label class="image2-field wide">模型${modelControl}</label>
       <label class="image2-field">分辨率<select class="image2-resolution">${resolutionOptions}</select></label>
@@ -1215,7 +1327,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
-        <span class="image2-status">未连接图片 · 文生图模式</span>
+        <span class="image2-status">未连接图片 · 未连接 TEXT · 文生图模式</span>
         <div class="image2-run-actions">
           <button class="image2-run-action image2-details hidden" type="button">调用详情</button>
           <button class="image2-run-action image2-error-info hidden" type="button">错误信息</button>
@@ -1673,6 +1785,14 @@ document.addEventListener("keydown", (event) => {
     selectNode(null);
     if (previewDialog.open) previewDialog.close();
   }
+});
+
+createTextNodeButton.addEventListener("click", () => {
+  createTextNode({
+    x: contextCanvasPoint.x - TEXT_NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - TEXT_NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
 });
 
 previewCloseButton.addEventListener("click", () => previewDialog.close());
