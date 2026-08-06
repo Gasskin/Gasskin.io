@@ -856,6 +856,7 @@ function createTextNode({ x, y, text = "" } = {}) {
     if (!selectedNodeIds.has(id)) selectNode(id);
   });
   node.textInput.addEventListener("input", () => refreshConsumers(id));
+  node.textInput.addEventListener("wheel", (event) => event.stopPropagation());
   node.body.append(contentHeader, node.textInput);
 
   node.element.append(header, node.body);
@@ -1561,7 +1562,7 @@ function showContextMenu(clientX, clientY) {
 }
 
 viewport.addEventListener("wheel", (event) => {
-  if (event.target instanceof Element && event.target.closest(".image2-prompt")) return;
+  if (event.target instanceof Element && event.target.closest(".image2-prompt, .text-node-input")) return;
   event.preventDefault();
   hideContextMenu();
   const factor = Math.exp(-event.deltaY * 0.0012);
