@@ -149,7 +149,6 @@ const selectedNodeIds = new Set();
 let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
-let suppressContextMenuUntil = 0;
 let dragDepth = 0;
 let apimartSettings = { ...DEFAULT_APIMART_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
@@ -1423,38 +1422,59 @@ viewport.addEventListener("wheel", (event) => {
 }, { passive: false });
 
 viewport.addEventListener("pointerdown", (event) => {
-  if (event.button === 2) {
+  if (event.button === 1) {
     event.preventDefault();
     event.stopPropagation();
     hideContextMenu();
+    const pointerId = event.pointerId;
     const start = { x: event.clientX, y: event.clientY };
     const origin = { x: view.x, y: view.y };
     let moved = false;
+    let finished = false;
+
+    try {
+      viewport.setPointerCapture(pointerId);
+    } catch {
+      // Pointer capture is an enhancement; window-level listeners remain as fallback.
+    }
 
     const onMove = (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      moveEvent.preventDefault();
+      moveEvent.stopPropagation();
       if (!moved && Math.hypot(moveEvent.clientX - start.x, moveEvent.clientY - start.y) > 3) {
         moved = true;
         hideContextMenu();
         viewport.classList.add("panning");
       }
       if (!moved) return;
-      moveEvent.preventDefault();
       view.x = origin.x + moveEvent.clientX - start.x;
       view.y = origin.y + moveEvent.clientY - start.y;
       applyView();
     };
 
-    const onUp = () => {
+    const finishPan = (endEvent) => {
+      if (finished || endEvent.pointerId !== pointerId) return;
+      finished = true;
+      if (endEvent.cancelable) endEvent.preventDefault();
+      endEvent.stopPropagation();
       viewport.classList.remove("panning");
-      if (moved) suppressContextMenuUntil = performance.now() + 400;
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
+      try {
+        if (viewport.hasPointerCapture(pointerId)) viewport.releasePointerCapture(pointerId);
+      } catch {
+        // The browser may already have released capture during cancellation.
+      }
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
     };
 
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+    const onUp = (upEvent) => finishPan(upEvent);
+    const onCancel = (cancelEvent) => finishPan(cancelEvent);
+
+    window.addEventListener("pointermove", onMove, { capture: true, passive: false });
+    window.addEventListener("pointerup", onUp, { capture: true, passive: false });
+    window.addEventListener("pointercancel", onCancel, { capture: true, passive: false });
     return;
   }
 
@@ -1517,8 +1537,22 @@ viewport.addEventListener("pointerdown", (event) => {
 
 viewport.addEventListener("contextmenu", (event) => {
   event.preventDefault();
-  if (performance.now() < suppressContextMenuUntil) return;
+  event.stopPropagation();
   showContextMenu(event.clientX, event.clientY);
+});
+
+viewport.addEventListener("mousedown", (event) => {
+  if (event.button === 1) event.preventDefault();
+}, true);
+
+viewport.addEventListener("auxclick", (event) => {
+  if (event.button !== 1) return;
+  event.preventDefault();
+  event.stopPropagation();
+});
+
+viewport.addEventListener("dragstart", (event) => {
+  event.preventDefault();
 });
 
 viewport.addEventListener("dragenter", (event) => {

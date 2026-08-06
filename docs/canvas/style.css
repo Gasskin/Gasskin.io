@@ -168,6 +168,11 @@ button { color: inherit; }
   background-size: var(--grid-size, 24px) var(--grid-size, 24px);
   user-select: none;
   touch-action: none;
+  -webkit-user-drag: none;
+}
+
+.canvas-viewport * {
+  -webkit-user-drag: none;
 }
 
 .canvas-viewport.panning { cursor: grabbing; }
