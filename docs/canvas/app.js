@@ -361,8 +361,8 @@ function describeImage2Inputs(imageSources, textSources) {
     ? `已连接 ${imageSources.length} 张输入图片`
     : "未连接图片";
   const textSummary = textSources.length
-    ? `已连接 ${textSources.length} 个 TEXT`
-    : "未连接 TEXT";
+    ? `已连接 ${textSources.length} 个文本节点`
+    : "未连接文本节点";
   return `${imageSummary} · ${textSummary} · ${imageSources.length ? "图生图模式" : "文生图模式"}`;
 }
 
@@ -399,7 +399,7 @@ function refreshImage2Input(node) {
   } else {
     const empty = document.createElement("span");
     empty.className = "image2-input-empty";
-    empty.innerHTML = "<span>↦</span><strong>可直接文生图</strong><small>可连接图片或 TEXT 节点作为输入</small>";
+    empty.innerHTML = "<span>↦</span><strong>可直接文生图</strong><small>可连接图片或文本节点作为输入</small>";
     node.inputPreview.title = "未连接图片时使用文生图模式";
     node.inputPreview.appendChild(empty);
   }
@@ -776,7 +776,7 @@ function createTextNode({ x, y, text = "" } = {}) {
     y: Number.isFinite(y) ? y : center.y - TEXT_NODE_HEIGHT / 2,
     width: TEXT_NODE_WIDTH,
     height: TEXT_NODE_HEIGHT,
-    name: `TEXT ${nodeSequence}`,
+    name: `文本节点 ${nodeSequence}`,
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
@@ -1070,7 +1070,7 @@ async function generateWithApimartImage2(node) {
   const selectedModel = node.model.value;
 
   if (!prompt) {
-    setImage2Status(node, "请在本节点或已连接的 TEXT 节点中填写提示词。", "error");
+    setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
     const emptyTextSource = textSources.find((source) => !source.textInput.value.trim());
     (emptyTextSource?.textInput || node.prompt).focus();
     return;
@@ -1315,7 +1315,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
       <label class="image2-field">Google 图片搜索<select class="image2-google-image-search"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>` : "";
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
-    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接 TEXT 后会在生成时合并文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
+    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接文本节点后会在生成时合并文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
     <div class="image2-config">
       <label class="image2-field wide">模型${modelControl}</label>
       <label class="image2-field">分辨率<select class="image2-resolution">${resolutionOptions}</select></label>
@@ -1327,7 +1327,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
-        <span class="image2-status">未连接图片 · 未连接 TEXT · 文生图模式</span>
+        <span class="image2-status">未连接图片 · 未连接文本节点 · 文生图模式</span>
         <div class="image2-run-actions">
           <button class="image2-run-action image2-details hidden" type="button">调用详情</button>
           <button class="image2-run-action image2-error-info hidden" type="button">错误信息</button>
