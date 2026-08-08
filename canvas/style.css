@@ -1392,6 +1392,7 @@ kbd {
 
 .details-dialog::backdrop { background: rgba(4, 5, 7, 0.76); backdrop-filter: blur(10px); }
 .details-shell { display: grid; max-height: min(88vh, 760px); grid-template-rows: auto auto auto minmax(0, 1fr); }
+.details-dialog.curl-only .details-shell { grid-template-rows: auto auto minmax(0, 1fr); }
 
 .details-head {
   display: flex;

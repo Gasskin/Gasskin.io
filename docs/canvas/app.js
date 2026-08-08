@@ -174,9 +174,11 @@ const generationDetailsDialog = document.getElementById("generationDetailsDialog
 const generationDetailsProvider = document.getElementById("generationDetailsProvider");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
 const generationDetailsClose = document.getElementById("generationDetailsClose");
+const generationDetailsSummary = document.getElementById("generationDetailsSummary");
 const generationDetailsStatus = document.getElementById("generationDetailsStatus");
 const generationDetailsElapsed = document.getElementById("generationDetailsElapsed");
 const generationDetailsCodeLabel = document.getElementById("generationDetailsCodeLabel");
+const generationDetailsTokenNote = document.getElementById("generationDetailsTokenNote");
 const generationDetailsCode = document.getElementById("generationDetailsCode");
 
 const view = { x: 0, y: 0, scale: 1 };
@@ -1028,17 +1030,47 @@ function formatGenerationElapsed(milliseconds) {
   return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
 }
 
+function quoteShellArgument(value) {
+  return `'${String(value).replace(/'/g, `'"'"'`)}'`;
+}
+
+function buildGenerationCurl(callDetails) {
+  if (!callDetails?.endpoint) return "暂无调用信息";
+  const method = String(callDetails.method || "POST").toUpperCase();
+  const parts = [
+    `curl -X ${method} ${quoteShellArgument(callDetails.endpoint)}`,
+    `  -H ${quoteShellArgument("Authorization: Bearer ***")}`,
+  ];
+
+  if (callDetails.mode === "image-edit") {
+    Object.entries(callDetails.body || {}).forEach(([key, value]) => {
+      if (key === "image") return;
+      parts.push(`  -F ${quoteShellArgument(`${key}=${value}`)}`);
+    });
+    const imageName = String(callDetails.body?.image || "input.png").replace(/^\[|\]$/g, "");
+    parts.push(`  -F ${quoteShellArgument(`image=@/path/to/${imageName}`)}`);
+  } else {
+    parts.push(`  -H ${quoteShellArgument("Content-Type: application/json")}`);
+    parts.push(`  --data-raw ${quoteShellArgument(JSON.stringify(callDetails.body || {}, null, 2))}`);
+  }
+
+  return parts.join(" \\\n");
+}
+
 function openGenerationDetails(node, errorOnly = false) {
   generationDetailsProvider.textContent = `${node.spec?.providerLabel || node.spec?.label || "Image"} image generation`;
   generationDetailsTitle.textContent = errorOnly ? "错误信息" : "生成详情";
-  generationDetailsCodeLabel.textContent = errorOnly ? "错误内容" : "本次调用";
+  generationDetailsCodeLabel.textContent = errorOnly ? "错误内容" : "cURL";
+  generationDetailsSummary.hidden = !errorOnly;
+  generationDetailsTokenNote.hidden = errorOnly;
+  generationDetailsDialog.classList.toggle("curl-only", !errorOnly);
   generationDetailsStatus.textContent = node.callStatus || "—";
   generationDetailsElapsed.textContent = node.elapsedMs == null
     ? formatGenerationElapsed(performance.now() - node.startedAt)
     : formatGenerationElapsed(node.elapsedMs);
   generationDetailsCode.textContent = errorOnly
     ? (node.lastError || "无错误信息")
-    : JSON.stringify(node.callDetails || {}, null, 2);
+    : buildGenerationCurl(node.callDetails);
   generationDetailsDialog.showModal();
 }
 
