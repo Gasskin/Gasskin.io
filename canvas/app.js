@@ -25,13 +25,21 @@ const APIMART_TASK_PATH = "v1/tasks";
 const APIMART_POLL_INTERVAL_MS = 2000;
 const APIMART_TASK_TIMEOUT_MS = 10 * 60 * 1000;
 const APIMART_USD_TO_CNY_RATE = 7;
+const MAOLAO_SETTINGS_STORAGE_KEY = "canvas:maolao-settings:v1";
+const MAOLAO_TASK_PATH = "v1/images/tasks";
+const MAOLAO_POLL_INTERVAL_MS = 2500;
+const MAOLAO_TASK_TIMEOUT_MS = 10 * 60 * 1000;
 const DEFAULT_APIMART_SETTINGS = Object.freeze({
   baseUrl: "https://api.apimart.ai",
   token: "",
 });
+const DEFAULT_MAOLAO_SETTINGS = Object.freeze({
+  baseUrl: "https://maolaoapi.com",
+  token: "",
+});
 const APIMART_NODE_SPECS = Object.freeze({
   "apimart-image2": Object.freeze({
-    label: "APIMart/Image2",
+    label: "Mart/Image2",
     model: "gpt-image-2",
     official: false,
     maxCount: 1,
@@ -41,7 +49,7 @@ const APIMART_NODE_SPECS = Object.freeze({
     priceUsdByResolution: Object.freeze({ "1k": 0.0085, "2k": 0.014, "4k": 0.021 }),
   }),
   "apimart-image2-official": Object.freeze({
-    label: "APIMart/Image2-Official",
+    label: "Mart/Image2-Official",
     model: "gpt-image-2-official",
     official: true,
     maxCount: 4,
@@ -56,7 +64,7 @@ const APIMART_NODE_SPECS = Object.freeze({
     }),
   }),
   "apimart-nano-banana-2": Object.freeze({
-    label: "APIMart/Nano Banana 2",
+    label: "Mart/Nano Banana 2",
     model: "nano-banana-2-ext",
     modelOptions: Object.freeze([
       Object.freeze({ value: "nano-banana-2-ext", label: "nano-banana-2-ext（标准）" }),
@@ -76,7 +84,7 @@ const APIMART_NODE_SPECS = Object.freeze({
     }),
   }),
   "apimart-nano-banana-pro": Object.freeze({
-    label: "APIMart/Nano Banana Pro",
+    label: "Mart/Nano Banana Pro",
     model: "nano-banana-pro-ext",
     modelOptions: Object.freeze([
       Object.freeze({ value: "nano-banana-pro-ext", label: "nano-banana-pro-ext（标准）" }),
@@ -95,6 +103,28 @@ const APIMART_NODE_SPECS = Object.freeze({
     }),
   }),
 });
+const MAOLAO_NODE_SPECS = Object.freeze({
+  "maolao-image2": Object.freeze({
+    label: "Image2",
+    providerLabel: "Maolao",
+    provider: "maolao",
+    showSequenceInName: false,
+    model: "gpt-image-2-4k",
+    modelOptions: Object.freeze([
+      Object.freeze({ value: "gpt-image-2", label: "gpt-image-2" }),
+      Object.freeze({ value: "gpt-image-2-4k", label: "gpt-image-2-4k" }),
+    ]),
+    maxCount: 128,
+    maxReferenceImages: 1,
+    resolutions: ["1k", "2k", "4k"],
+    defaultResolution: "4k",
+    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
+    qualityOptions: ["auto", "standard", "high", "2K"],
+    defaultQuality: "high",
+    nodeClass: "maolao-image2",
+  }),
+});
+const IMAGE2_NODE_SPECS = Object.freeze({ ...APIMART_NODE_SPECS, ...MAOLAO_NODE_SPECS });
 
 const viewport = document.getElementById("canvasViewport");
 const panLayer = document.getElementById("canvasPanLayer");
@@ -113,6 +143,9 @@ const createApimartImage2NodeButton = document.getElementById("createApimartImag
 const createApimartImage2OfficialNodeButton = document.getElementById("createApimartImage2OfficialNodeButton");
 const createApimartNanoBanana2NodeButton = document.getElementById("createApimartNanoBanana2NodeButton");
 const createApimartNanoBananaProNodeButton = document.getElementById("createApimartNanoBananaProNodeButton");
+const maolaoMenuGroup = document.getElementById("maolaoMenuGroup");
+const maolaoMenuButton = document.getElementById("maolaoMenuButton");
+const createMaolaoImage2NodeButton = document.getElementById("createMaolaoImage2NodeButton");
 const fitButton = document.getElementById("fitButton");
 const settingsButton = document.getElementById("settingsButton");
 const zoomOutButton = document.getElementById("zoomOutButton");
@@ -132,8 +165,13 @@ const settingsPanels = Array.from(document.querySelectorAll("[data-settings-pane
 const apimartBaseUrl = document.getElementById("apimartBaseUrl");
 const apimartToken = document.getElementById("apimartToken");
 const apimartTokenClear = document.getElementById("apimartTokenClear");
+const maolaoBaseUrl = document.getElementById("maolaoBaseUrl");
+const maolaoToken = document.getElementById("maolaoToken");
+const maolaoTokenClear = document.getElementById("maolaoTokenClear");
 const settingsMessage = document.getElementById("settingsMessage");
+const maolaoSettingsMessage = document.getElementById("maolaoSettingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
+const generationDetailsProvider = document.getElementById("generationDetailsProvider");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
 const generationDetailsClose = document.getElementById("generationDetailsClose");
 const generationDetailsStatus = document.getElementById("generationDetailsStatus");
@@ -154,6 +192,7 @@ let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
 let dragDepth = 0;
 let apimartSettings = { ...DEFAULT_APIMART_SETTINGS };
+let maolaoSettings = { ...DEFAULT_MAOLAO_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -173,14 +212,18 @@ function joinApiUrl(baseUrl, path) {
   return `${base}/${joinedPath}`;
 }
 
-function isApimartImageNode(node) {
-  return Boolean(APIMART_NODE_SPECS[node?.type]);
+function isImage2GenerationNode(node) {
+  return Boolean(IMAGE2_NODE_SPECS[node?.type]);
 }
 
 function updateSettingsButtonState() {
-  const configured = isValidHttpUrl(apimartSettings.baseUrl) && Boolean(apimartSettings.token);
-  settingsButton.classList.toggle("configured", configured);
-  settingsButton.title = configured ? "APIMart API 已配置" : "设置（APIMart API 尚未配置）";
+  const martConfigured = isValidHttpUrl(apimartSettings.baseUrl) && Boolean(apimartSettings.token);
+  const maolaoConfigured = isValidHttpUrl(maolaoSettings.baseUrl) && Boolean(maolaoSettings.token);
+  settingsButton.classList.toggle("configured", martConfigured || maolaoConfigured);
+  const configuredProviders = [martConfigured && "Mart", maolaoConfigured && "Maolao"].filter(Boolean);
+  settingsButton.title = configuredProviders.length
+    ? `设置（${configuredProviders.join("、")} API 已配置）`
+    : "设置（图片生成 API 尚未配置）";
 }
 
 function loadApimartSettings() {
@@ -198,6 +241,24 @@ function loadApimartSettings() {
     // Ignore malformed or unavailable browser storage and keep the defaults.
   }
   apimartSettings = loaded;
+  updateSettingsButtonState();
+}
+
+function loadMaolaoSettings() {
+  let loaded = { ...DEFAULT_MAOLAO_SETTINGS };
+  try {
+    const stored = window.localStorage.getItem(MAOLAO_SETTINGS_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      loaded = {
+        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_MAOLAO_SETTINGS.baseUrl,
+        token: String(parsed?.token || "").trim(),
+      };
+    }
+  } catch {
+    // Ignore malformed or unavailable browser storage and keep the defaults.
+  }
+  maolaoSettings = loaded;
   updateSettingsButtonState();
 }
 
@@ -387,7 +448,7 @@ function syncImage2PromptFromTextNodes(node, textSources) {
 }
 
 function refreshImage2Input(node) {
-  if (!isApimartImageNode(node) || !node.inputPreview) return;
+  if (!isImage2GenerationNode(node) || !node.inputPreview) return;
   const sources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
   node.inputSourceIds = sources.map((source) => source.id);
@@ -429,7 +490,7 @@ function refreshImage2Input(node) {
 
 function refreshNodeInput(nodeId) {
   const node = nodes.get(nodeId);
-  if (isApimartImageNode(node)) refreshImage2Input(node);
+  if (isImage2GenerationNode(node)) refreshImage2Input(node);
 }
 
 function refreshConsumers(sourceNodeId) {
@@ -525,7 +586,7 @@ function startConnectionDrag(node, event) {
     const target = findConnectionTarget(upEvent.clientX, upEvent.clientY, batchSourceIds);
     const targetNodeId = target?.node.id;
     if (targetNodeId) {
-      if (batchSourceIds.size > 1 && isApimartImageNode(target.node)) {
+      if (batchSourceIds.size > 1 && isImage2GenerationNode(target.node)) {
         batchSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, targetNodeId));
       } else {
         connectNodes(node.id, targetNodeId);
@@ -968,6 +1029,7 @@ function formatGenerationElapsed(milliseconds) {
 }
 
 function openGenerationDetails(node, errorOnly = false) {
+  generationDetailsProvider.textContent = `${node.spec?.providerLabel || node.spec?.label || "Image"} image generation`;
   generationDetailsTitle.textContent = errorOnly ? "错误信息" : "生成详情";
   generationDetailsCodeLabel.textContent = errorOnly ? "错误内容" : "本次调用";
   generationDetailsStatus.textContent = node.callStatus || "—";
@@ -1002,7 +1064,7 @@ function createImage2Results(node, results) {
         src: result.src,
         name: `生成图片 ${index + 1}`,
         file: result.file || null,
-        revokeOnRemove: false,
+        revokeOnRemove: Boolean(result.revokeOnRemove),
       },
     });
     connectNodes(node.id, imageNode.id);
@@ -1033,7 +1095,7 @@ async function waitForApimartPoll(signal) {
   });
 }
 
-async function fetchApimartJson(url, options) {
+async function fetchImageApiJson(url, options) {
   const response = await fetch(url, options);
   const text = await response.text();
   let payload = null;
@@ -1063,7 +1125,7 @@ async function pollApimartTask(node, taskId, requestConfig) {
   const deadline = Date.now() + APIMART_TASK_TIMEOUT_MS;
   while (Date.now() < deadline) {
     await waitForApimartPoll(node.abortController.signal);
-    const payload = await fetchApimartJson(queryEndpoint, {
+    const payload = await fetchImageApiJson(queryEndpoint, {
       method: "GET",
       headers: { Authorization: `Bearer ${requestConfig.token}` },
       signal: node.abortController.signal,
@@ -1081,10 +1143,10 @@ async function pollApimartTask(node, taskId, requestConfig) {
 
     if (status === "completed") return { payload, results: extractApimartResults(payload) };
     if (status === "failed") {
-      throw new Error(task?.error?.message || task?.error || "APIMart 图片生成任务失败。");
+      throw new Error(task?.error?.message || task?.error || "Mart 图片生成任务失败。");
     }
   }
-  throw new Error("APIMart 任务查询超时（10 分钟）。");
+  throw new Error("Mart 任务查询超时（10 分钟）。");
 }
 
 async function generateWithApimartImage2(node) {
@@ -1110,7 +1172,7 @@ async function generateWithApimartImage2(node) {
     return;
   }
   if (!isValidHttpUrl(apimartSettings.baseUrl) || !apimartSettings.token) {
-    setImage2Status(node, "请先在设置中配置 APIMart API 地址和 API Key。", "error");
+    setImage2Status(node, "请先在设置中配置 Mart API 地址和 API Key。", "error");
     openSettings("apimart");
     return;
   }
@@ -1148,7 +1210,7 @@ async function generateWithApimartImage2(node) {
   node.progressLabel = "提交中";
   node.callDetails = {
     configuration: {
-      provider: "APIMart",
+      provider: "Mart",
       node: node.spec.label,
       model: selectedModel,
       base_url: requestConfig.baseUrl,
@@ -1176,7 +1238,7 @@ async function generateWithApimartImage2(node) {
         url.startsWith("data:") ? `[参考图 ${index + 1}：base64 data URI]` : url
       ));
     }
-    const submitPayload = await fetchApimartJson(endpoint, {
+    const submitPayload = await fetchImageApiJson(endpoint, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${requestConfig.token}`,
@@ -1186,7 +1248,7 @@ async function generateWithApimartImage2(node) {
       signal: node.abortController.signal,
     });
     const taskId = submitPayload?.data?.[0]?.task_id || submitPayload?.data?.task_id || submitPayload?.task_id;
-    if (!taskId) throw new Error("APIMart 接口未返回 task_id。");
+    if (!taskId) throw new Error("Mart 接口未返回 task_id。");
     node.callDetails.submit_response = submitPayload;
     node.progressLabel = "任务已提交";
     node.callStatus = "查询中";
@@ -1227,15 +1289,261 @@ async function generateWithApimartImage2(node) {
   }
 }
 
-function cloneApimartImage2Node(node) {
-  if (!isApimartImageNode(node)) return null;
+async function waitForMaolaoPoll(signal) {
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+  await new Promise((resolve, reject) => {
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, MAOLAO_POLL_INTERVAL_MS);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+async function sourceImageToFile(source, signal) {
+  if (source.file) return source.file;
+  const response = await fetch(source.objectUrl, { signal });
+  if (!response.ok) throw new Error(`读取参考图片失败：${response.status} ${response.statusText}`);
+  const blob = await response.blob();
+  const extension = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "png";
+  return new File([blob], `maolao-input.${extension}`, { type: blob.type || "image/png" });
+}
+
+async function extractMaolaoResults(taskPayload, requestConfig, signal) {
+  const task = taskPayload?.data || taskPayload;
+  const images = Array.isArray(task?.result?.data) ? task.result.data : [];
+  return Promise.all(images.map(async (image, index) => {
+    const details = {
+      index: index + 1,
+      url: image?.url || null,
+      revised_prompt: image?.revised_prompt || null,
+    };
+    if (image?.b64_json) {
+      return {
+        src: `data:image/png;base64,${image.b64_json}`,
+        name: `生成图片 ${index + 1}`,
+        responseDetails: { ...details, url: "[base64 image]" },
+      };
+    }
+
+    const resultUrl = String(image?.url || "");
+    if (!resultUrl) return null;
+    if (!resultUrl.startsWith("/v1/")) {
+      return {
+        src: resultUrl,
+        name: `生成图片 ${index + 1}`,
+        responseDetails: details,
+      };
+    }
+
+    const contentEndpoint = joinApiUrl(requestConfig.baseUrl, resultUrl);
+    const response = await fetch(contentEndpoint, {
+      headers: { Authorization: `Bearer ${requestConfig.token}` },
+      signal,
+    });
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || `图片读取失败：${response.status} ${response.statusText}`);
+    }
+    const blob = await response.blob();
+    const extension = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "png";
+    const file = new File([blob], `maolao-${index + 1}.${extension}`, { type: blob.type || "image/png" });
+    return {
+      src: URL.createObjectURL(file),
+      file,
+      name: `生成图片 ${index + 1}`,
+      revokeOnRemove: true,
+      responseDetails: { ...details, content_endpoint: contentEndpoint },
+    };
+  })).then((results) => results.filter(Boolean));
+}
+
+async function pollMaolaoTask(node, taskId, requestConfig) {
+  const queryEndpoint = `${joinApiUrl(requestConfig.baseUrl, MAOLAO_TASK_PATH)}/${encodeURIComponent(taskId)}`;
+  const deadline = Date.now() + MAOLAO_TASK_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await waitForMaolaoPoll(node.abortController.signal);
+    const payload = await fetchImageApiJson(queryEndpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${requestConfig.token}` },
+      signal: node.abortController.signal,
+    });
+    const task = payload?.data || payload;
+    const status = String(task?.status || "unknown");
+    const progress = task?.progress == null ? "" : ` ${String(task.progress)}`;
+    node.progressLabel = status === "queued" ? "任务已排队" : `任务 ${status}${progress}`;
+    node.callDetails.task = {
+      id: taskId,
+      status,
+      progress: task?.progress ?? null,
+      query_endpoint: queryEndpoint,
+    };
+
+    if (status === "succeeded") {
+      const results = await extractMaolaoResults(payload, requestConfig, node.abortController.signal);
+      return { payload, results };
+    }
+    if (status === "failed") {
+      throw new Error(task?.error?.message || task?.error || "Maolao 图片生成任务失败。");
+    }
+  }
+  throw new Error("Maolao 任务查询超时（10 分钟）。");
+}
+
+async function generateWithMaolaoImage2(node) {
+  const sources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
+  const linkedPromptParts = textSources
+    .map((source) => source.textInput.value.trim())
+    .filter(Boolean);
+  const prompt = textSources.length
+    ? linkedPromptParts.join("\n\n")
+    : node.prompt.value.trim();
+  const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
+  const selectedModel = node.model.value;
+
+  if (!prompt) {
+    setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
+    const emptyTextSource = textSources.find((source) => !source.textInput.value.trim());
+    (emptyTextSource?.textInput || node.prompt).focus();
+    return;
+  }
+  if (sources.length > node.spec.maxReferenceImages) {
+    setImage2Status(node, `${node.spec.label} 最多支持 ${node.spec.maxReferenceImages} 张参考图。`, "error");
+    return;
+  }
+  if (!isValidHttpUrl(maolaoSettings.baseUrl) || !maolaoSettings.token) {
+    setImage2Status(node, "请先在设置中配置 Maolao API 地址和 API Key。", "error");
+    openSettings("maolao");
+    return;
+  }
+
+  node.count.value = String(count);
+  node.generateButton.disabled = true;
+  node.abortController?.abort();
+  node.abortController = new AbortController();
+
+  const requestConfig = { ...maolaoSettings };
+  const baseEndpoint = joinApiUrl(requestConfig.baseUrl, MAOLAO_TASK_PATH);
+  const endpoint = sources.length ? `${baseEndpoint}?action=edits` : baseEndpoint;
+  const requestBody = {
+    model: selectedModel,
+    prompt,
+    size: node.aspectRatio.value === "auto" ? "auto" : node.finalSize.value,
+    quality: node.quality?.value || "high",
+    n: count,
+    response_format: "b64_json",
+  };
+  node.startedAt = performance.now();
+  node.elapsedMs = null;
+  node.callStatus = "提交中";
+  node.lastError = "";
+  node.progressLabel = "提交中";
+  node.callDetails = {
+    configuration: {
+      provider: "Maolao",
+      node: node.spec.label,
+      model: selectedModel,
+      base_url: requestConfig.baseUrl,
+    },
+    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
+    mode: sources.length ? "image-edit" : "text-to-image",
+    endpoint,
+    method: "POST",
+    headers: { Authorization: "Bearer ***", "Content-Type": sources.length ? "multipart/form-data" : "application/json" },
+    body: { ...requestBody, ...(sources.length ? { image: `[${sources[0].name}]` } : {}) },
+  };
+  setImage2RunActions(node);
+  setImage2Status(node, "提交中 · 0 秒");
+  node.timerId = window.setInterval(() => {
+    setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
+  }, 250);
+
+  try {
+    let submitOptions;
+    if (sources.length) {
+      node.progressLabel = "正在读取参考图";
+      const formData = new FormData();
+      Object.entries(requestBody).forEach(([key, value]) => formData.append(key, String(value)));
+      formData.append("image", await sourceImageToFile(sources[0], node.abortController.signal));
+      submitOptions = {
+        method: "POST",
+        headers: { Authorization: `Bearer ${requestConfig.token}` },
+        body: formData,
+        signal: node.abortController.signal,
+      };
+    } else {
+      submitOptions = {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${requestConfig.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        signal: node.abortController.signal,
+      };
+    }
+
+    const submitPayload = await fetchImageApiJson(endpoint, submitOptions);
+    const taskId = submitPayload?.task_id || submitPayload?.data?.task_id;
+    if (!taskId) throw new Error("Maolao 接口未返回 task_id。");
+    node.callDetails.submit_response = submitPayload;
+    node.progressLabel = "任务已提交";
+    node.callStatus = "查询中";
+    const { payload: taskPayload, results } = await pollMaolaoTask(node, taskId, requestConfig);
+    if (!results.length) throw new Error("任务已成功，但没有找到可交付的生成图片。");
+
+    stopImage2Timer(node);
+    node.callStatus = "生成成功";
+    node.callDetails = {
+      ...node.callDetails,
+      response: {
+        task: taskPayload?.data || taskPayload,
+        image_count: results.length,
+        images: results.map((result) => result.responseDetails),
+      },
+    };
+    setImage2Status(node, `生成完成 · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
+    setImage2RunActions(node, { details: true });
+    if (nodes.has(node.id)) {
+      createImage2Results(node, results);
+    } else {
+      results.filter((result) => result.revokeOnRemove).forEach((result) => URL.revokeObjectURL(result.src));
+    }
+  } catch (error) {
+    stopImage2Timer(node);
+    let failureMessage;
+    if (error?.name === "AbortError") {
+      failureMessage = "生成已停止。";
+    } else if (error instanceof TypeError) {
+      failureMessage = "请求失败，请检查网络、网址或 CORS 设置。";
+    } else {
+      failureMessage = error.message || String(error);
+    }
+    node.callStatus = "生成失败";
+    node.lastError = failureMessage;
+    node.callDetails = { ...node.callDetails, error: failureMessage };
+    setImage2Status(node, `生成失败 · ${formatGenerationElapsed(node.elapsedMs)}`, "error");
+    setImage2RunActions(node, { details: true, error: true });
+  } finally {
+    node.generateButton.disabled = false;
+    node.abortController = null;
+  }
+}
+
+function cloneImage2GenerationNode(node) {
+  if (!isImage2GenerationNode(node)) return null;
   const inputSourceIds = Array.from(connections.values())
     .filter((connection) => {
       const sourceType = nodes.get(connection.fromNodeId)?.type;
       return connection.toNodeId === node.id && (sourceType === "image" || sourceType === "text");
     })
     .map((connection) => connection.fromNodeId);
-  const clone = createApimartImage2Node(node.type, {
+  const clone = createImage2GenerationNode(node.type, {
     x: node.x + 52,
     y: node.y + 52,
   });
@@ -1259,8 +1567,8 @@ function cloneApimartImage2Node(node) {
   return clone;
 }
 
-function createApimartImage2Node(type, { x, y } = {}) {
-  const spec = APIMART_NODE_SPECS[type];
+function createImage2GenerationNode(type, { x, y } = {}) {
+  const spec = IMAGE2_NODE_SPECS[type];
   if (!spec) return null;
   nodeSequence += 1;
   const id = `${type}-${nodeSequence}`;
@@ -1273,7 +1581,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
     y: Number.isFinite(y) ? y : center.y - IMAGE2_NODE_HEIGHT / 2,
     width: IMAGE2_NODE_WIDTH,
     height: IMAGE2_NODE_HEIGHT,
-    name: `${spec.label} ${nodeSequence}`,
+    name: spec.showSequenceInName === false ? spec.label : `${spec.label} ${nodeSequence}`,
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
@@ -1318,7 +1626,7 @@ function createApimartImage2Node(type, { x, y } = {}) {
   cloneButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   cloneButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    cloneApimartImage2Node(node);
+    cloneImage2GenerationNode(node);
   });
 
   const headerActions = document.createElement("div");
@@ -1331,14 +1639,18 @@ function createApimartImage2Node(type, { x, y } = {}) {
     .map((ratio) => `<option value="${ratio}"${ratio === "16:9" ? " selected" : ""}>${ratio}</option>`)
     .join("");
   const resolutionOptions = spec.resolutions
-    .map((resolution) => `<option value="${resolution}"${resolution.toLowerCase() === "1k" ? " selected" : ""}>${resolution}</option>`)
+    .map((resolution) => `<option value="${resolution}"${resolution.toLowerCase() === String(spec.defaultResolution || "1k").toLowerCase() ? " selected" : ""}>${resolution}</option>`)
     .join("");
   const modelControl = spec.modelOptions ? `
       <select class="image2-model">${spec.modelOptions.map((option) => (
         `<option value="${option.value}"${option.value === spec.model ? " selected" : ""}>${option.label}</option>`
       )).join("")}</select>` : `
       <input class="image2-model" type="text" value="${spec.model}" disabled />`;
-  const providerFields = spec.official ? `
+  const customQualityOptions = spec.qualityOptions?.map((quality) => (
+    `<option value="${quality}"${quality === spec.defaultQuality ? " selected" : ""}>${quality}</option>`
+  )).join("");
+  const providerFields = spec.qualityOptions ? `
+      <label class="image2-field">质量<select class="image2-quality">${customQualityOptions}</select></label>` : spec.official ? `
       <label class="image2-field">质量<select class="image2-quality"><option value="low">low</option><option value="medium" selected>medium</option><option value="high">high</option><option value="auto">auto</option></select></label>` : `
       <label class="image2-field">官方渠道兜底<select class="image2-official-fallback"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>`;
   const searchFields = spec.supportsGoogleSearch ? `
@@ -1422,7 +1734,10 @@ function createApimartImage2Node(type, { x, y } = {}) {
     event.stopPropagation();
     openGenerationDetails(node, true);
   });
-  node.generateButton.addEventListener("click", () => void generateWithApimartImage2(node));
+  node.generateButton.addEventListener("click", () => {
+    const generate = node.spec.provider === "maolao" ? generateWithMaolaoImage2 : generateWithApimartImage2;
+    void generate(node);
+  });
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
@@ -1501,7 +1816,10 @@ function isValidHttpUrl(value) {
 function openSettings(section = "apimart") {
   apimartBaseUrl.value = apimartSettings.baseUrl;
   apimartToken.value = apimartSettings.token;
+  maolaoBaseUrl.value = maolaoSettings.baseUrl;
+  maolaoToken.value = maolaoSettings.token;
   settingsMessage.textContent = "";
+  maolaoSettingsMessage.textContent = "";
   showSettingsSection(section);
   settingsDialog.showModal();
 }
@@ -1511,17 +1829,47 @@ function closeSettings() {
 }
 
 function saveSettings() {
+  const activeSection = settingsNavItems.find((item) => item.classList.contains("active"))?.dataset.settingsSection;
+  if (activeSection === "image") {
+    closeSettings();
+    return;
+  }
+  if (activeSection === "maolao") {
+    const baseUrl = cleanBaseUrl(maolaoBaseUrl.value);
+    const token = maolaoToken.value.trim();
+    if (!isValidHttpUrl(baseUrl)) {
+      maolaoSettingsMessage.textContent = "请输入有效的 Maolao API 基础网址。";
+      maolaoBaseUrl.focus();
+      return;
+    }
+    if (!token) {
+      maolaoSettingsMessage.textContent = "请输入 Maolao API Key。";
+      maolaoToken.focus();
+      return;
+    }
+    try {
+      window.localStorage.setItem(MAOLAO_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, token }));
+    } catch {
+      maolaoSettingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
+      return;
+    }
+    maolaoSettings = { baseUrl, token };
+    updateSettingsButtonState();
+    closeSettings();
+    return;
+  }
+
   const baseUrl = cleanBaseUrl(apimartBaseUrl.value);
   const token = apimartToken.value.trim();
   if (!isValidHttpUrl(baseUrl)) {
     showSettingsSection("apimart");
-    settingsMessage.textContent = "请输入有效的 APIMart API 基础网址。";
+    settingsMessage.textContent = "请输入有效的 Mart API 基础网址。";
     apimartBaseUrl.focus();
     return;
   }
   if (!token) {
     showSettingsSection("apimart");
-    settingsMessage.textContent = "请输入 APIMart API Key。";
+    settingsMessage.textContent = "请输入 Mart API Key。";
     apimartToken.focus();
     return;
   }
@@ -1544,6 +1892,8 @@ function hideContextMenu() {
   contextMenu.setAttribute("aria-hidden", "true");
   apimartMenuGroup.classList.remove("open");
   apimartMenuButton.setAttribute("aria-expanded", "false");
+  maolaoMenuGroup.classList.remove("open");
+  maolaoMenuButton.setAttribute("aria-expanded", "false");
 }
 
 function showContextMenu(clientX, clientY) {
@@ -1558,6 +1908,7 @@ function showContextMenu(clientX, clientY) {
   contextMenu.style.left = `${clamp(clientX, margin, window.innerWidth - width - margin)}px`;
   contextMenu.style.top = `${clamp(clientY, margin, window.innerHeight - height - margin)}px`;
   apimartMenuGroup.classList.toggle("submenu-left", clientX + width + 258 > window.innerWidth);
+  maolaoMenuGroup.classList.toggle("submenu-left", clientX + width + 258 > window.innerWidth);
   createImageNodeButton.focus();
 }
 
@@ -1751,13 +2102,25 @@ createTextNodeButton.addEventListener("click", () => {
 apimartMenuButton.addEventListener("click", (event) => {
   event.stopPropagation();
   const open = !apimartMenuGroup.classList.contains("open");
+  maolaoMenuGroup.classList.remove("open");
+  maolaoMenuButton.setAttribute("aria-expanded", "false");
   apimartMenuGroup.classList.toggle("open", open);
   apimartMenuButton.setAttribute("aria-expanded", String(open));
   if (open) createApimartImage2NodeButton.focus();
 });
 
+maolaoMenuButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const open = !maolaoMenuGroup.classList.contains("open");
+  apimartMenuGroup.classList.remove("open");
+  apimartMenuButton.setAttribute("aria-expanded", "false");
+  maolaoMenuGroup.classList.toggle("open", open);
+  maolaoMenuButton.setAttribute("aria-expanded", String(open));
+  if (open) createMaolaoImage2NodeButton.focus();
+});
+
 createApimartImage2NodeButton.addEventListener("click", () => {
-  createApimartImage2Node("apimart-image2", {
+  createImage2GenerationNode("apimart-image2", {
     x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
     y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
   });
@@ -1765,7 +2128,7 @@ createApimartImage2NodeButton.addEventListener("click", () => {
 });
 
 createApimartImage2OfficialNodeButton.addEventListener("click", () => {
-  createApimartImage2Node("apimart-image2-official", {
+  createImage2GenerationNode("apimart-image2-official", {
     x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
     y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
   });
@@ -1773,7 +2136,7 @@ createApimartImage2OfficialNodeButton.addEventListener("click", () => {
 });
 
 createApimartNanoBanana2NodeButton.addEventListener("click", () => {
-  createApimartImage2Node("apimart-nano-banana-2", {
+  createImage2GenerationNode("apimart-nano-banana-2", {
     x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
     y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
   });
@@ -1781,7 +2144,15 @@ createApimartNanoBanana2NodeButton.addEventListener("click", () => {
 });
 
 createApimartNanoBananaProNodeButton.addEventListener("click", () => {
-  createApimartImage2Node("apimart-nano-banana-pro", {
+  createImage2GenerationNode("apimart-nano-banana-pro", {
+    x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
+});
+
+createMaolaoImage2NodeButton.addEventListener("click", () => {
+  createImage2GenerationNode("maolao-image2", {
     x: contextCanvasPoint.x - IMAGE2_NODE_WIDTH / 2,
     y: contextCanvasPoint.y - IMAGE2_NODE_HEIGHT / 2,
   });
@@ -1802,6 +2173,10 @@ settingsNavItems.forEach((item) => {
 apimartTokenClear.addEventListener("click", () => {
   apimartToken.value = "";
   apimartToken.focus();
+});
+maolaoTokenClear.addEventListener("click", () => {
+  maolaoToken.value = "";
+  maolaoToken.focus();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -1859,3 +2234,4 @@ window.addEventListener("beforeunload", () => {
 resetView();
 updateEmptyState();
 loadApimartSettings();
+loadMaolaoSettings();

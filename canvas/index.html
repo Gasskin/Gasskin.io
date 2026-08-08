@@ -79,10 +79,10 @@
       <div id="apimartMenuGroup" class="context-submenu-wrap">
         <button id="apimartMenuButton" class="context-submenu-trigger" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
           <span class="menu-icon image2" aria-hidden="true">API</span>
-          <span><strong>APIMart</strong></span>
+          <span><strong>Mart</strong></span>
           <span class="menu-arrow" aria-hidden="true">›</span>
         </button>
-        <div id="apimartSubmenu" class="context-submenu" role="menu" aria-label="APIMart 节点">
+        <div id="apimartSubmenu" class="context-submenu" role="menu" aria-label="Mart 节点">
           <button id="createApimartImage2NodeButton" type="button" role="menuitem">
             <span class="menu-icon image2" aria-hidden="true">I2</span>
             <span><strong>Image2</strong></span>
@@ -98,6 +98,19 @@
           <button id="createApimartNanoBananaProNodeButton" type="button" role="menuitem">
             <span class="menu-icon image2 nano-banana-pro" aria-hidden="true">NBP</span>
             <span><strong>Nano Banana Pro</strong></span>
+          </button>
+        </div>
+      </div>
+      <div id="maolaoMenuGroup" class="context-submenu-wrap">
+        <button id="maolaoMenuButton" class="context-submenu-trigger" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
+          <span class="menu-icon image2 maolao" aria-hidden="true">ML</span>
+          <span><strong>Maolao</strong></span>
+          <span class="menu-arrow" aria-hidden="true">›</span>
+        </button>
+        <div id="maolaoSubmenu" class="context-submenu" role="menu" aria-label="Maolao 节点">
+          <button id="createMaolaoImage2NodeButton" type="button" role="menuitem">
+            <span class="menu-icon image2 maolao" aria-hidden="true">I2</span>
+            <span><strong>Image2</strong></span>
           </button>
         </div>
       </div>
@@ -132,7 +145,11 @@
           </button>
           <button class="settings-nav-item active" type="button" data-settings-section="apimart" aria-controls="apimartSettingsPanel" aria-current="page">
             <span class="settings-nav-icon" aria-hidden="true">API</span>
-            <span><strong>APIMart</strong><small>服务配置</small></span>
+            <span><strong>Mart</strong><small>服务配置</small></span>
+          </button>
+          <button class="settings-nav-item" type="button" data-settings-section="maolao" aria-controls="maolaoSettingsPanel">
+            <span class="settings-nav-icon maolao" aria-hidden="true">ML</span>
+            <span><strong>Maolao</strong><small>服务配置</small></span>
           </button>
         </nav>
 
@@ -152,22 +169,22 @@
         <section id="apimartSettingsPanel" class="settings-panel" data-settings-panel="apimart" aria-labelledby="apimartSettingsTitle">
           <div class="settings-panel-head">
             <p>Provider settings</p>
-            <h3 id="apimartSettingsTitle">APIMart</h3>
-            <span>为 APIMart 下的图片生成节点配置共享的接口地址与 Token。</span>
+            <h3 id="apimartSettingsTitle">Mart</h3>
+            <span>为 Mart 下的图片生成节点配置共享的接口地址与 Token。</span>
           </div>
           <section class="settings-service-card" aria-labelledby="apimartImage2SettingsTitle">
             <header class="settings-service-head">
               <span class="settings-service-icon" aria-hidden="true">I2</span>
               <span class="settings-service-copy">
                 <strong id="apimartImage2SettingsTitle">Image2 设置</strong>
-                <small>适用于 APIMart 下的全部图片生成节点</small>
+                <small>适用于 Mart 下的全部图片生成节点</small>
               </span>
             </header>
             <div class="settings-fields">
               <label class="settings-field">
                 <span>Image2 Token</span>
                 <span class="settings-token-field">
-                  <input id="apimartToken" type="password" autocomplete="off" placeholder="输入 APIMart Image2 Token" />
+                  <input id="apimartToken" type="password" autocomplete="off" placeholder="输入 Mart Image2 Token" />
                   <button id="apimartTokenClear" type="button">清除</button>
                 </span>
                 <small>仅保存在当前浏览器的 localStorage 中，不会随工作流导出。</small>
@@ -180,6 +197,39 @@
             </div>
           </section>
           <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
+        </section>
+
+        <section id="maolaoSettingsPanel" class="settings-panel" data-settings-panel="maolao" aria-labelledby="maolaoSettingsTitle" hidden>
+          <div class="settings-panel-head">
+            <p>Provider settings</p>
+            <h3 id="maolaoSettingsTitle">Maolao</h3>
+            <span>为 Maolao 下的图片生成节点配置共享的接口地址与 API Key。</span>
+          </div>
+          <section class="settings-service-card" aria-labelledby="maolaoImage2SettingsTitle">
+            <header class="settings-service-head">
+              <span class="settings-service-icon maolao" aria-hidden="true">I2</span>
+              <span class="settings-service-copy">
+                <strong id="maolaoImage2SettingsTitle">Image2 设置</strong>
+                <small>用于异步图片生成与任务结果读取</small>
+              </span>
+            </header>
+            <div class="settings-fields">
+              <label class="settings-field">
+                <span>API Key</span>
+                <span class="settings-token-field">
+                  <input id="maolaoToken" type="password" autocomplete="off" placeholder="输入 Maolao API Key" />
+                  <button id="maolaoTokenClear" type="button">清除</button>
+                </span>
+                <small>仅保存在当前浏览器的 localStorage 中，不会写入源码。</small>
+              </label>
+              <label class="settings-field">
+                <span>API 基础网址</span>
+                <input id="maolaoBaseUrl" type="url" placeholder="https://maolaoapi.com" />
+                <small>任务提交与查询统一使用 <code>/v1/images/tasks</code>。</small>
+              </label>
+            </div>
+          </section>
+          <p id="maolaoSettingsMessage" class="settings-message" role="status" aria-live="polite"></p>
         </section>
       </div>
 
@@ -194,7 +244,7 @@
     <div class="details-shell">
       <header class="details-head">
         <div>
-          <p>APIMart image generation</p>
+          <p id="generationDetailsProvider">Image generation</p>
           <h2 id="generationDetailsTitle">生成详情</h2>
         </div>
         <button id="generationDetailsClose" type="button" aria-label="关闭生成详情">×</button>

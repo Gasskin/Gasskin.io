@@ -17,7 +17,7 @@ DST = ROOT / "docs"
 
 HOME_FILES = ("index.html", "pages.json")
 EXCLUDE_DIRS = {"docs", ".git", "__pycache__", "node_modules"}
-SKIP_NAMES = {"Readme", "APIMart", "__pycache__", "tushare-data"}
+SKIP_NAMES = {"Readme", "APIMart", "Mart", "Maolao", "__pycache__", "tushare-data"}
 SKIP_SUFFIXES = {".py", ".pyc", ".md", ".txt", ".bat"}
 PUBLISH_TXT_FILES = {"Image2-API.txt"}
 
