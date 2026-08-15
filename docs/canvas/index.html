@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>画布</title>
-  <link rel="stylesheet" href="style.css?v=20260815-gpt-node-1" />
+  <link rel="stylesheet" href="style.css?v=20260816-aicoming-1" />
 </head>
 <body>
   <main class="workspace" aria-label="画布工作区">
@@ -76,35 +76,10 @@
         <span class="menu-icon text" aria-hidden="true">T</span>
         <span><strong>文本节点</strong></span>
       </button>
-      <button id="createGptNodeButton" type="button" role="menuitem">
-        <span class="menu-icon gpt" aria-hidden="true">GPT</span>
-        <span><strong>GPT</strong></span>
+      <button id="createAicomingNodeButton" type="button" role="menuitem">
+        <span class="menu-icon aicoming" aria-hidden="true">AI</span>
+        <span><strong>AIComing</strong></span>
       </button>
-      <div id="apimartMenuGroup" class="context-submenu-wrap">
-        <button id="apimartMenuButton" class="context-submenu-trigger" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
-          <span class="menu-icon image2" aria-hidden="true">API</span>
-          <span><strong>Mart</strong></span>
-          <span class="menu-arrow" aria-hidden="true">›</span>
-        </button>
-        <div id="apimartSubmenu" class="context-submenu" role="menu" aria-label="Mart 节点">
-          <button id="createApimartImage2NodeButton" type="button" role="menuitem">
-            <span class="menu-icon image2" aria-hidden="true">I2</span>
-            <span><strong>Image2</strong></span>
-          </button>
-          <button id="createApimartImage2OfficialNodeButton" type="button" role="menuitem">
-            <span class="menu-icon image2 official" aria-hidden="true">I2O</span>
-            <span><strong>Image2-Official</strong></span>
-          </button>
-          <button id="createApimartNanoBanana2NodeButton" type="button" role="menuitem">
-            <span class="menu-icon image2 nano-banana-2" aria-hidden="true">NB2</span>
-            <span><strong>Nano Banana 2</strong></span>
-          </button>
-          <button id="createApimartNanoBananaProNodeButton" type="button" role="menuitem">
-            <span class="menu-icon image2 nano-banana-pro" aria-hidden="true">NBP</span>
-            <span><strong>Nano Banana Pro</strong></span>
-          </button>
-        </div>
-      </div>
       <div class="menu-coming-soon">更多节点即将加入</div>
     </div>
 
@@ -134,13 +109,9 @@
             <span class="settings-nav-icon image" aria-hidden="true">▧</span>
             <span><strong>图片节点</strong><small>Image Node</small></span>
           </button>
-          <button class="settings-nav-item active" type="button" data-settings-section="apimart" aria-controls="apimartSettingsPanel" aria-current="page">
-            <span class="settings-nav-icon" aria-hidden="true">API</span>
-            <span><strong>Mart</strong><small>服务配置</small></span>
-          </button>
-          <button class="settings-nav-item" type="button" data-settings-section="gpt" aria-controls="gptSettingsPanel">
-            <span class="settings-nav-icon gpt" aria-hidden="true">GPT</span>
-            <span><strong>GPT</strong><small>GPT API 兼容接口</small></span>
+          <button class="settings-nav-item active" type="button" data-settings-section="aicoming" aria-controls="aicomingSettingsPanel" aria-current="page">
+            <span class="settings-nav-icon aicoming" aria-hidden="true">AI</span>
+            <span><strong>AIComing</strong><small>服务配置</small></span>
           </button>
         </nav>
 
@@ -157,75 +128,37 @@
           </div>
         </section>
 
-        <section id="apimartSettingsPanel" class="settings-panel" data-settings-panel="apimart" aria-labelledby="apimartSettingsTitle">
+        <section id="aicomingSettingsPanel" class="settings-panel" data-settings-panel="aicoming" aria-labelledby="aicomingSettingsTitle">
           <div class="settings-panel-head">
             <p>Provider settings</p>
-            <h3 id="apimartSettingsTitle">Mart</h3>
-            <span>为 Mart 下的图片生成节点配置共享的接口地址与 Token。</span>
+            <h3 id="aicomingSettingsTitle">AIComing</h3>
+            <span>为 AIComing 图片生成节点配置接口地址与 API Key。</span>
           </div>
-          <section class="settings-service-card" aria-labelledby="apimartImage2SettingsTitle">
+          <section class="settings-service-card" aria-labelledby="aicomingImageSettingsTitle">
             <header class="settings-service-head">
-              <span class="settings-service-icon" aria-hidden="true">I2</span>
+              <span class="settings-service-icon aicoming" aria-hidden="true">AI</span>
               <span class="settings-service-copy">
-                <strong id="apimartImage2SettingsTitle">Image2 设置</strong>
-                <small>适用于 Mart 下的全部图片生成节点</small>
+                <strong id="aicomingImageSettingsTitle">图片生成设置</strong>
+                <small>文生图与图生图统一使用 images/generations</small>
               </span>
             </header>
             <div class="settings-fields">
               <label class="settings-field">
-                <span>Image2 Token</span>
+                <span>API Key</span>
                 <span class="settings-token-field">
-                  <input id="apimartToken" type="password" autocomplete="off" placeholder="输入 Mart Image2 Token" />
-                  <button id="apimartTokenClear" type="button">清除</button>
+                  <input id="aicomingApiKey" type="password" autocomplete="off" placeholder="输入 AIComing API Key" />
+                  <button id="aicomingApiKeyClear" type="button">清除</button>
                 </span>
                 <small>仅保存在当前浏览器的 localStorage 中，不会随工作流导出。</small>
               </label>
               <label class="settings-field">
                 <span>API 基础网址</span>
-                <input id="apimartBaseUrl" type="url" placeholder="https://api.apimart.ai" />
-                <small>生图请求使用 <code>/v1/images/generations</code>，任务查询使用 <code>/v1/tasks/{task_id}</code>。</small>
+                <input id="aicomingBaseUrl" type="url" placeholder="https://api.aicoming.top" />
+                <small>提交使用 <code>/v1/images/generations</code>，异步查询使用 <code>/v1/images/generations/{id}</code>。</small>
               </label>
             </div>
           </section>
           <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
-        </section>
-
-        <section id="gptSettingsPanel" class="settings-panel" data-settings-panel="gpt" aria-labelledby="gptSettingsTitle" hidden>
-          <div class="settings-panel-head">
-            <p>Provider settings</p>
-            <h3 id="gptSettingsTitle">GPT</h3>
-            <span>GPT 节点用于配置符合 GPT Image API 请求格式的自定义站点；可使用 OpenAI 官方服务，也可使用其他兼容站点。</span>
-          </div>
-          <section class="settings-service-card" aria-labelledby="gptImageSettingsTitle">
-            <header class="settings-service-head">
-              <span class="settings-service-icon gpt" aria-hidden="true">GPT</span>
-                <span class="settings-service-copy">
-                  <strong id="gptImageSettingsTitle">GPT Image 设置</strong>
-                  <small>用于兼容接口的图片生成与参考图编辑</small>
-              </span>
-            </header>
-            <div class="settings-fields">
-              <label class="settings-field">
-                <span>模型名称</span>
-                <input id="gptModel" type="text" autocomplete="off" placeholder="gpt-image-2" />
-                <small>默认使用 <code>gpt-image-2</code>；使用兼容站点时可填写该站点提供的模型名称。</small>
-              </label>
-              <label class="settings-field">
-                <span>API Key</span>
-                <span class="settings-token-field">
-                  <input id="gptApiKey" type="password" autocomplete="off" placeholder="输入当前站点的 API Key" />
-                  <button id="gptApiKeyClear" type="button">清除</button>
-                </span>
-                <small>仅保存在当前浏览器的 localStorage 中，不会写入项目文件或随 Git 上传。</small>
-              </label>
-              <label class="settings-field">
-                <span>API 基础网址</span>
-                <input id="gptBaseUrl" type="url" placeholder="https://api.openai.com" />
-                <small>默认使用 OpenAI 官方地址，也可替换为兼容站点；文生图使用 JSON，连接参考图后通过 multipart 表单调用 <code>/v1/images/edits</code>。</small>
-              </label>
-            </div>
-          </section>
-          <p id="gptSettingsMessage" class="settings-message" role="status" aria-live="polite"></p>
         </section>
 
       </div>
@@ -258,6 +191,6 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=20260815-gpt-node-5"></script>
+  <script src="app.js?v=20260816-aicoming-2"></script>
 </body>
 </html>

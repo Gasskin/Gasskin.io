@@ -15,90 +15,33 @@ const IMAGE_TIER_PIXELS = {
   "2k": 2048 * 2048,
   "4k": MAX_IMAGE_PIXELS,
 };
-const APIMART_SETTINGS_STORAGE_KEY = "canvas:apimart-settings:v1";
-const GPT_SETTINGS_STORAGE_KEY = "canvas:gpt-settings:v1";
-const RETIRED_SETTINGS_STORAGE_KEYS = Object.freeze(["canvas:maolao-settings:v1"]);
-const APIMART_GENERATE_PATH = "v1/images/generations";
-const APIMART_TASK_PATH = "v1/tasks";
-const GPT_GENERATE_PATH = "v1/images/generations";
-const GPT_EDIT_PATH = "v1/images/edits";
-const APIMART_POLL_INTERVAL_MS = 2000;
-const APIMART_TASK_TIMEOUT_MS = 10 * 60 * 1000;
-const DEFAULT_APIMART_SETTINGS = Object.freeze({
-  baseUrl: "https://api.apimart.ai",
-  token: "",
-});
-const DEFAULT_GPT_SETTINGS = Object.freeze({
-  baseUrl: "https://api.openai.com",
+const AICOMING_SETTINGS_STORAGE_KEY = "canvas:aicoming-settings:v1";
+const RETIRED_SETTINGS_STORAGE_KEYS = Object.freeze([
+  "canvas:maolao-settings:v1",
+  "canvas:gpt-settings:v1",
+  "canvas:apimart-settings:v1",
+]);
+const AICOMING_GENERATE_PATH = "v1/images/generations";
+const AICOMING_POLL_INTERVAL_MS = 2000;
+const AICOMING_TASK_TIMEOUT_MS = 10 * 60 * 1000;
+const DEFAULT_AICOMING_SETTINGS = Object.freeze({
+  baseUrl: "https://api.aicoming.top",
   apiKey: "",
-  model: "gpt-image-2",
 });
-const APIMART_NODE_SPECS = Object.freeze({
-  "apimart-image2": Object.freeze({
-    label: "Mart/Image2",
+const IMAGE2_NODE_SPECS = Object.freeze({
+  aicoming: Object.freeze({
+    label: "AIComing",
     model: "gpt-image-2",
-    official: false,
+    modelOptions: Object.freeze([
+      Object.freeze({ value: "gpt-image-2", label: "gpt-image-2" }),
+      Object.freeze({ value: "gpt-image-2-official", label: "gpt-image-2-official" }),
+    ]),
     maxCount: 1,
     maxReferenceImages: 16,
     resolutions: ["1k", "2k", "4k"],
     ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
   }),
-  "apimart-image2-official": Object.freeze({
-    label: "Mart/Image2-Official",
-    model: "gpt-image-2-official",
-    official: true,
-    maxCount: 4,
-    maxReferenceImages: 16,
-    resolutions: ["1k", "2k", "4k"],
-    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
-  }),
-  "apimart-nano-banana-2": Object.freeze({
-    label: "Mart/Nano Banana 2",
-    model: "nano-banana-2-ext",
-    modelOptions: Object.freeze([
-      Object.freeze({ value: "nano-banana-2-ext", label: "nano-banana-2-ext（标准）" }),
-      Object.freeze({ value: "nano-banana-2", label: "nano-banana-2（Official）" }),
-    ]),
-    officialModels: Object.freeze(["nano-banana-2"]),
-    official: false,
-    maxCount: 1,
-    maxReferenceImages: 14,
-    resolutions: ["0.5K", "1K", "2K", "4K"],
-    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "21:9", "1:4", "4:1", "1:8", "8:1"],
-    supportsGoogleSearch: true,
-    nodeClass: "apimart-nano-banana-2",
-  }),
-  "apimart-nano-banana-pro": Object.freeze({
-    label: "Mart/Nano Banana Pro",
-    model: "nano-banana-pro-ext",
-    modelOptions: Object.freeze([
-      Object.freeze({ value: "nano-banana-pro-ext", label: "nano-banana-pro-ext（标准）" }),
-      Object.freeze({ value: "nano-banana-pro", label: "nano-banana-pro（Official）" }),
-    ]),
-    officialModels: Object.freeze(["nano-banana-pro"]),
-    official: false,
-    maxCount: 1,
-    maxReferenceImages: 14,
-    resolutions: ["1K", "2K", "4K"],
-    ratios: ["auto", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
-    nodeClass: "apimart-nano-banana-pro",
-  }),
 });
-const GPT_NODE_SPECS = Object.freeze({
-  "gpt-image-2": Object.freeze({
-    label: "GPT",
-    model: "gpt-image-2",
-    provider: "gpt-compatible",
-    official: false,
-    supportsQuality: true,
-    maxCount: 10,
-    maxReferenceImages: 16,
-    resolutions: ["1k", "2k"],
-    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
-    nodeClass: "openai-gpt",
-  }),
-});
-const IMAGE2_NODE_SPECS = Object.freeze({ ...APIMART_NODE_SPECS, ...GPT_NODE_SPECS });
 
 const viewport = document.getElementById("canvasViewport");
 const panLayer = document.getElementById("canvasPanLayer");
@@ -111,13 +54,7 @@ const selectionMarquee = document.getElementById("selectionMarquee");
 const contextMenu = document.getElementById("contextMenu");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
 const createTextNodeButton = document.getElementById("createTextNodeButton");
-const createGptNodeButton = document.getElementById("createGptNodeButton");
-const apimartMenuGroup = document.getElementById("apimartMenuGroup");
-const apimartMenuButton = document.getElementById("apimartMenuButton");
-const createApimartImage2NodeButton = document.getElementById("createApimartImage2NodeButton");
-const createApimartImage2OfficialNodeButton = document.getElementById("createApimartImage2OfficialNodeButton");
-const createApimartNanoBanana2NodeButton = document.getElementById("createApimartNanoBanana2NodeButton");
-const createApimartNanoBananaProNodeButton = document.getElementById("createApimartNanoBananaProNodeButton");
+const createAicomingNodeButton = document.getElementById("createAicomingNodeButton");
 const fitButton = document.getElementById("fitButton");
 const settingsButton = document.getElementById("settingsButton");
 const zoomOutButton = document.getElementById("zoomOutButton");
@@ -134,15 +71,10 @@ const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
 const settingsNavItems = Array.from(document.querySelectorAll("[data-settings-section]"));
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
-const apimartBaseUrl = document.getElementById("apimartBaseUrl");
-const apimartToken = document.getElementById("apimartToken");
-const apimartTokenClear = document.getElementById("apimartTokenClear");
+const aicomingBaseUrl = document.getElementById("aicomingBaseUrl");
+const aicomingApiKey = document.getElementById("aicomingApiKey");
+const aicomingApiKeyClear = document.getElementById("aicomingApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
-const gptBaseUrl = document.getElementById("gptBaseUrl");
-const gptApiKey = document.getElementById("gptApiKey");
-const gptModel = document.getElementById("gptModel");
-const gptApiKeyClear = document.getElementById("gptApiKeyClear");
-const gptSettingsMessage = document.getElementById("gptSettingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsProvider = document.getElementById("generationDetailsProvider");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
@@ -166,8 +98,7 @@ let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
 let dragDepth = 0;
-let apimartSettings = { ...DEFAULT_APIMART_SETTINGS };
-let gptSettings = { ...DEFAULT_GPT_SETTINGS };
+let aicomingSettings = { ...DEFAULT_AICOMING_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -187,62 +118,39 @@ function joinApiUrl(baseUrl, path) {
   return `${base}/${joinedPath}`;
 }
 
+function createIdempotencyKey() {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  return `canvas-${uuid || `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
+}
+
 function isImage2GenerationNode(node) {
   return Boolean(IMAGE2_NODE_SPECS[node?.type]);
 }
 
 function updateSettingsButtonState() {
-  const martConfigured = isValidHttpUrl(apimartSettings.baseUrl) && Boolean(apimartSettings.token);
-  const gptConfigured = isValidHttpUrl(gptSettings.baseUrl) && Boolean(gptSettings.apiKey);
-  const configuredProviders = [martConfigured ? "Mart" : "", gptConfigured ? "GPT" : ""].filter(Boolean);
-  settingsButton.classList.toggle("configured", configuredProviders.length > 0);
-  settingsButton.title = configuredProviders.length
-    ? `设置（已配置：${configuredProviders.join("、")}）`
+  const aicomingConfigured = isValidHttpUrl(aicomingSettings.baseUrl) && Boolean(aicomingSettings.apiKey);
+  settingsButton.classList.toggle("configured", aicomingConfigured);
+  settingsButton.title = aicomingConfigured
+    ? "设置（已配置：AIComing）"
     : "设置（图片生成 API 尚未配置）";
 }
 
-function loadApimartSettings() {
-  let loaded = { ...DEFAULT_APIMART_SETTINGS };
+function loadAicomingSettings() {
+  let loaded = { ...DEFAULT_AICOMING_SETTINGS };
   try {
-    const stored = window.localStorage.getItem(APIMART_SETTINGS_STORAGE_KEY);
+    const stored = window.localStorage.getItem(AICOMING_SETTINGS_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
       loaded = {
-        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_APIMART_SETTINGS.baseUrl,
-        token: String(parsed?.token || "").trim(),
-      };
-    }
-  } catch {
-    // Ignore malformed or unavailable browser storage and keep the defaults.
-  }
-  apimartSettings = loaded;
-  updateSettingsButtonState();
-}
-
-function loadGptSettings() {
-  let loaded = { ...DEFAULT_GPT_SETTINGS };
-  try {
-    const stored = window.localStorage.getItem(GPT_SETTINGS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      loaded = {
-        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_GPT_SETTINGS.baseUrl,
+        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_AICOMING_SETTINGS.baseUrl,
         apiKey: String(parsed?.apiKey || "").trim(),
-        model: String(parsed?.model || DEFAULT_GPT_SETTINGS.model).trim() || DEFAULT_GPT_SETTINGS.model,
       };
     }
   } catch {
     // Ignore malformed or unavailable browser storage and keep the defaults.
   }
-  gptSettings = loaded;
-  syncGptNodeModels();
+  aicomingSettings = loaded;
   updateSettingsButtonState();
-}
-
-function syncGptNodeModels() {
-  nodes.forEach((node) => {
-    if (node.spec?.provider === "gpt-compatible" && node.model) node.model.value = gptSettings.model;
-  });
 }
 
 function removeRetiredSettings() {
@@ -477,6 +385,10 @@ function refreshImage2Input(node) {
     node.inputPreview.appendChild(empty);
   }
   if (!node.generateButton.disabled) setImage2Status(node, describeImage2Inputs(sources, textSources));
+  if (!node.hasRun) {
+    node.detailsButton.textContent = "调用预览";
+    setImage2RunActions(node, { details: sources.length > 0 });
+  }
 }
 
 function refreshNodeInput(nodeId) {
@@ -968,14 +880,6 @@ function updateImage2NodeSize(node) {
   node.finalSize.value = calculateImage2Size(node.resolution.value, node.aspectRatio.value);
 }
 
-function updateApimartModelControls(node) {
-  if (!node.officialFallback) return;
-  const usesOfficialModel = node.spec.officialModels?.includes(node.model.value) || false;
-  node.officialFallback.disabled = usesOfficialModel;
-  if (usesOfficialModel) node.officialFallback.value = "false";
-  node.officialFallback.title = usesOfficialModel ? "Official 模型不使用官方渠道兜底参数" : "";
-}
-
 function formatGenerationElapsed(milliseconds) {
   return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
 }
@@ -991,6 +895,8 @@ function buildGenerationCurl(callDetails) {
     `curl -X ${method} ${quoteShellArgument(callDetails.endpoint)}`,
     `  -H ${quoteShellArgument("Authorization: Bearer ***")}`,
   ];
+  const idempotencyKey = callDetails.headers?.["Idempotency-Key"];
+  if (idempotencyKey) parts.push(`  -H ${quoteShellArgument(`Idempotency-Key: ${idempotencyKey}`)}`);
 
   if (callDetails.multipart) {
     Object.entries(callDetails.body || {}).forEach(([key, value]) => {
@@ -1005,20 +911,71 @@ function buildGenerationCurl(callDetails) {
   return parts.join(" \\\n");
 }
 
-function openGenerationDetails(node, errorOnly = false) {
+function buildAicomingCallPreview(node) {
+  const sources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
+  const linkedPromptParts = textSources
+    .map((source) => source.textInput.value.trim())
+    .filter(Boolean);
+  const prompt = textSources.length
+    ? linkedPromptParts.join("\n\n")
+    : node.prompt.value.trim();
+  const outputSize = node.finalSize.value === "服务端自动选择"
+    ? calculateImage2Size(node.resolution.value, "1:1")
+    : node.finalSize.value;
+  const body = {
+    model: node.model.value,
+    prompt,
+    size: outputSize,
+    quality: "high",
+    n: 1,
+  };
+  if (node.asyncMode.value === "true") body.async = true;
+  if (sources.length) {
+    const imageDetails = sources.map((source, index) => (
+      source.file || String(source.objectUrl || "").startsWith("blob:")
+        ? `[参考图 ${index + 1}：base64 data URI]`
+        : source.objectUrl
+    ));
+    body.image = imageDetails.length === 1 ? imageDetails[0] : imageDetails;
+  }
+  return {
+    configuration: {
+      provider: "AIComing",
+      node: node.spec.label,
+      model: node.model.value,
+      base_url: aicomingSettings.baseUrl,
+    },
+    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
+    mode: sources.length ? "image-to-image" : "text-to-image",
+    endpoint: joinApiUrl(aicomingSettings.baseUrl, AICOMING_GENERATE_PATH),
+    method: "POST",
+    headers: {
+      Authorization: "Bearer ***",
+      "Content-Type": "application/json",
+      "Idempotency-Key": "<生成时自动创建>",
+    },
+    body,
+  };
+}
+
+function openGenerationDetails(node, errorOnly = false, { preview = false } = {}) {
+  const callDetails = preview ? buildAicomingCallPreview(node) : node.callDetails;
   generationDetailsProvider.textContent = `${node.spec?.label || "Image"} image generation`;
-  generationDetailsTitle.textContent = errorOnly ? "错误信息" : "生成详情";
+  generationDetailsTitle.textContent = errorOnly ? "错误信息" : preview ? "调用预览" : "生成详情";
   generationDetailsCodeLabel.textContent = errorOnly ? "错误内容" : "cURL";
   generationDetailsSummary.hidden = !errorOnly;
   generationDetailsTokenNote.hidden = errorOnly;
   generationDetailsDialog.classList.toggle("curl-only", !errorOnly);
-  generationDetailsStatus.textContent = node.callStatus || "—";
-  generationDetailsElapsed.textContent = node.elapsedMs == null
-    ? formatGenerationElapsed(performance.now() - node.startedAt)
-    : formatGenerationElapsed(node.elapsedMs);
+  generationDetailsStatus.textContent = preview ? "尚未调用" : (node.callStatus || "—");
+  generationDetailsElapsed.textContent = preview
+    ? "—"
+    : node.elapsedMs == null
+      ? formatGenerationElapsed(performance.now() - node.startedAt)
+      : formatGenerationElapsed(node.elapsedMs);
   generationDetailsCode.textContent = errorOnly
     ? (node.lastError || "无错误信息")
-    : buildGenerationCurl(node.callDetails);
+    : buildGenerationCurl(callDetails);
   generationDetailsDialog.showModal();
 }
 
@@ -1060,7 +1017,7 @@ function fileToDataUrl(file) {
   });
 }
 
-async function waitForApimartPoll(signal) {
+async function waitForAicomingPoll(signal) {
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
   await new Promise((resolve, reject) => {
     const onAbort = () => {
@@ -1070,7 +1027,7 @@ async function waitForApimartPoll(signal) {
     const timer = window.setTimeout(() => {
       signal.removeEventListener("abort", onAbort);
       resolve();
-    }, APIMART_POLL_INTERVAL_MS);
+    }, AICOMING_POLL_INTERVAL_MS);
     signal.addEventListener("abort", onAbort, { once: true });
   });
 }
@@ -1080,56 +1037,59 @@ async function fetchImageApiJson(url, options) {
   const text = await response.text();
   let payload = null;
   try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
-  if (!response.ok || (Number(payload?.code) >= 400)) {
+  if (!response.ok || payload?.error || (Number(payload?.code) >= 400)) {
     throw new Error(payload?.error?.message || payload?.message || text || `${response.status} ${response.statusText}`);
   }
   return payload;
 }
 
-function extractApimartResults(taskPayload) {
-  const task = taskPayload?.data || taskPayload;
-  const images = Array.isArray(task?.result?.images) ? task.result.images : [];
-  const urls = images.flatMap((image) => {
-    if (Array.isArray(image?.url)) return image.url;
-    return image?.url ? [image.url] : [];
+function extractAicomingResults(payload) {
+  const images = Array.isArray(payload?.data) ? payload.data : [];
+  return images.flatMap((image, index) => {
+    const src = image?.url || (image?.b64_json ? `data:image/png;base64,${image.b64_json}` : "");
+    if (!src) return [];
+    return [{
+      src,
+      name: `AIComing 生成图片 ${index + 1}`,
+      responseDetails: {
+        index: index + 1,
+        url: image?.url || null,
+        output_format: image?.url ? "url" : "b64_json",
+      },
+    }];
   });
-  return urls.filter(Boolean).map((url, index) => ({
-    src: url,
-    name: `生成图片 ${index + 1}`,
-    responseDetails: { index: index + 1, url },
-  }));
 }
 
-async function pollApimartTask(node, taskId, requestConfig) {
-  const queryEndpoint = `${joinApiUrl(requestConfig.baseUrl, APIMART_TASK_PATH)}/${encodeURIComponent(taskId)}`;
-  const deadline = Date.now() + APIMART_TASK_TIMEOUT_MS;
+async function pollAicomingTask(node, taskId, requestConfig) {
+  const queryEndpoint = `${joinApiUrl(requestConfig.baseUrl, AICOMING_GENERATE_PATH)}/${encodeURIComponent(taskId)}`;
+  const deadline = Date.now() + AICOMING_TASK_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    await waitForApimartPoll(node.abortController.signal);
+    await waitForAicomingPoll(node.abortController.signal);
     const payload = await fetchImageApiJson(queryEndpoint, {
       method: "GET",
-      headers: { Authorization: `Bearer ${requestConfig.token}` },
+      headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
       signal: node.abortController.signal,
     });
-    const task = payload?.data || payload;
-    const status = String(task?.status || "unknown");
-    const progress = Number.isFinite(Number(task?.progress)) ? ` ${Number(task.progress)}%` : "";
-    node.progressLabel = status === "submitted" ? "任务已提交" : `任务 ${status}${progress}`;
+    const status = String(payload?.status || "unknown");
+    const progressValue = Number(payload?.progress);
+    const progress = Number.isFinite(progressValue) ? ` ${progressValue}%` : "";
+    node.progressLabel = status === "processing" ? `处理中${progress}` : `任务 ${status}${progress}`;
     node.callDetails.task = {
       id: taskId,
       status,
-      progress: task?.progress ?? null,
+      progress: payload?.progress ?? null,
       query_endpoint: queryEndpoint,
     };
 
-    if (status === "completed") return { payload, results: extractApimartResults(payload) };
+    if (status === "completed") return { payload, results: extractAicomingResults(payload) };
     if (status === "failed") {
-      throw new Error(task?.error?.message || task?.error || "Mart 图片生成任务失败。");
+      throw new Error(payload?.error?.message || payload?.error || "AIComing 图片生成任务失败。");
     }
   }
-  throw new Error("Mart 任务查询超时（10 分钟）。");
+  throw new Error("AIComing 任务查询超时（10 分钟）。");
 }
 
-async function generateWithApimartImage2(node) {
+async function generateWithAicoming(node) {
   const sources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
   const linkedPromptParts = textSources
@@ -1151,9 +1111,9 @@ async function generateWithApimartImage2(node) {
     setImage2Status(node, `${node.spec.label} 最多支持 ${node.spec.maxReferenceImages} 张参考图。`, "error");
     return;
   }
-  if (!isValidHttpUrl(apimartSettings.baseUrl) || !apimartSettings.token) {
-    setImage2Status(node, "请先在设置中配置 Mart API 地址和 API Key。", "error");
-    openSettings("apimart");
+  if (!isValidHttpUrl(aicomingSettings.baseUrl) || !aicomingSettings.apiKey) {
+    setImage2Status(node, "请先在设置中配置 AIComing API 地址和 API Key。", "error");
+    openSettings("aicoming");
     return;
   }
 
@@ -1162,27 +1122,21 @@ async function generateWithApimartImage2(node) {
   node.abortController?.abort();
   node.abortController = new AbortController();
 
-  const requestConfig = { ...apimartSettings };
-  const endpoint = joinApiUrl(requestConfig.baseUrl, APIMART_GENERATE_PATH);
+  const requestConfig = { ...aicomingSettings };
+  const endpoint = joinApiUrl(requestConfig.baseUrl, AICOMING_GENERATE_PATH);
+  const idempotencyKey = createIdempotencyKey();
+  const useAsync = node.asyncMode.value === "true";
+  const outputSize = node.finalSize.value === "服务端自动选择"
+    ? calculateImage2Size(node.resolution.value, "1:1")
+    : node.finalSize.value;
   const requestBody = {
     model: selectedModel,
     prompt,
-    size: node.aspectRatio.value,
-    resolution: node.resolution.value,
-    n: count,
+    size: outputSize,
+    quality: "high",
+    n: 1,
   };
-  if (node.spec.official) {
-    requestBody.quality = node.quality.value;
-    requestBody.background = "auto";
-    requestBody.moderation = "low";
-    requestBody.output_format = "png";
-  } else if (!node.spec.officialModels?.includes(selectedModel)) {
-    requestBody.official_fallback = node.officialFallback.value === "true";
-  }
-  if (node.spec.supportsGoogleSearch) {
-    requestBody.google_search = node.googleSearch.value === "true";
-    requestBody.google_image_search = node.googleImageSearch.value === "true";
-  }
+  if (useAsync) requestBody.async = true;
   node.startedAt = performance.now();
   node.elapsedMs = null;
   node.callStatus = "提交中";
@@ -1190,7 +1144,7 @@ async function generateWithApimartImage2(node) {
   node.progressLabel = "提交中";
   node.callDetails = {
     configuration: {
-      provider: "Mart",
+      provider: "AIComing",
       node: node.spec.label,
       model: selectedModel,
       base_url: requestConfig.baseUrl,
@@ -1199,10 +1153,16 @@ async function generateWithApimartImage2(node) {
     mode: sources.length ? "image-to-image" : "text-to-image",
     endpoint,
     method: "POST",
-    headers: { Authorization: "Bearer ***", "Content-Type": "application/json" },
+    headers: {
+      Authorization: "Bearer ***",
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+    },
     body: { ...requestBody },
   };
-  setImage2RunActions(node);
+  node.hasRun = true;
+  node.detailsButton.textContent = "调用详情";
+  setImage2RunActions(node, { details: true });
   setImage2Status(node, "提交中 · 0 秒");
   node.timerId = window.setInterval(() => {
     setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
@@ -1211,223 +1171,60 @@ async function generateWithApimartImage2(node) {
   try {
     if (sources.length) {
       node.progressLabel = "正在读取参考图";
-      requestBody.image_urls = await Promise.all(sources.map((source) => (
+      const images = await Promise.all(sources.map((source) => (
         source.file ? fileToDataUrl(source.file) : source.objectUrl
       )));
-      node.callDetails.body.image_urls = requestBody.image_urls.map((url, index) => (
+      requestBody.image = images.length === 1 ? images[0] : images;
+      const imageDetails = images.map((url, index) => (
         url.startsWith("data:") ? `[参考图 ${index + 1}：base64 data URI]` : url
       ));
+      node.callDetails.body.image = images.length === 1 ? imageDetails[0] : imageDetails;
     }
-    const submitPayload = await fetchImageApiJson(endpoint, {
+    const submitOptions = {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${requestConfig.token}`,
+        Authorization: `Bearer ${requestConfig.apiKey}`,
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify(requestBody),
       signal: node.abortController.signal,
-    });
-    const taskId = submitPayload?.data?.[0]?.task_id || submitPayload?.data?.task_id || submitPayload?.task_id;
-    if (!taskId) throw new Error("Mart 接口未返回 task_id。");
-    node.callDetails.submit_response = submitPayload;
-    node.progressLabel = "任务已提交";
-    node.callStatus = "查询中";
-    const { payload: taskPayload, results } = await pollApimartTask(node, taskId, requestConfig);
-    if (!results.length) throw new Error("接口返回成功，但没有找到生成图片。");
+    };
+    let submitPayload;
+    try {
+      submitPayload = await fetchImageApiJson(endpoint, submitOptions);
+    } catch (error) {
+      if (!(error instanceof TypeError)) throw error;
+      node.progressLabel = "连接中断，正在安全重试";
+      submitPayload = await fetchImageApiJson(endpoint, submitOptions);
+      node.callDetails.network_retry = true;
+    }
+    let resultPayload = submitPayload;
+    let results;
+    if (useAsync) {
+      const taskId = submitPayload?.id;
+      if (!taskId) throw new Error("AIComing 异步接口未返回任务 id。");
+      node.callDetails.submit_response = submitPayload;
+      node.progressLabel = "任务已提交";
+      node.callStatus = "查询中";
+      const polled = await pollAicomingTask(node, taskId, requestConfig);
+      resultPayload = polled.payload;
+      results = polled.results;
+    } else {
+      results = extractAicomingResults(submitPayload);
+    }
+    if (!results.length) throw new Error("AIComing 接口返回成功，但没有找到生成图片。");
 
     stopImage2Timer(node);
     node.callStatus = "生成成功";
     node.callDetails = {
       ...node.callDetails,
       response: {
-        task: taskPayload?.data || taskPayload,
+        id: resultPayload?.id || null,
+        status: resultPayload?.status || (useAsync ? null : "completed"),
+        created: resultPayload?.created || null,
+        completed: resultPayload?.completed || null,
         image_count: results.length,
-        images: results.map((result) => result.responseDetails),
-      },
-    };
-    setImage2Status(node, `生成完成 · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
-    setImage2RunActions(node, { details: true });
-    if (nodes.has(node.id)) createImage2Results(node, results);
-  } catch (error) {
-    stopImage2Timer(node);
-    let failureMessage;
-    if (error?.name === "AbortError") {
-      failureMessage = "生成已停止。";
-    } else if (error instanceof TypeError) {
-      failureMessage = "请求失败，请检查网络、网址或 CORS 设置。";
-    } else {
-      failureMessage = error.message || String(error);
-    }
-    node.callStatus = "生成失败";
-    node.lastError = failureMessage;
-    node.callDetails = { ...node.callDetails, error: failureMessage };
-    setImage2Status(node, `生成失败 · ${formatGenerationElapsed(node.elapsedMs)}`, "error");
-    setImage2RunActions(node, { details: true, error: true });
-  } finally {
-    node.generateButton.disabled = false;
-    node.abortController = null;
-  }
-}
-
-function extractGptResults(payload) {
-  const format = String(payload?.output_format || "png").toLowerCase();
-  const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-  const images = Array.isArray(payload?.data) ? payload.data : [];
-  return images.flatMap((image, index) => {
-    if (!image?.b64_json) return [];
-    return [{
-      src: `data:${mimeType};base64,${image.b64_json}`,
-      name: `GPT 生成图片 ${index + 1}`,
-      responseDetails: {
-        index: index + 1,
-        output_format: format,
-        size: payload?.size || null,
-        quality: payload?.quality || null,
-        background: payload?.background || null,
-      },
-    }];
-  });
-}
-
-function imageExtensionForMimeType(mimeType) {
-  if (mimeType === "image/jpeg") return "jpg";
-  if (mimeType === "image/webp") return "webp";
-  if (mimeType === "image/gif") return "gif";
-  return "png";
-}
-
-async function resolveGptImageUpload(source, index, signal) {
-  if (source.file instanceof Blob) {
-    return {
-      blob: source.file,
-      name: source.file.name || `reference-image-${index + 1}.${imageExtensionForMimeType(source.file.type)}`,
-    };
-  }
-
-  const response = await fetch(source.objectUrl, { signal });
-  if (!response.ok) throw new Error(`无法读取参考图 ${index + 1}：${response.status} ${response.statusText}`);
-  const blob = await response.blob();
-  if (blob.type && !blob.type.startsWith("image/")) throw new Error(`参考图 ${index + 1} 不是有效的图片文件。`);
-  return {
-    blob,
-    name: `reference-image-${index + 1}.${imageExtensionForMimeType(blob.type)}`,
-  };
-}
-
-async function generateWithGptImage(node) {
-  const sources = getConnectedImageNodes(node);
-  const textSources = getConnectedTextNodes(node);
-  const linkedPromptParts = textSources
-    .map((source) => source.textInput.value.trim())
-    .filter(Boolean);
-  const prompt = textSources.length
-    ? linkedPromptParts.join("\n\n")
-    : node.prompt.value.trim();
-  const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
-
-  if (!prompt) {
-    setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
-    const emptyTextSource = textSources.find((source) => !source.textInput.value.trim());
-    (emptyTextSource?.textInput || node.prompt).focus();
-    return;
-  }
-  if (sources.length > node.spec.maxReferenceImages) {
-    setImage2Status(node, `GPT 最多支持 ${node.spec.maxReferenceImages} 张参考图。`, "error");
-    return;
-  }
-  if (!isValidHttpUrl(gptSettings.baseUrl) || !gptSettings.apiKey) {
-    setImage2Status(node, "请先在设置中配置 GPT API 地址和 API Key。", "error");
-    openSettings("gpt");
-    return;
-  }
-
-  node.count.value = String(count);
-  node.generateButton.disabled = true;
-  node.abortController?.abort();
-  node.abortController = new AbortController();
-
-  const requestConfig = { ...gptSettings };
-  const isEdit = sources.length > 0;
-  const endpoint = joinApiUrl(requestConfig.baseUrl, isEdit ? GPT_EDIT_PATH : GPT_GENERATE_PATH);
-  const requestBody = {
-    model: requestConfig.model,
-    prompt,
-    size: node.aspectRatio.value === "auto" ? "auto" : node.finalSize.value,
-    quality: node.quality.value,
-    n: count,
-    output_format: "png",
-    background: "auto",
-    moderation: "auto",
-  };
-
-  node.startedAt = performance.now();
-  node.elapsedMs = null;
-  node.callStatus = "生成中";
-  node.lastError = "";
-  node.progressLabel = isEdit ? "正在编辑图片" : "正在生成图片";
-  node.callDetails = {
-    configuration: {
-      provider: "GPT API Compatible",
-      node: node.spec.label,
-      model: requestConfig.model,
-      base_url: requestConfig.baseUrl,
-    },
-    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
-    mode: isEdit ? "image-edit" : "text-to-image",
-    endpoint,
-    method: "POST",
-    headers: isEdit
-      ? { Authorization: "Bearer ***", "Content-Type": "multipart/form-data; boundary=<browser generated>" }
-      : { Authorization: "Bearer ***", "Content-Type": "application/json" },
-    multipart: isEdit,
-    body: { ...requestBody },
-  };
-  setImage2RunActions(node);
-  setImage2Status(node, `${node.progressLabel} · 0 秒`);
-  node.timerId = window.setInterval(() => {
-    setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
-  }, 250);
-
-  try {
-    const headers = { Authorization: `Bearer ${requestConfig.apiKey}` };
-    let body;
-    if (isEdit) {
-      node.progressLabel = "正在读取参考图";
-      const uploads = await Promise.all(sources.map((source, index) => (
-        resolveGptImageUpload(source, index, node.abortController.signal)
-      )));
-      const formData = new FormData();
-      Object.entries(requestBody).forEach(([key, value]) => formData.append(key, String(value)));
-      uploads.forEach(({ blob, name }) => formData.append("image[]", blob, name));
-      node.callDetails.body["image[]"] = uploads.map(({ name }) => `@${name}`);
-      body = formData;
-      node.progressLabel = "正在编辑图片";
-    } else {
-      headers["Content-Type"] = "application/json";
-      body = JSON.stringify(requestBody);
-    }
-
-    const payload = await fetchImageApiJson(endpoint, {
-      method: "POST",
-      headers,
-      body,
-      signal: node.abortController.signal,
-    });
-    const results = extractGptResults(payload);
-    if (!results.length) throw new Error("GPT 兼容接口返回成功，但没有找到生成图片。");
-
-    stopImage2Timer(node);
-    node.callStatus = "生成成功";
-    node.callDetails = {
-      ...node.callDetails,
-      response: {
-        created: payload?.created || null,
-        image_count: results.length,
-        output_format: payload?.output_format || "png",
-        size: payload?.size || null,
-        quality: payload?.quality || null,
-        background: payload?.background || null,
-        usage: payload?.usage || null,
         images: results.map((result) => result.responseDetails),
       },
     };
@@ -1476,10 +1273,7 @@ function cloneImage2GenerationNode(node) {
   clone.aspectRatio.value = node.aspectRatio.value;
   clone.count.value = node.count.value;
   if (clone.quality && node.quality) clone.quality.value = node.quality.value;
-  if (clone.officialFallback && node.officialFallback) clone.officialFallback.value = node.officialFallback.value;
-  if (clone.googleSearch && node.googleSearch) clone.googleSearch.value = node.googleSearch.value;
-  if (clone.googleImageSearch && node.googleImageSearch) clone.googleImageSearch.value = node.googleImageSearch.value;
-  updateApimartModelControls(clone);
+  clone.asyncMode.value = node.asyncMode.value;
   updateImage2NodeSize(clone);
   inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
   selectNode(clone.id);
@@ -1507,7 +1301,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
     body: document.createElement("div"),
   };
 
-  node.element.className = `canvas-node image2-node ${spec.nodeClass || (spec.official ? "apimart-official" : "apimart-standard")}`;
+  node.element.className = "canvas-node image2-node aicoming-image";
   node.element.dataset.nodeId = id;
   node.element.style.left = `${node.x}px`;
   node.element.style.top = `${node.y}px`;
@@ -1560,17 +1354,9 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   const resolutionOptions = spec.resolutions
     .map((resolution) => `<option value="${resolution}"${resolution.toLowerCase() === "1k" ? " selected" : ""}>${resolution}</option>`)
     .join("");
-  const modelControl = spec.modelOptions ? `
-      <select class="image2-model">${spec.modelOptions.map((option) => (
-        `<option value="${option.value}"${option.value === spec.model ? " selected" : ""}>${option.label}</option>`
-      )).join("")}</select>` : `
-      <input class="image2-model" type="text" value="${spec.model}" disabled />`;
-  const providerFields = spec.official || spec.supportsQuality ? `
-      <label class="image2-field">质量<select class="image2-quality"><option value="low">low</option><option value="medium" selected>medium</option><option value="high">high</option><option value="auto">auto</option></select></label>` : `
-      <label class="image2-field">官方渠道兜底<select class="image2-official-fallback"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>`;
-  const searchFields = spec.supportsGoogleSearch ? `
-      <label class="image2-field">Google 文字搜索<select class="image2-google-search"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>
-      <label class="image2-field">Google 图片搜索<select class="image2-google-image-search"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>` : "";
+  const modelControl = `<select class="image2-model">${spec.modelOptions.map((option) => (
+    `<option value="${option.value}"${option.value === spec.model ? " selected" : ""}>${option.label}</option>`
+  )).join("")}</select>`;
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
     <textarea class="image2-prompt" placeholder="描述要生成的图片；连接文本节点后会在生成时同步文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
@@ -1579,9 +1365,9 @@ function createImage2GenerationNode(type, { x, y } = {}) {
       <label class="image2-field">分辨率<select class="image2-resolution">${resolutionOptions}</select></label>
       <label class="image2-field">图片比例<select class="image2-aspect">${ratioOptions}</select></label>
       <label class="image2-field">预计输出<input class="image2-final-size" type="text" disabled /></label>
-      <label class="image2-field">图片数量<input class="image2-count" type="number" min="1" max="${spec.maxCount}" value="1"${spec.maxCount === 1 ? " disabled" : ""} /></label>
-      ${providerFields}
-      ${searchFields}
+      <label class="image2-field">图片数量<input class="image2-count" type="number" min="1" max="1" value="1" disabled /></label>
+      <label class="image2-field">质量<input class="image2-quality" type="text" value="high" disabled /></label>
+      <label class="image2-field">异步任务<select class="image2-async"><option value="true" selected>开启</option><option value="false">关闭</option></select></label>
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
@@ -1601,18 +1387,12 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   node.prompt = node.body.querySelector(".image2-prompt");
   node.localPromptValue = "";
   node.model = node.body.querySelector(".image2-model");
-  if (spec.provider === "gpt-compatible") {
-    node.model.value = gptSettings.model;
-    node.model.title = "模型名称由 GPT 设置统一配置";
-  }
   node.resolution = node.body.querySelector(".image2-resolution");
   node.aspectRatio = node.body.querySelector(".image2-aspect");
   node.finalSize = node.body.querySelector(".image2-final-size");
   node.count = node.body.querySelector(".image2-count");
   node.quality = node.body.querySelector(".image2-quality");
-  node.officialFallback = node.body.querySelector(".image2-official-fallback");
-  node.googleSearch = node.body.querySelector(".image2-google-search");
-  node.googleImageSearch = node.body.querySelector(".image2-google-image-search");
+  node.asyncMode = node.body.querySelector(".image2-async");
   node.status = node.body.querySelector(".image2-status");
   node.detailsButton = node.body.querySelector(".image2-details");
   node.errorButton = node.body.querySelector(".image2-error-info");
@@ -1624,35 +1404,24 @@ function createImage2GenerationNode(type, { x, y } = {}) {
 
   node.resolution.addEventListener("change", () => updateImage2NodeSize(node));
   node.aspectRatio.addEventListener("change", () => updateImage2NodeSize(node));
-  node.model.addEventListener("change", () => updateApimartModelControls(node));
   node.count.addEventListener("change", () => {
     node.count.value = String(Math.max(1, Math.min(spec.maxCount, Number.parseInt(node.count.value, 10) || 1)));
   });
-  node.googleImageSearch?.addEventListener("change", () => {
-    if (node.googleImageSearch.value === "true") node.googleSearch.value = "true";
-  });
-  node.googleSearch?.addEventListener("change", () => {
-    if (node.googleSearch.value === "false") node.googleImageSearch.value = "false";
-  });
   node.detailsButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    openGenerationDetails(node);
+    openGenerationDetails(node, false, { preview: !node.hasRun });
   });
   node.errorButton.addEventListener("click", (event) => {
     event.stopPropagation();
     openGenerationDetails(node, true);
   });
-  node.generateButton.addEventListener("click", () => {
-    if (node.spec.provider === "gpt-compatible") void generateWithGptImage(node);
-    else void generateWithApimartImage2(node);
-  });
+  node.generateButton.addEventListener("click", () => void generateWithAicoming(node));
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
   attachNodeDrag(node);
   surface.appendChild(node.element);
   nodes.set(id, node);
-  updateApimartModelControls(node);
   refreshImage2Input(node);
   updateImage2NodeSize(node);
   selectNode(id);
@@ -1720,14 +1489,10 @@ function isValidHttpUrl(value) {
   }
 }
 
-function openSettings(section = "apimart") {
-  apimartBaseUrl.value = apimartSettings.baseUrl;
-  apimartToken.value = apimartSettings.token;
-  gptBaseUrl.value = gptSettings.baseUrl;
-  gptApiKey.value = gptSettings.apiKey;
-  gptModel.value = gptSettings.model;
+function openSettings(section = "aicoming") {
+  aicomingBaseUrl.value = aicomingSettings.baseUrl;
+  aicomingApiKey.value = aicomingSettings.apiKey;
   settingsMessage.textContent = "";
-  gptSettingsMessage.textContent = "";
   showSettingsSection(section);
   settingsDialog.showModal();
 }
@@ -1742,63 +1507,30 @@ function saveSettings() {
     closeSettings();
     return;
   }
-  if (activeSection === "gpt") {
-    const baseUrl = cleanBaseUrl(gptBaseUrl.value);
-    const apiKey = gptApiKey.value.trim();
-    const model = gptModel.value.trim();
-    if (!model) {
-      gptSettingsMessage.textContent = "请输入模型名称。";
-      gptModel.focus();
-      return;
-    }
-    if (!isValidHttpUrl(baseUrl)) {
-      gptSettingsMessage.textContent = "请输入有效的 GPT API 基础网址。";
-      gptBaseUrl.focus();
-      return;
-    }
-    if (!apiKey) {
-      gptSettingsMessage.textContent = "请输入当前站点的 API Key。";
-      gptApiKey.focus();
-      return;
-    }
-
-    try {
-      window.localStorage.setItem(GPT_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey, model }));
-    } catch {
-      gptSettingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
-      return;
-    }
-
-    gptSettings = { baseUrl, apiKey, model };
-    syncGptNodeModels();
-    updateSettingsButtonState();
-    closeSettings();
-    return;
-  }
-  const baseUrl = cleanBaseUrl(apimartBaseUrl.value);
-  const token = apimartToken.value.trim();
+  const baseUrl = cleanBaseUrl(aicomingBaseUrl.value);
+  const apiKey = aicomingApiKey.value.trim();
   if (!isValidHttpUrl(baseUrl)) {
-    showSettingsSection("apimart");
-    settingsMessage.textContent = "请输入有效的 Mart API 基础网址。";
-    apimartBaseUrl.focus();
+    showSettingsSection("aicoming");
+    settingsMessage.textContent = "请输入有效的 AIComing API 基础网址。";
+    aicomingBaseUrl.focus();
     return;
   }
-  if (!token) {
-    showSettingsSection("apimart");
-    settingsMessage.textContent = "请输入 Mart API Key。";
-    apimartToken.focus();
+  if (!apiKey) {
+    showSettingsSection("aicoming");
+    settingsMessage.textContent = "请输入 AIComing API Key。";
+    aicomingApiKey.focus();
     return;
   }
 
   try {
-    window.localStorage.setItem(APIMART_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, token }));
+    window.localStorage.setItem(AICOMING_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
   } catch {
-    showSettingsSection("apimart");
+    showSettingsSection("aicoming");
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
 
-  apimartSettings = { baseUrl, token };
+  aicomingSettings = { baseUrl, apiKey };
   updateSettingsButtonState();
   closeSettings();
 }
@@ -1806,8 +1538,6 @@ function saveSettings() {
 function hideContextMenu() {
   contextMenu.classList.remove("open");
   contextMenu.setAttribute("aria-hidden", "true");
-  apimartMenuGroup.classList.remove("open");
-  apimartMenuButton.setAttribute("aria-expanded", "false");
 }
 
 function showContextMenu(clientX, clientY) {
@@ -1821,7 +1551,6 @@ function showContextMenu(clientX, clientY) {
   const height = contextMenu.offsetHeight;
   contextMenu.style.left = `${clamp(clientX, margin, window.innerWidth - width - margin)}px`;
   contextMenu.style.top = `${clamp(clientY, margin, window.innerHeight - height - margin)}px`;
-  apimartMenuGroup.classList.toggle("submenu-left", clientX + width + 258 > window.innerWidth);
   createImageNodeButton.focus();
 }
 
@@ -2012,48 +1741,8 @@ createTextNodeButton.addEventListener("click", () => {
   hideContextMenu();
 });
 
-createGptNodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("gpt-image-2", {
-    x: contextCanvasPoint.x - NODE_WIDTH / 2,
-    y: contextCanvasPoint.y - NODE_HEIGHT / 2,
-  });
-  hideContextMenu();
-});
-
-apimartMenuButton.addEventListener("click", (event) => {
-  event.stopPropagation();
-  const open = !apimartMenuGroup.classList.contains("open");
-  apimartMenuGroup.classList.toggle("open", open);
-  apimartMenuButton.setAttribute("aria-expanded", String(open));
-  if (open) createApimartImage2NodeButton.focus();
-});
-
-createApimartImage2NodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("apimart-image2", {
-    x: contextCanvasPoint.x - NODE_WIDTH / 2,
-    y: contextCanvasPoint.y - NODE_HEIGHT / 2,
-  });
-  hideContextMenu();
-});
-
-createApimartImage2OfficialNodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("apimart-image2-official", {
-    x: contextCanvasPoint.x - NODE_WIDTH / 2,
-    y: contextCanvasPoint.y - NODE_HEIGHT / 2,
-  });
-  hideContextMenu();
-});
-
-createApimartNanoBanana2NodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("apimart-nano-banana-2", {
-    x: contextCanvasPoint.x - NODE_WIDTH / 2,
-    y: contextCanvasPoint.y - NODE_HEIGHT / 2,
-  });
-  hideContextMenu();
-});
-
-createApimartNanoBananaProNodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("apimart-nano-banana-pro", {
+createAicomingNodeButton.addEventListener("click", () => {
+  createImage2GenerationNode("aicoming", {
     x: contextCanvasPoint.x - NODE_WIDTH / 2,
     y: contextCanvasPoint.y - NODE_HEIGHT / 2,
   });
@@ -2064,20 +1753,16 @@ zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
-settingsButton.addEventListener("click", () => openSettings("apimart"));
+settingsButton.addEventListener("click", () => openSettings("aicoming"));
 settingsCloseButton.addEventListener("click", closeSettings);
 settingsCancelButton.addEventListener("click", closeSettings);
 settingsSaveButton.addEventListener("click", saveSettings);
 settingsNavItems.forEach((item) => {
   item.addEventListener("click", () => showSettingsSection(item.dataset.settingsSection));
 });
-apimartTokenClear.addEventListener("click", () => {
-  apimartToken.value = "";
-  apimartToken.focus();
-});
-gptApiKeyClear.addEventListener("click", () => {
-  gptApiKey.value = "";
-  gptApiKey.focus();
+aicomingApiKeyClear.addEventListener("click", () => {
+  aicomingApiKey.value = "";
+  aicomingApiKey.focus();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -2135,5 +1820,4 @@ window.addEventListener("beforeunload", () => {
 resetView();
 updateEmptyState();
 removeRetiredSettings();
-loadApimartSettings();
-loadGptSettings();
+loadAicomingSettings();
