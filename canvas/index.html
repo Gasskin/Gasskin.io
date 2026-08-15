@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>画布</title>
-  <link rel="stylesheet" href="style.css?v=20260811-unified-nodes-1" />
+  <link rel="stylesheet" href="style.css?v=20260815-gpt-node-1" />
 </head>
 <body>
   <main class="workspace" aria-label="画布工作区">
@@ -76,6 +76,10 @@
         <span class="menu-icon text" aria-hidden="true">T</span>
         <span><strong>文本节点</strong></span>
       </button>
+      <button id="createGptNodeButton" type="button" role="menuitem">
+        <span class="menu-icon gpt" aria-hidden="true">GPT</span>
+        <span><strong>GPT</strong></span>
+      </button>
       <div id="apimartMenuGroup" class="context-submenu-wrap">
         <button id="apimartMenuButton" class="context-submenu-trigger" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
           <span class="menu-icon image2" aria-hidden="true">API</span>
@@ -134,6 +138,10 @@
             <span class="settings-nav-icon" aria-hidden="true">API</span>
             <span><strong>Mart</strong><small>服务配置</small></span>
           </button>
+          <button class="settings-nav-item" type="button" data-settings-section="gpt" aria-controls="gptSettingsPanel">
+            <span class="settings-nav-icon gpt" aria-hidden="true">GPT</span>
+            <span><strong>GPT</strong><small>GPT API 兼容接口</small></span>
+          </button>
         </nav>
 
         <section id="imageNodeSettingsPanel" class="settings-panel" data-settings-panel="image" aria-labelledby="imageNodeSettingsTitle" hidden>
@@ -182,6 +190,44 @@
           <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
         </section>
 
+        <section id="gptSettingsPanel" class="settings-panel" data-settings-panel="gpt" aria-labelledby="gptSettingsTitle" hidden>
+          <div class="settings-panel-head">
+            <p>Provider settings</p>
+            <h3 id="gptSettingsTitle">GPT</h3>
+            <span>GPT 节点用于配置符合 GPT Image API 请求格式的自定义站点；可使用 OpenAI 官方服务，也可使用其他兼容站点。</span>
+          </div>
+          <section class="settings-service-card" aria-labelledby="gptImageSettingsTitle">
+            <header class="settings-service-head">
+              <span class="settings-service-icon gpt" aria-hidden="true">GPT</span>
+                <span class="settings-service-copy">
+                  <strong id="gptImageSettingsTitle">GPT Image 设置</strong>
+                  <small>用于兼容接口的图片生成与参考图编辑</small>
+              </span>
+            </header>
+            <div class="settings-fields">
+              <label class="settings-field">
+                <span>模型名称</span>
+                <input id="gptModel" type="text" autocomplete="off" placeholder="gpt-image-2" />
+                <small>默认使用 <code>gpt-image-2</code>；使用兼容站点时可填写该站点提供的模型名称。</small>
+              </label>
+              <label class="settings-field">
+                <span>API Key</span>
+                <span class="settings-token-field">
+                  <input id="gptApiKey" type="password" autocomplete="off" placeholder="输入当前站点的 API Key" />
+                  <button id="gptApiKeyClear" type="button">清除</button>
+                </span>
+                <small>仅保存在当前浏览器的 localStorage 中，不会写入项目文件或随 Git 上传。</small>
+              </label>
+              <label class="settings-field">
+                <span>API 基础网址</span>
+                <input id="gptBaseUrl" type="url" placeholder="https://api.openai.com" />
+                <small>默认使用 OpenAI 官方地址，也可替换为兼容站点；文生图使用 <code>/v1/images/generations</code>，连接参考图后使用 <code>/v1/images/edits</code>。</small>
+              </label>
+            </div>
+          </section>
+          <p id="gptSettingsMessage" class="settings-message" role="status" aria-live="polite"></p>
+        </section>
+
       </div>
 
       <footer class="settings-actions">
@@ -212,6 +258,6 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=20260811-unified-nodes-1"></script>
+  <script src="app.js?v=20260815-gpt-node-4"></script>
 </body>
 </html>

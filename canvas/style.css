@@ -824,13 +824,6 @@ kbd {
   gap: 10px;
 }
 
-.image2-estimated-cost {
-  color: #cfd3db;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 .image2-generate {
   height: 42px;
   min-width: 116px;
@@ -910,6 +903,7 @@ kbd {
 
 .menu-icon.image2 { font-size: 11px; font-weight: 800; }
 .menu-icon.text { color: #8db5ff; background: rgba(141, 181, 255, 0.11); font-size: 16px; font-weight: 800; }
+.menu-icon.gpt { color: #9ee7d8; background: rgba(72, 201, 176, 0.11); font-size: 10px; font-weight: 800; }
 .menu-icon.image2.official { color: #b8b3ff; background: rgba(139, 128, 255, 0.12); font-size: 9px; }
 .menu-icon.image2.nano-banana-2 { color: #ffd36f; background: rgba(255, 183, 55, 0.12); font-size: 9px; }
 .menu-icon.image2.nano-banana-pro { color: #75dfff; background: rgba(72, 191, 230, 0.12); font-size: 9px; }
@@ -922,6 +916,11 @@ kbd {
 .canvas-node.apimart-nano-banana-pro .node-type-dot {
   background: #65d7ff;
   box-shadow: 0 0 12px rgba(101, 215, 255, 0.5);
+}
+
+.canvas-node.openai-gpt .node-type-dot {
+  background: #65dbc4;
+  box-shadow: 0 0 12px rgba(101, 219, 196, 0.5);
 }
 
 .context-menu button > span:nth-child(2) { display: grid; gap: 2px; }
@@ -1153,6 +1152,13 @@ kbd {
 }
 
 .settings-nav-icon.image { font-size: 17px; }
+.settings-nav-icon.gpt,
+.settings-service-icon.gpt {
+  border-color: rgba(101, 219, 196, 0.3);
+  color: #9ee7d8;
+  background: rgba(72, 201, 176, 0.09);
+  font-size: 10px;
+}
 .settings-nav-item > span:last-child { display: grid; gap: 3px; }
 .settings-nav-item strong { font-size: 13px; }
 .settings-nav-item small { color: #9297a1; font-size: 11px; }

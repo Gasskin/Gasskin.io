@@ -16,15 +16,22 @@ const IMAGE_TIER_PIXELS = {
   "4k": MAX_IMAGE_PIXELS,
 };
 const APIMART_SETTINGS_STORAGE_KEY = "canvas:apimart-settings:v1";
+const GPT_SETTINGS_STORAGE_KEY = "canvas:gpt-settings:v1";
 const RETIRED_SETTINGS_STORAGE_KEYS = Object.freeze(["canvas:maolao-settings:v1"]);
 const APIMART_GENERATE_PATH = "v1/images/generations";
 const APIMART_TASK_PATH = "v1/tasks";
+const GPT_GENERATE_PATH = "v1/images/generations";
+const GPT_EDIT_PATH = "v1/images/edits";
 const APIMART_POLL_INTERVAL_MS = 2000;
 const APIMART_TASK_TIMEOUT_MS = 10 * 60 * 1000;
-const APIMART_USD_TO_CNY_RATE = 7;
 const DEFAULT_APIMART_SETTINGS = Object.freeze({
   baseUrl: "https://api.apimart.ai",
   token: "",
+});
+const DEFAULT_GPT_SETTINGS = Object.freeze({
+  baseUrl: "https://api.openai.com",
+  apiKey: "",
+  model: "gpt-image-2",
 });
 const APIMART_NODE_SPECS = Object.freeze({
   "apimart-image2": Object.freeze({
@@ -35,7 +42,6 @@ const APIMART_NODE_SPECS = Object.freeze({
     maxReferenceImages: 16,
     resolutions: ["1k", "2k", "4k"],
     ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
-    priceUsdByResolution: Object.freeze({ "1k": 0.0085, "2k": 0.014, "4k": 0.021 }),
   }),
   "apimart-image2-official": Object.freeze({
     label: "Mart/Image2-Official",
@@ -45,12 +51,6 @@ const APIMART_NODE_SPECS = Object.freeze({
     maxReferenceImages: 16,
     resolutions: ["1k", "2k", "4k"],
     ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
-    priceCeiling: true,
-    priceUsdByQuality: Object.freeze({
-      low: Object.freeze({ "1k": 0.0048, "2k": 0.0096, "4k": 0.0159 }),
-      medium: Object.freeze({ "1k": 0.042, "2k": 0.085, "4k": 0.142 }),
-      high: Object.freeze({ "1k": 0.168, "2k": 0.342, "4k": 0.569 }),
-    }),
   }),
   "apimart-nano-banana-2": Object.freeze({
     label: "Mart/Nano Banana 2",
@@ -67,10 +67,6 @@ const APIMART_NODE_SPECS = Object.freeze({
     ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "21:9", "1:4", "4:1", "1:8", "8:1"],
     supportsGoogleSearch: true,
     nodeClass: "apimart-nano-banana-2",
-    priceUsdByModel: Object.freeze({
-      "nano-banana-2-ext": Object.freeze({ "0.5k": 0.03, "1k": 0.03, "2k": 0.04, "4k": 0.06 }),
-      "nano-banana-2": Object.freeze({ "0.5k": 0.0536, "1k": 0.0536, "2k": 0.0808, "4k": 0.1208 }),
-    }),
   }),
   "apimart-nano-banana-pro": Object.freeze({
     label: "Mart/Nano Banana Pro",
@@ -86,13 +82,23 @@ const APIMART_NODE_SPECS = Object.freeze({
     resolutions: ["1K", "2K", "4K"],
     ratios: ["auto", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
     nodeClass: "apimart-nano-banana-pro",
-    priceUsdByModel: Object.freeze({
-      "nano-banana-pro-ext": Object.freeze({ "1k": 0.04, "2k": 0.04, "4k": 0.065 }),
-      "nano-banana-pro": Object.freeze({ "1k": 0.1072, "2k": 0.1072, "4k": 0.192 }),
-    }),
   }),
 });
-const IMAGE2_NODE_SPECS = APIMART_NODE_SPECS;
+const GPT_NODE_SPECS = Object.freeze({
+  "gpt-image-2": Object.freeze({
+    label: "GPT",
+    model: "gpt-image-2",
+    provider: "gpt-compatible",
+    official: false,
+    supportsQuality: true,
+    maxCount: 10,
+    maxReferenceImages: 16,
+    resolutions: ["1k", "2k"],
+    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
+    nodeClass: "openai-gpt",
+  }),
+});
+const IMAGE2_NODE_SPECS = Object.freeze({ ...APIMART_NODE_SPECS, ...GPT_NODE_SPECS });
 
 const viewport = document.getElementById("canvasViewport");
 const panLayer = document.getElementById("canvasPanLayer");
@@ -105,6 +111,7 @@ const selectionMarquee = document.getElementById("selectionMarquee");
 const contextMenu = document.getElementById("contextMenu");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
 const createTextNodeButton = document.getElementById("createTextNodeButton");
+const createGptNodeButton = document.getElementById("createGptNodeButton");
 const apimartMenuGroup = document.getElementById("apimartMenuGroup");
 const apimartMenuButton = document.getElementById("apimartMenuButton");
 const createApimartImage2NodeButton = document.getElementById("createApimartImage2NodeButton");
@@ -131,6 +138,11 @@ const apimartBaseUrl = document.getElementById("apimartBaseUrl");
 const apimartToken = document.getElementById("apimartToken");
 const apimartTokenClear = document.getElementById("apimartTokenClear");
 const settingsMessage = document.getElementById("settingsMessage");
+const gptBaseUrl = document.getElementById("gptBaseUrl");
+const gptApiKey = document.getElementById("gptApiKey");
+const gptModel = document.getElementById("gptModel");
+const gptApiKeyClear = document.getElementById("gptApiKeyClear");
+const gptSettingsMessage = document.getElementById("gptSettingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsProvider = document.getElementById("generationDetailsProvider");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
@@ -155,6 +167,7 @@ let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
 let dragDepth = 0;
 let apimartSettings = { ...DEFAULT_APIMART_SETTINGS };
+let gptSettings = { ...DEFAULT_GPT_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -180,9 +193,11 @@ function isImage2GenerationNode(node) {
 
 function updateSettingsButtonState() {
   const martConfigured = isValidHttpUrl(apimartSettings.baseUrl) && Boolean(apimartSettings.token);
-  settingsButton.classList.toggle("configured", martConfigured);
-  settingsButton.title = martConfigured
-    ? "设置（Mart API 已配置）"
+  const gptConfigured = isValidHttpUrl(gptSettings.baseUrl) && Boolean(gptSettings.apiKey);
+  const configuredProviders = [martConfigured ? "Mart" : "", gptConfigured ? "GPT" : ""].filter(Boolean);
+  settingsButton.classList.toggle("configured", configuredProviders.length > 0);
+  settingsButton.title = configuredProviders.length
+    ? `设置（已配置：${configuredProviders.join("、")}）`
     : "设置（图片生成 API 尚未配置）";
 }
 
@@ -202,6 +217,32 @@ function loadApimartSettings() {
   }
   apimartSettings = loaded;
   updateSettingsButtonState();
+}
+
+function loadGptSettings() {
+  let loaded = { ...DEFAULT_GPT_SETTINGS };
+  try {
+    const stored = window.localStorage.getItem(GPT_SETTINGS_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      loaded = {
+        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_GPT_SETTINGS.baseUrl,
+        apiKey: String(parsed?.apiKey || "").trim(),
+        model: String(parsed?.model || DEFAULT_GPT_SETTINGS.model).trim() || DEFAULT_GPT_SETTINGS.model,
+      };
+    }
+  } catch {
+    // Ignore malformed or unavailable browser storage and keep the defaults.
+  }
+  gptSettings = loaded;
+  syncGptNodeModels();
+  updateSettingsButtonState();
+}
+
+function syncGptNodeModels() {
+  nodes.forEach((node) => {
+    if (node.spec?.provider === "gpt-compatible" && node.model) node.model.value = gptSettings.model;
+  });
 }
 
 function removeRetiredSettings() {
@@ -935,45 +976,6 @@ function updateApimartModelControls(node) {
   node.officialFallback.title = usesOfficialModel ? "Official 模型不使用官方渠道兜底参数" : "";
 }
 
-function formatEstimatedCny(value) {
-  return value.toFixed(2);
-}
-
-function resolveApimartUnitPrice(node) {
-  const resolution = node.resolution.value.toLowerCase();
-  if (node.spec.priceUsdByQuality) {
-    const selectedQuality = node.quality.value;
-    const pricedQuality = selectedQuality === "auto" ? "high" : selectedQuality;
-    return {
-      usd: node.spec.priceUsdByQuality[pricedQuality]?.[resolution],
-      ceiling: true,
-      autoQuality: selectedQuality === "auto",
-    };
-  }
-  const modelPrices = node.spec.priceUsdByModel?.[node.model.value];
-  return {
-    usd: modelPrices?.[resolution] ?? node.spec.priceUsdByResolution?.[resolution],
-    ceiling: Boolean(node.spec.priceCeiling),
-    autoQuality: false,
-  };
-}
-
-function updateApimartEstimatedCost(node) {
-  if (!node.estimatedCost) return;
-  const price = resolveApimartUnitPrice(node);
-  if (!Number.isFinite(price.usd)) {
-    node.estimatedCost.textContent = "预估费用 —";
-    node.estimatedCost.title = "当前配置暂无价格数据";
-    return;
-  }
-
-  const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
-  const totalCny = price.usd * APIMART_USD_TO_CNY_RATE * count;
-  const prefix = price.ceiling ? "≤" : "";
-  node.estimatedCost.textContent = `${price.autoQuality ? "最高预估" : "预估费用"} ${prefix}¥${formatEstimatedCny(totalCny)}`;
-  node.estimatedCost.title = `${price.autoQuality ? "auto 按高质量上限估算；" : ""}单张 $${price.usd} × 汇率 ${APIMART_USD_TO_CNY_RATE} × ${count} 张`;
-}
-
 function formatGenerationElapsed(milliseconds) {
   return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
 }
@@ -1260,6 +1262,161 @@ async function generateWithApimartImage2(node) {
   }
 }
 
+function extractGptResults(payload) {
+  const format = String(payload?.output_format || "png").toLowerCase();
+  const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
+  const images = Array.isArray(payload?.data) ? payload.data : [];
+  return images.flatMap((image, index) => {
+    if (!image?.b64_json) return [];
+    return [{
+      src: `data:${mimeType};base64,${image.b64_json}`,
+      name: `GPT 生成图片 ${index + 1}`,
+      responseDetails: {
+        index: index + 1,
+        output_format: format,
+        size: payload?.size || null,
+        quality: payload?.quality || null,
+        background: payload?.background || null,
+      },
+    }];
+  });
+}
+
+async function generateWithGptImage(node) {
+  const sources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
+  const linkedPromptParts = textSources
+    .map((source) => source.textInput.value.trim())
+    .filter(Boolean);
+  const prompt = textSources.length
+    ? linkedPromptParts.join("\n\n")
+    : node.prompt.value.trim();
+  const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
+
+  if (!prompt) {
+    setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
+    const emptyTextSource = textSources.find((source) => !source.textInput.value.trim());
+    (emptyTextSource?.textInput || node.prompt).focus();
+    return;
+  }
+  if (sources.length > node.spec.maxReferenceImages) {
+    setImage2Status(node, `GPT 最多支持 ${node.spec.maxReferenceImages} 张参考图。`, "error");
+    return;
+  }
+  if (!isValidHttpUrl(gptSettings.baseUrl) || !gptSettings.apiKey) {
+    setImage2Status(node, "请先在设置中配置 GPT API 地址和 API Key。", "error");
+    openSettings("gpt");
+    return;
+  }
+
+  node.count.value = String(count);
+  node.generateButton.disabled = true;
+  node.abortController?.abort();
+  node.abortController = new AbortController();
+
+  const requestConfig = { ...gptSettings };
+  const isEdit = sources.length > 0;
+  const endpoint = joinApiUrl(requestConfig.baseUrl, isEdit ? GPT_EDIT_PATH : GPT_GENERATE_PATH);
+  const requestBody = {
+    model: requestConfig.model,
+    prompt,
+    size: node.aspectRatio.value === "auto" ? "auto" : node.finalSize.value,
+    quality: node.quality.value,
+    n: count,
+    output_format: "png",
+    background: "auto",
+    moderation: "auto",
+  };
+
+  node.startedAt = performance.now();
+  node.elapsedMs = null;
+  node.callStatus = "生成中";
+  node.lastError = "";
+  node.progressLabel = isEdit ? "正在编辑图片" : "正在生成图片";
+  node.callDetails = {
+    configuration: {
+      provider: "GPT API Compatible",
+      node: node.spec.label,
+      model: requestConfig.model,
+      base_url: requestConfig.baseUrl,
+    },
+    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
+    mode: isEdit ? "image-edit" : "text-to-image",
+    endpoint,
+    method: "POST",
+    headers: { Authorization: "Bearer ***", "Content-Type": "application/json" },
+    body: { ...requestBody },
+  };
+  setImage2RunActions(node);
+  setImage2Status(node, `${node.progressLabel} · 0 秒`);
+  node.timerId = window.setInterval(() => {
+    setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
+  }, 250);
+
+  try {
+    if (isEdit) {
+      node.progressLabel = "正在读取参考图";
+      const imageUrls = await Promise.all(sources.map((source) => (
+        source.file ? fileToDataUrl(source.file) : source.objectUrl
+      )));
+      requestBody.images = imageUrls.map((imageUrl) => ({ image_url: imageUrl }));
+      node.callDetails.body.images = imageUrls.map((imageUrl, index) => ({
+        image_url: imageUrl.startsWith("data:") ? `[参考图 ${index + 1}：base64 data URI]` : imageUrl,
+      }));
+      node.progressLabel = "正在编辑图片";
+    }
+
+    const payload = await fetchImageApiJson(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${requestConfig.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+      signal: node.abortController.signal,
+    });
+    const results = extractGptResults(payload);
+    if (!results.length) throw new Error("GPT 兼容接口返回成功，但没有找到生成图片。");
+
+    stopImage2Timer(node);
+    node.callStatus = "生成成功";
+    node.callDetails = {
+      ...node.callDetails,
+      response: {
+        created: payload?.created || null,
+        image_count: results.length,
+        output_format: payload?.output_format || "png",
+        size: payload?.size || null,
+        quality: payload?.quality || null,
+        background: payload?.background || null,
+        usage: payload?.usage || null,
+        images: results.map((result) => result.responseDetails),
+      },
+    };
+    setImage2Status(node, `生成完成 · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
+    setImage2RunActions(node, { details: true });
+    if (nodes.has(node.id)) createImage2Results(node, results);
+  } catch (error) {
+    stopImage2Timer(node);
+    let failureMessage;
+    if (error?.name === "AbortError") {
+      failureMessage = "生成已停止。";
+    } else if (error instanceof TypeError) {
+      failureMessage = "请求失败，请检查网络、网址或 CORS 设置。";
+    } else {
+      failureMessage = error.message || String(error);
+    }
+    node.callStatus = "生成失败";
+    node.lastError = failureMessage;
+    node.callDetails = { ...node.callDetails, error: failureMessage };
+    setImage2Status(node, `生成失败 · ${formatGenerationElapsed(node.elapsedMs)}`, "error");
+    setImage2RunActions(node, { details: true, error: true });
+  } finally {
+    node.generateButton.disabled = false;
+    node.abortController = null;
+  }
+}
+
 function cloneImage2GenerationNode(node) {
   if (!isImage2GenerationNode(node)) return null;
   const inputSourceIds = Array.from(connections.values())
@@ -1286,7 +1443,6 @@ function cloneImage2GenerationNode(node) {
   if (clone.googleImageSearch && node.googleImageSearch) clone.googleImageSearch.value = node.googleImageSearch.value;
   updateApimartModelControls(clone);
   updateImage2NodeSize(clone);
-  updateApimartEstimatedCost(clone);
   inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
   selectNode(clone.id);
   return clone;
@@ -1371,7 +1527,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
         `<option value="${option.value}"${option.value === spec.model ? " selected" : ""}>${option.label}</option>`
       )).join("")}</select>` : `
       <input class="image2-model" type="text" value="${spec.model}" disabled />`;
-  const providerFields = spec.official ? `
+  const providerFields = spec.official || spec.supportsQuality ? `
       <label class="image2-field">质量<select class="image2-quality"><option value="low">low</option><option value="medium" selected>medium</option><option value="high">high</option><option value="auto">auto</option></select></label>` : `
       <label class="image2-field">官方渠道兜底<select class="image2-official-fallback"><option value="false" selected>关闭</option><option value="true">开启</option></select></label>`;
   const searchFields = spec.supportsGoogleSearch ? `
@@ -1398,7 +1554,6 @@ function createImage2GenerationNode(type, { x, y } = {}) {
         </div>
       </div>
       <div class="image2-generate-actions">
-        <span class="image2-estimated-cost" title="预估费用"></span>
         <button class="image2-generate" type="button">生成图片</button>
       </div>
     </div>
@@ -1408,6 +1563,10 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   node.prompt = node.body.querySelector(".image2-prompt");
   node.localPromptValue = "";
   node.model = node.body.querySelector(".image2-model");
+  if (spec.provider === "gpt-compatible") {
+    node.model.value = gptSettings.model;
+    node.model.title = "模型名称由 GPT 设置统一配置";
+  }
   node.resolution = node.body.querySelector(".image2-resolution");
   node.aspectRatio = node.body.querySelector(".image2-aspect");
   node.finalSize = node.body.querySelector(".image2-final-size");
@@ -1419,28 +1578,18 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   node.status = node.body.querySelector(".image2-status");
   node.detailsButton = node.body.querySelector(".image2-details");
   node.errorButton = node.body.querySelector(".image2-error-info");
-  node.estimatedCost = node.body.querySelector(".image2-estimated-cost");
   node.generateButton = node.body.querySelector(".image2-generate");
 
   node.prompt.addEventListener("input", () => {
     if (!node.prompt.readOnly) node.localPromptValue = node.prompt.value;
   });
 
-  node.resolution.addEventListener("change", () => {
-    updateImage2NodeSize(node);
-    updateApimartEstimatedCost(node);
-  });
+  node.resolution.addEventListener("change", () => updateImage2NodeSize(node));
   node.aspectRatio.addEventListener("change", () => updateImage2NodeSize(node));
-  node.model.addEventListener("change", () => {
-    updateApimartModelControls(node);
-    updateApimartEstimatedCost(node);
-  });
+  node.model.addEventListener("change", () => updateApimartModelControls(node));
   node.count.addEventListener("change", () => {
     node.count.value = String(Math.max(1, Math.min(spec.maxCount, Number.parseInt(node.count.value, 10) || 1)));
-    updateApimartEstimatedCost(node);
   });
-  node.count.addEventListener("input", () => updateApimartEstimatedCost(node));
-  node.quality?.addEventListener("change", () => updateApimartEstimatedCost(node));
   node.googleImageSearch?.addEventListener("change", () => {
     if (node.googleImageSearch.value === "true") node.googleSearch.value = "true";
   });
@@ -1455,7 +1604,10 @@ function createImage2GenerationNode(type, { x, y } = {}) {
     event.stopPropagation();
     openGenerationDetails(node, true);
   });
-  node.generateButton.addEventListener("click", () => void generateWithApimartImage2(node));
+  node.generateButton.addEventListener("click", () => {
+    if (node.spec.provider === "gpt-compatible") void generateWithGptImage(node);
+    else void generateWithApimartImage2(node);
+  });
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
@@ -1463,7 +1615,6 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   surface.appendChild(node.element);
   nodes.set(id, node);
   updateApimartModelControls(node);
-  updateApimartEstimatedCost(node);
   refreshImage2Input(node);
   updateImage2NodeSize(node);
   selectNode(id);
@@ -1534,7 +1685,11 @@ function isValidHttpUrl(value) {
 function openSettings(section = "apimart") {
   apimartBaseUrl.value = apimartSettings.baseUrl;
   apimartToken.value = apimartSettings.token;
+  gptBaseUrl.value = gptSettings.baseUrl;
+  gptApiKey.value = gptSettings.apiKey;
+  gptModel.value = gptSettings.model;
   settingsMessage.textContent = "";
+  gptSettingsMessage.textContent = "";
   showSettingsSection(section);
   settingsDialog.showModal();
 }
@@ -1546,6 +1701,39 @@ function closeSettings() {
 function saveSettings() {
   const activeSection = settingsNavItems.find((item) => item.classList.contains("active"))?.dataset.settingsSection;
   if (activeSection === "image") {
+    closeSettings();
+    return;
+  }
+  if (activeSection === "gpt") {
+    const baseUrl = cleanBaseUrl(gptBaseUrl.value);
+    const apiKey = gptApiKey.value.trim();
+    const model = gptModel.value.trim();
+    if (!model) {
+      gptSettingsMessage.textContent = "请输入模型名称。";
+      gptModel.focus();
+      return;
+    }
+    if (!isValidHttpUrl(baseUrl)) {
+      gptSettingsMessage.textContent = "请输入有效的 GPT API 基础网址。";
+      gptBaseUrl.focus();
+      return;
+    }
+    if (!apiKey) {
+      gptSettingsMessage.textContent = "请输入当前站点的 API Key。";
+      gptApiKey.focus();
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(GPT_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey, model }));
+    } catch {
+      gptSettingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
+      return;
+    }
+
+    gptSettings = { baseUrl, apiKey, model };
+    syncGptNodeModels();
+    updateSettingsButtonState();
     closeSettings();
     return;
   }
@@ -1786,6 +1974,14 @@ createTextNodeButton.addEventListener("click", () => {
   hideContextMenu();
 });
 
+createGptNodeButton.addEventListener("click", () => {
+  createImage2GenerationNode("gpt-image-2", {
+    x: contextCanvasPoint.x - NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
+});
+
 apimartMenuButton.addEventListener("click", (event) => {
   event.stopPropagation();
   const open = !apimartMenuGroup.classList.contains("open");
@@ -1840,6 +2036,10 @@ settingsNavItems.forEach((item) => {
 apimartTokenClear.addEventListener("click", () => {
   apimartToken.value = "";
   apimartToken.focus();
+});
+gptApiKeyClear.addEventListener("click", () => {
+  gptApiKey.value = "";
+  gptApiKey.focus();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -1898,3 +2098,4 @@ resetView();
 updateEmptyState();
 removeRetiredSettings();
 loadApimartSettings();
+loadGptSettings();
