@@ -221,7 +221,7 @@
               <label class="settings-field">
                 <span>API 基础网址</span>
                 <input id="gptBaseUrl" type="url" placeholder="https://api.openai.com" />
-                <small>默认使用 OpenAI 官方地址，也可替换为兼容站点；文生图使用 <code>/v1/images/generations</code>，连接参考图后使用 <code>/v1/images/edits</code>。</small>
+                <small>默认使用 OpenAI 官方地址，也可替换为兼容站点；文生图使用 JSON，连接参考图后通过 multipart 表单调用 <code>/v1/images/edits</code>。</small>
               </label>
             </div>
           </section>
@@ -258,6 +258,6 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=20260815-gpt-node-4"></script>
+  <script src="app.js?v=20260815-gpt-node-5"></script>
 </body>
 </html>

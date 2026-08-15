@@ -992,8 +992,15 @@ function buildGenerationCurl(callDetails) {
     `  -H ${quoteShellArgument("Authorization: Bearer ***")}`,
   ];
 
-  parts.push(`  -H ${quoteShellArgument("Content-Type: application/json")}`);
-  parts.push(`  --data-raw ${quoteShellArgument(JSON.stringify(callDetails.body || {}, null, 2))}`);
+  if (callDetails.multipart) {
+    Object.entries(callDetails.body || {}).forEach(([key, value]) => {
+      const values = Array.isArray(value) ? value : [value];
+      values.forEach((entry) => parts.push(`  -F ${quoteShellArgument(`${key}=${entry}`)}`));
+    });
+  } else {
+    parts.push(`  -H ${quoteShellArgument("Content-Type: application/json")}`);
+    parts.push(`  --data-raw ${quoteShellArgument(JSON.stringify(callDetails.body || {}, null, 2))}`);
+  }
 
   return parts.join(" \\\n");
 }
@@ -1282,6 +1289,31 @@ function extractGptResults(payload) {
   });
 }
 
+function imageExtensionForMimeType(mimeType) {
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/webp") return "webp";
+  if (mimeType === "image/gif") return "gif";
+  return "png";
+}
+
+async function resolveGptImageUpload(source, index, signal) {
+  if (source.file instanceof Blob) {
+    return {
+      blob: source.file,
+      name: source.file.name || `reference-image-${index + 1}.${imageExtensionForMimeType(source.file.type)}`,
+    };
+  }
+
+  const response = await fetch(source.objectUrl, { signal });
+  if (!response.ok) throw new Error(`无法读取参考图 ${index + 1}：${response.status} ${response.statusText}`);
+  const blob = await response.blob();
+  if (blob.type && !blob.type.startsWith("image/")) throw new Error(`参考图 ${index + 1} 不是有效的图片文件。`);
+  return {
+    blob,
+    name: `reference-image-${index + 1}.${imageExtensionForMimeType(blob.type)}`,
+  };
+}
+
 async function generateWithGptImage(node) {
   const sources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
@@ -1344,7 +1376,10 @@ async function generateWithGptImage(node) {
     mode: isEdit ? "image-edit" : "text-to-image",
     endpoint,
     method: "POST",
-    headers: { Authorization: "Bearer ***", "Content-Type": "application/json" },
+    headers: isEdit
+      ? { Authorization: "Bearer ***", "Content-Type": "multipart/form-data; boundary=<browser generated>" }
+      : { Authorization: "Bearer ***", "Content-Type": "application/json" },
+    multipart: isEdit,
     body: { ...requestBody },
   };
   setImage2RunActions(node);
@@ -1354,25 +1389,28 @@ async function generateWithGptImage(node) {
   }, 250);
 
   try {
+    const headers = { Authorization: `Bearer ${requestConfig.apiKey}` };
+    let body;
     if (isEdit) {
       node.progressLabel = "正在读取参考图";
-      const imageUrls = await Promise.all(sources.map((source) => (
-        source.file ? fileToDataUrl(source.file) : source.objectUrl
+      const uploads = await Promise.all(sources.map((source, index) => (
+        resolveGptImageUpload(source, index, node.abortController.signal)
       )));
-      requestBody.images = imageUrls.map((imageUrl) => ({ image_url: imageUrl }));
-      node.callDetails.body.images = imageUrls.map((imageUrl, index) => ({
-        image_url: imageUrl.startsWith("data:") ? `[参考图 ${index + 1}：base64 data URI]` : imageUrl,
-      }));
+      const formData = new FormData();
+      Object.entries(requestBody).forEach(([key, value]) => formData.append(key, String(value)));
+      uploads.forEach(({ blob, name }) => formData.append("image[]", blob, name));
+      node.callDetails.body["image[]"] = uploads.map(({ name }) => `@${name}`);
+      body = formData;
       node.progressLabel = "正在编辑图片";
+    } else {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify(requestBody);
     }
 
     const payload = await fetchImageApiJson(endpoint, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${requestConfig.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
+      headers,
+      body,
       signal: node.abortController.signal,
     });
     const results = extractGptResults(payload);
