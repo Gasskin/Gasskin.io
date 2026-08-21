@@ -18,6 +18,7 @@ from pathlib import Path
 
 ARK_ORIGIN = "https://ark.cn-beijing.volces.com"
 GENARRATIVE_ORIGIN = "https://www.genarrative.world"
+GENARRATIVE_OSS_ORIGIN = "https://genarrative-release.oss-cn-beijing.aliyuncs.com"
 ROOT = Path(__file__).resolve().parent
 DOCS = ROOT / "docs"
 HOST = "127.0.0.1"
@@ -108,7 +109,10 @@ class DevHandler(SimpleHTTPRequestHandler):
         self._serve_html(filepath, head=head, inject_api=inject_api)
 
     def _proxy(self, head=False):
-        if self.path.split("?", 1)[0].startswith("/api/genarrative"):
+        path = self.path.split("?", 1)[0]
+        if path == "/api/genarrative/oss-upload":
+            url = GENARRATIVE_OSS_ORIGIN + "/"
+        elif path.startswith("/api/genarrative"):
             suffix = self.path[len("/api/genarrative"):]
             url = f"{GENARRATIVE_ORIGIN}/api/external/v1{suffix}"
         else:
@@ -163,6 +167,7 @@ def main() -> None:
     print(f"Serving {DOCS} at http://{HOST}:{PORT}/")
     print("API 代理: /api/v3 ->", ARK_ORIGIN + "/api/v3")
     print("陶泥儿代理: /api/genarrative ->", GENARRATIVE_ORIGIN + "/api/external/v1")
+    print("陶泥儿 OSS 上传代理: /api/genarrative/oss-upload ->", GENARRATIVE_OSS_ORIGIN + "/")
     print("按 Ctrl+C 结束")
     httpd.serve_forever()
 

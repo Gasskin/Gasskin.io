@@ -1415,6 +1415,19 @@ function imageMimeExtension(mimeType) {
   return "png";
 }
 
+function resolveGenarrativeUploadEndpoint(baseUrl, directUploadHost) {
+  try {
+    const proxyUrl = new URL(baseUrl);
+    const normalizedPath = proxyUrl.pathname.replace(/\/+$/, "");
+    if (normalizedPath.endsWith("/api/genarrative")) {
+      return joinApiUrl(baseUrl, "oss-upload");
+    }
+  } catch {
+    // The settings validator reports malformed base URLs before generation.
+  }
+  return directUploadHost;
+}
+
 async function getGenarrativeSourceBlob(source, index, signal) {
   if (source.file instanceof Blob) return source.file;
   const response = await fetch(source.objectUrl, { signal });
@@ -1479,7 +1492,8 @@ async function uploadGenarrativeReference(source, index, requestConfig, signal) 
     if (value != null) formData.append(key, String(value));
   });
   formData.append("file", blob, fileName);
-  const uploadResponse = await fetch(upload.host, { method: "POST", body: formData, signal });
+  const uploadEndpoint = resolveGenarrativeUploadEndpoint(requestConfig.baseUrl, upload.host);
+  const uploadResponse = await fetch(uploadEndpoint, { method: "POST", body: formData, signal });
   if (!uploadResponse.ok) throw new Error(`参考图 ${index + 1} 上传失败：${uploadResponse.status} ${uploadResponse.statusText}`);
 
   const confirmation = await fetchImageApiJson(joinApiUrl(requestConfig.baseUrl, GENARRATIVE_CONFIRM_OBJECT_PATH), {
