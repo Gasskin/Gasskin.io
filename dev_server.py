@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-本地开发服务器：托管 docs/ 目录，并把 /api/v3/* 反向代理到火山方舟。
+本地开发服务器：托管 docs/ 目录，并反向代理需要同源访问的外部 API。
 页面与接口同源，可避免浏览器跨域限制。
 
 用法：
@@ -17,6 +17,7 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 ARK_ORIGIN = "https://ark.cn-beijing.volces.com"
+GENARRATIVE_ORIGIN = "https://www.genarrative.world"
 ROOT = Path(__file__).resolve().parent
 DOCS = ROOT / "docs"
 HOST = "127.0.0.1"
@@ -38,7 +39,7 @@ class DevHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split("?", 1)[0]
-        if path.startswith("/api/v3"):
+        if self._is_proxy_path(path):
             self._proxy()
             return
         # 对所有 index.html 注入 API base（插件页面可能需要）
@@ -49,7 +50,7 @@ class DevHandler(SimpleHTTPRequestHandler):
 
     def do_HEAD(self):
         path = self.path.split("?", 1)[0]
-        if path.startswith("/api/v3"):
+        if self._is_proxy_path(path):
             self._proxy(head=True)
             return
         if path in ("/", "/index.html") or path.endswith("/index.html") or path.endswith("/"):
@@ -58,21 +59,30 @@ class DevHandler(SimpleHTTPRequestHandler):
         super().do_HEAD()
 
     def do_POST(self):
-        if self.path.split("?", 1)[0].startswith("/api/v3"):
+        if self._is_proxy_path(self.path.split("?", 1)[0]):
             self._proxy()
             return
         self.send_error(404, "Not Found")
 
     def do_DELETE(self):
-        if self.path.split("?", 1)[0].startswith("/api/v3"):
+        if self._is_proxy_path(self.path.split("?", 1)[0]):
             self._proxy()
             return
         self.send_error(404, "Not Found")
 
+    @staticmethod
+    def _is_proxy_path(path):
+        return path.startswith("/api/v3") or path.startswith("/api/genarrative")
+
     def _serve_html(self, filepath, head=False, inject_api=False):
         raw = filepath.read_text(encoding="utf-8")
         if inject_api:
-            snippet = "<script>window.__SEEDANCE_API_BASE__=location.origin+\"/api/v3\";</script>\n"
+            snippet = (
+                "<script>"
+                "window.__SEEDANCE_API_BASE__=location.origin+\"/api/v3\";"
+                "window.__GENARRATIVE_API_BASE__=location.origin+\"/api/genarrative\";"
+                "</script>\n"
+            )
             if "</head>" in raw:
                 raw = raw.replace("</head>", snippet + "</head>", 1)
             else:
@@ -98,7 +108,11 @@ class DevHandler(SimpleHTTPRequestHandler):
         self._serve_html(filepath, head=head, inject_api=inject_api)
 
     def _proxy(self, head=False):
-        url = f"{ARK_ORIGIN}{self.path}"
+        if self.path.split("?", 1)[0].startswith("/api/genarrative"):
+            suffix = self.path[len("/api/genarrative"):]
+            url = f"{GENARRATIVE_ORIGIN}/api/external/v1{suffix}"
+        else:
+            url = f"{ARK_ORIGIN}{self.path}"
         data = None
         if self.command == "POST" and not head:
             length = int(self.headers.get("Content-Length", 0))
@@ -106,7 +120,7 @@ class DevHandler(SimpleHTTPRequestHandler):
 
         method = "HEAD" if head else self.command
         req = urllib.request.Request(url, data=data, method=method)
-        for name in ("Authorization", "Content-Type"):
+        for name in ("Authorization", "Content-Type", "Idempotency-Key", "Accept"):
             val = self.headers.get(name)
             if val:
                 req.add_header(name, val)
@@ -148,6 +162,7 @@ def main() -> None:
     httpd.allow_reuse_address = True
     print(f"Serving {DOCS} at http://{HOST}:{PORT}/")
     print("API 代理: /api/v3 ->", ARK_ORIGIN + "/api/v3")
+    print("陶泥儿代理: /api/genarrative ->", GENARRATIVE_ORIGIN + "/api/external/v1")
     print("按 Ctrl+C 结束")
     httpd.serve_forever()
 

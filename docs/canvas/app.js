@@ -16,6 +16,7 @@ const IMAGE_TIER_PIXELS = {
   "4k": MAX_IMAGE_PIXELS,
 };
 const AICOMING_SETTINGS_STORAGE_KEY = "canvas:aicoming-settings:v1";
+const GENARRATIVE_SETTINGS_STORAGE_KEY = "canvas:genarrative-settings:v1";
 const RETIRED_SETTINGS_STORAGE_KEYS = Object.freeze([
   "canvas:maolao-settings:v1",
   "canvas:gpt-settings:v1",
@@ -24,13 +25,27 @@ const RETIRED_SETTINGS_STORAGE_KEYS = Object.freeze([
 const AICOMING_GENERATE_PATH = "v1/images/generations";
 const AICOMING_POLL_INTERVAL_MS = 2000;
 const AICOMING_TASK_TIMEOUT_MS = 10 * 60 * 1000;
+const GENARRATIVE_GENERATE_PATH = "editor/images/generations";
+const GENARRATIVE_EDIT_PATH = "editor/images/edits";
+const GENARRATIVE_TASK_PATH = "generations";
+const GENARRATIVE_UPLOAD_TICKET_PATH = "assets/direct-upload-tickets";
+const GENARRATIVE_CONFIRM_OBJECT_PATH = "assets/objects/confirm";
+const GENARRATIVE_READ_URL_PATH = "assets/read-url";
+const GENARRATIVE_PROJECTS_PATH = "editor/projects";
+const GENARRATIVE_TASK_TIMEOUT_MS = 30 * 60 * 1000;
 const DEFAULT_AICOMING_SETTINGS = Object.freeze({
   baseUrl: "https://api.aicoming.top",
   apiKey: "",
 });
+const DEFAULT_GENARRATIVE_SETTINGS = Object.freeze({
+  baseUrl: cleanBaseUrl(globalThis.__GENARRATIVE_API_BASE__ || "https://www.genarrative.world/api/external/v1"),
+  apiKey: "",
+  projectId: "",
+});
 const IMAGE2_NODE_SPECS = Object.freeze({
   aicoming: Object.freeze({
     label: "AIComing",
+    provider: "aicoming",
     model: "gpt-image-2",
     modelOptions: Object.freeze([
       Object.freeze({ value: "gpt-image-2", label: "gpt-image-2" }),
@@ -40,6 +55,20 @@ const IMAGE2_NODE_SPECS = Object.freeze({
     maxReferenceImages: 16,
     resolutions: ["1k", "2k", "4k"],
     ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
+  }),
+  genarrative: Object.freeze({
+    label: "陶泥儿",
+    provider: "genarrative",
+    model: "gpt-image-2",
+    modelOptions: Object.freeze([
+      Object.freeze({ value: "gpt-image-2", label: "gpt-image-2" }),
+    ]),
+    maxCount: 1,
+    maxReferenceImages: 5,
+    resolutions: ["1K", "2K"],
+    ratios: ["1:1", "2:3", "3:2", "9:16", "16:9"],
+    editRatios: ["1:1", "4:3", "3:2", "2:3", "9:16", "16:9"],
+    nodeClass: "genarrative-image",
   }),
 });
 
@@ -55,6 +84,7 @@ const contextMenu = document.getElementById("contextMenu");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
 const createTextNodeButton = document.getElementById("createTextNodeButton");
 const createAicomingNodeButton = document.getElementById("createAicomingNodeButton");
+const createGenarrativeNodeButton = document.getElementById("createGenarrativeNodeButton");
 const fitButton = document.getElementById("fitButton");
 const settingsButton = document.getElementById("settingsButton");
 const zoomOutButton = document.getElementById("zoomOutButton");
@@ -75,6 +105,10 @@ const aicomingBaseUrl = document.getElementById("aicomingBaseUrl");
 const aicomingApiKey = document.getElementById("aicomingApiKey");
 const aicomingApiKeyClear = document.getElementById("aicomingApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
+const genarrativeBaseUrl = document.getElementById("genarrativeBaseUrl");
+const genarrativeApiKey = document.getElementById("genarrativeApiKey");
+const genarrativeApiKeyClear = document.getElementById("genarrativeApiKeyClear");
+const genarrativeSettingsMessage = document.getElementById("genarrativeSettingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsProvider = document.getElementById("generationDetailsProvider");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
@@ -99,6 +133,7 @@ let contextCanvasPoint = { x: 0, y: 0 };
 let contextScreenPoint = { x: 0, y: 0 };
 let dragDepth = 0;
 let aicomingSettings = { ...DEFAULT_AICOMING_SETTINGS };
+let genarrativeSettings = { ...DEFAULT_GENARRATIVE_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -129,9 +164,11 @@ function isImage2GenerationNode(node) {
 
 function updateSettingsButtonState() {
   const aicomingConfigured = isValidHttpUrl(aicomingSettings.baseUrl) && Boolean(aicomingSettings.apiKey);
-  settingsButton.classList.toggle("configured", aicomingConfigured);
-  settingsButton.title = aicomingConfigured
-    ? "设置（已配置：AIComing）"
+  const genarrativeConfigured = isValidHttpUrl(genarrativeSettings.baseUrl) && Boolean(genarrativeSettings.apiKey);
+  const configuredProviders = [aicomingConfigured ? "AIComing" : "", genarrativeConfigured ? "陶泥儿" : ""].filter(Boolean);
+  settingsButton.classList.toggle("configured", configuredProviders.length > 0);
+  settingsButton.title = configuredProviders.length
+    ? `设置（已配置：${configuredProviders.join("、")}）`
     : "设置（图片生成 API 尚未配置）";
 }
 
@@ -151,6 +188,34 @@ function loadAicomingSettings() {
   }
   aicomingSettings = loaded;
   updateSettingsButtonState();
+}
+
+function loadGenarrativeSettings() {
+  let loaded = { ...DEFAULT_GENARRATIVE_SETTINGS };
+  try {
+    const stored = window.localStorage.getItem(GENARRATIVE_SETTINGS_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      loaded = {
+        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_GENARRATIVE_SETTINGS.baseUrl,
+        apiKey: String(parsed?.apiKey || "").trim(),
+        projectId: String(parsed?.projectId || "").trim(),
+      };
+    }
+  } catch {
+    // Ignore malformed or unavailable browser storage and keep the defaults.
+  }
+  genarrativeSettings = loaded;
+  updateSettingsButtonState();
+}
+
+function persistGenarrativeSettings() {
+  window.localStorage.setItem(GENARRATIVE_SETTINGS_STORAGE_KEY, JSON.stringify({
+    version: 1,
+    baseUrl: genarrativeSettings.baseUrl,
+    apiKey: genarrativeSettings.apiKey,
+    projectId: genarrativeSettings.projectId,
+  }));
 }
 
 function removeRetiredSettings() {
@@ -352,6 +417,7 @@ function refreshImage2Input(node) {
   const textSources = getConnectedTextNodes(node);
   node.inputSourceIds = sources.map((source) => source.id);
   node.textInputSourceIds = textSources.map((source) => source.id);
+  updateGenarrativeRatioOptions(node, sources.length > 0);
   syncImage2PromptFromTextNodes(node, textSources);
   node.inputPreview.replaceChildren();
   node.inputPreview.classList.toggle("has-image", sources.length > 0);
@@ -563,13 +629,14 @@ function openPreview(node) {
   openPreviewSource(node.objectUrl, node.name);
 }
 
-function setNodeImageSource(node, { src, name, file = null, revokeOnRemove = false }) {
+function setNodeImageSource(node, { src, name, file = null, revokeOnRemove = false, genarrative = null }) {
   if (!src) return;
   if (node.objectUrl && node.revokeObjectUrl) URL.revokeObjectURL(node.objectUrl);
 
   node.file = file;
   node.objectUrl = src;
   node.revokeObjectUrl = revokeOnRemove;
+  node.genarrative = genarrative;
   node.name = name || file?.name || "未命名图片";
   node.title.textContent = node.name;
   node.body.replaceChildren();
@@ -671,6 +738,7 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
     file: null,
     objectUrl: null,
     revokeObjectUrl: false,
+    genarrative: null,
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
@@ -877,7 +945,25 @@ function setImage2Status(node, message, state = "") {
 }
 
 function updateImage2NodeSize(node) {
+  if (node.spec.provider === "genarrative") {
+    node.finalSize.value = `${node.resolution.value} · ${node.aspectRatio.value}`;
+    return;
+  }
   node.finalSize.value = calculateImage2Size(node.resolution.value, node.aspectRatio.value);
+}
+
+function updateGenarrativeRatioOptions(node, hasImageSources) {
+  if (node.spec.provider !== "genarrative") return;
+  const ratios = hasImageSources ? node.spec.editRatios : node.spec.ratios;
+  const previous = node.aspectRatio.value;
+  node.aspectRatio.replaceChildren(...ratios.map((ratio) => {
+    const option = document.createElement("option");
+    option.value = ratio;
+    option.textContent = ratio;
+    return option;
+  }));
+  node.aspectRatio.value = ratios.includes(previous) ? previous : (ratios.includes("16:9") ? "16:9" : ratios[0]);
+  updateImage2NodeSize(node);
 }
 
 function formatGenerationElapsed(milliseconds) {
@@ -960,7 +1046,9 @@ function buildAicomingCallPreview(node) {
 }
 
 function openGenerationDetails(node, errorOnly = false, { preview = false } = {}) {
-  const callDetails = preview ? buildAicomingCallPreview(node) : node.callDetails;
+  const callDetails = preview
+    ? node.spec.provider === "genarrative" ? buildGenarrativeCallPreview(node) : buildAicomingCallPreview(node)
+    : node.callDetails;
   generationDetailsProvider.textContent = `${node.spec?.label || "Image"} image generation`;
   generationDetailsTitle.textContent = errorOnly ? "错误信息" : preview ? "调用预览" : "生成详情";
   generationDetailsCodeLabel.textContent = errorOnly ? "错误内容" : "cURL";
@@ -1002,6 +1090,7 @@ function createImage2Results(node, results) {
         name: `生成图片 ${index + 1}`,
         file: result.file || null,
         revokeOnRemove: Boolean(result.revokeOnRemove),
+        genarrative: result.genarrative || null,
       },
     });
     connectNodes(node.id, imageNode.id);
@@ -1038,7 +1127,10 @@ async function fetchImageApiJson(url, options) {
   let payload = null;
   try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
   if (!response.ok || payload?.error || (Number(payload?.code) >= 400)) {
-    throw new Error(payload?.error?.message || payload?.message || text || `${response.status} ${response.statusText}`);
+    const error = new Error(payload?.error?.message || payload?.message || text || `${response.status} ${response.statusText}`);
+    error.status = response.status;
+    error.code = payload?.error?.code || payload?.code || null;
+    throw error;
   }
   return payload;
 }
@@ -1252,6 +1344,416 @@ async function generateWithAicoming(node) {
   }
 }
 
+function buildGenarrativeCallPreview(node) {
+  const sources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
+  const prompt = textSources.length
+    ? textSources.map((source) => source.textInput.value.trim()).filter(Boolean).join("\n\n")
+    : node.prompt.value.trim();
+  const isEdit = sources.length > 0;
+  const body = {
+    prompt,
+    model: "gpt-image-2",
+    aspectRatio: node.aspectRatio.value,
+    imageSize: node.resolution.value,
+  };
+  if (isEdit) {
+    body.sourceReferenceId = "<首张参考图上传并登记后的 resourceId>";
+    if (sources.length > 1) {
+      body.referenceImageSrcs = sources.slice(1).map((_, index) => `<辅助参考图 ${index + 2} 的 objectKey>`);
+    }
+  }
+  return {
+    configuration: {
+      provider: "陶泥儿",
+      node: node.spec.label,
+      model: "gpt-image-2",
+      base_url: genarrativeSettings.baseUrl,
+    },
+    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
+    mode: isEdit ? "image-edit" : "text-to-image",
+    endpoint: joinApiUrl(genarrativeSettings.baseUrl, isEdit ? GENARRATIVE_EDIT_PATH : GENARRATIVE_GENERATE_PATH),
+    method: "POST",
+    headers: {
+      Authorization: "Bearer ***",
+      "Content-Type": "application/json",
+      "Idempotency-Key": "<生成时自动创建>",
+    },
+    body,
+  };
+}
+
+async function waitForGenarrativePoll(signal, delayMs) {
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+  await new Promise((resolve, reject) => {
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, Math.max(250, Math.min(10000, Number(delayMs) || 1500)));
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+function imageMimeExtension(mimeType) {
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/webp") return "webp";
+  if (mimeType === "image/gif") return "gif";
+  return "png";
+}
+
+async function getGenarrativeSourceBlob(source, index, signal) {
+  if (source.file instanceof Blob) return source.file;
+  const response = await fetch(source.objectUrl, { signal });
+  if (!response.ok) throw new Error(`无法读取参考图 ${index + 1}：${response.status} ${response.statusText}`);
+  const blob = await response.blob();
+  if (blob.type && !blob.type.startsWith("image/")) throw new Error(`参考图 ${index + 1} 不是有效图片。`);
+  return blob;
+}
+
+async function getGenarrativeSourceDimensions(source, blob) {
+  const image = source.body?.querySelector("img");
+  if (image?.naturalWidth && image?.naturalHeight) {
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  }
+  if (globalThis.createImageBitmap) {
+    const bitmap = await createImageBitmap(blob);
+    const dimensions = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return dimensions;
+  }
+  throw new Error(`无法读取参考图尺寸：${source.name}`);
+}
+
+async function uploadGenarrativeReference(source, index, requestConfig, signal) {
+  if (source.genarrative?.objectKey) {
+    const image = source.body?.querySelector("img");
+    return {
+      objectKey: source.genarrative.objectKey,
+      assetObjectId: source.genarrative.assetObjectId || null,
+      legacyPublicPath: source.genarrative.imageSrc || source.genarrative.objectKey,
+      width: source.genarrative.width || image?.naturalWidth || 1,
+      height: source.genarrative.height || image?.naturalHeight || 1,
+    };
+  }
+
+  const blob = await getGenarrativeSourceBlob(source, index, signal);
+  const dimensions = await getGenarrativeSourceDimensions(source, blob);
+  const contentType = blob.type || "image/png";
+  const fileName = source.file?.name || `gasskin-reference-${index + 1}.${imageMimeExtension(contentType)}`;
+  const ticketPayload = await fetchImageApiJson(joinApiUrl(requestConfig.baseUrl, GENARRATIVE_UPLOAD_TICKET_PATH), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requestConfig.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      legacyPrefix: "gasskin-editor-references",
+      pathSegments: ["editor", "external-editor-references"],
+      fileName,
+      contentType,
+      access: "private",
+      maxSizeBytes: blob.size,
+      successActionStatus: 204,
+    }),
+    signal,
+  });
+  const upload = ticketPayload?.upload || ticketPayload?.data?.upload;
+  if (!upload?.host || !upload?.objectKey || !upload?.formFields) throw new Error("陶泥儿未返回完整的参考图上传凭证。");
+
+  const formData = new FormData();
+  Object.entries(upload.formFields).forEach(([key, value]) => {
+    if (value != null) formData.append(key, String(value));
+  });
+  formData.append("file", blob, fileName);
+  const uploadResponse = await fetch(upload.host, { method: "POST", body: formData, signal });
+  if (!uploadResponse.ok) throw new Error(`参考图 ${index + 1} 上传失败：${uploadResponse.status} ${uploadResponse.statusText}`);
+
+  const confirmation = await fetchImageApiJson(joinApiUrl(requestConfig.baseUrl, GENARRATIVE_CONFIRM_OBJECT_PATH), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requestConfig.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      objectKey: upload.objectKey,
+      contentType,
+      contentLength: blob.size,
+      assetKind: "editor_reference_image",
+      accessPolicy: "private",
+    }),
+    signal,
+  });
+  const assetObject = confirmation?.assetObject || confirmation?.data?.assetObject;
+  return {
+    objectKey: assetObject?.objectKey || upload.objectKey,
+    assetObjectId: assetObject?.assetObjectId || null,
+    legacyPublicPath: upload.legacyPublicPath || upload.objectKey,
+    width: dimensions.width,
+    height: dimensions.height,
+  };
+}
+
+async function ensureGenarrativeProject(requestConfig, signal, { forceNew = false } = {}) {
+  if (!forceNew && genarrativeSettings.projectId) return genarrativeSettings.projectId;
+  const payload = await fetchImageApiJson(joinApiUrl(requestConfig.baseUrl, GENARRATIVE_PROJECTS_PATH), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requestConfig.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ title: "Gasskin Canvas" }),
+    signal,
+  });
+  const projectId = payload?.project?.projectId || payload?.data?.project?.projectId;
+  if (!projectId) throw new Error("陶泥儿创建项目后未返回 projectId。");
+  genarrativeSettings = { ...genarrativeSettings, projectId };
+  try { persistGenarrativeSettings(); } catch { /* Project reuse is an optimization; generation can continue. */ }
+  return projectId;
+}
+
+async function registerGenarrativeMainSource(reference, requestConfig, signal) {
+  let projectId = await ensureGenarrativeProject(requestConfig, signal);
+  const createResource = async () => fetchImageApiJson(
+    joinApiUrl(requestConfig.baseUrl, `editor/projects/${encodeURIComponent(projectId)}/resources`),
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${requestConfig.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        imageSrc: reference.legacyPublicPath || reference.objectKey,
+        objectKey: reference.objectKey,
+        assetObjectId: reference.assetObjectId,
+        width: reference.width,
+        height: reference.height,
+        sourceType: "external-upload",
+      }),
+      signal,
+    },
+  );
+  let payload;
+  try {
+    payload = await createResource();
+  } catch (error) {
+    if (error.status !== 404) throw error;
+    projectId = await ensureGenarrativeProject(requestConfig, signal, { forceNew: true });
+    payload = await createResource();
+  }
+  const resourceId = payload?.resource?.resourceId || payload?.data?.resource?.resourceId;
+  if (!resourceId) throw new Error("陶泥儿登记主参考图后未返回 resourceId。");
+  return { projectId, resourceId };
+}
+
+function findGenarrativeArtifact(result) {
+  const candidates = [
+    result,
+    result?.resource,
+    result?.asset,
+    result?.spritesheetResource,
+    result?.spritesheetAsset,
+  ].filter(Boolean);
+  const withObjectKey = candidates.find((candidate) => candidate?.objectKey);
+  if (!withObjectKey) return null;
+  return {
+    objectKey: withObjectKey.objectKey,
+    assetObjectId: withObjectKey.assetObjectId || result?.assetObjectId || null,
+    resourceId: result?.resourceId || result?.resource?.resourceId || null,
+    assetId: result?.assetId || result?.asset?.assetId || null,
+    imageSrc: withObjectKey.imageSrc || withObjectKey.objectKey,
+    width: withObjectKey.width || result?.width || null,
+    height: withObjectKey.height || result?.height || null,
+  };
+}
+
+function collectGenarrativeWarnings(payload) {
+  return [
+    payload?.warning,
+    payload?.result?.warning?.message || payload?.result?.warning,
+    payload?.result?.sliceWarning?.message || payload?.result?.sliceWarning,
+  ]
+    .filter((warning) => typeof warning === "string" && warning.trim())
+    .map((warning) => warning.trim())
+    .filter((warning, index, warnings) => warnings.indexOf(warning) === index);
+}
+
+async function resolveGenarrativeResult(node, payload, requestConfig) {
+  const artifact = findGenarrativeArtifact(payload?.result);
+  if (!artifact?.objectKey) throw new Error("陶泥儿任务已完成，但没有返回图片 objectKey。");
+  const readEndpoint = `${joinApiUrl(requestConfig.baseUrl, GENARRATIVE_READ_URL_PATH)}?objectKey=${encodeURIComponent(artifact.objectKey)}`;
+  const readPayload = await fetchImageApiJson(readEndpoint, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
+    signal: node.abortController.signal,
+  });
+  const signedUrl = readPayload?.read?.signedUrl || readPayload?.data?.read?.signedUrl;
+  if (!signedUrl) throw new Error("陶泥儿未返回图片的临时读取地址。");
+  return [{
+    src: signedUrl,
+    name: "陶泥儿生成图片",
+    genarrative: artifact,
+    responseDetails: artifact,
+  }];
+}
+
+async function pollGenarrativeTask(node, submission, requestConfig) {
+  const operationId = submission?.operationId || submission?.data?.operationId;
+  if (!operationId) throw new Error("陶泥儿提交成功但未返回 operationId。");
+  const queryEndpoint = joinApiUrl(requestConfig.baseUrl, `${GENARRATIVE_TASK_PATH}/${encodeURIComponent(operationId)}`);
+  const deadline = Date.now() + GENARRATIVE_TASK_TIMEOUT_MS;
+  let delayMs = submission?.pollAfterMs || submission?.data?.pollAfterMs || 1500;
+  while (Date.now() < deadline) {
+    await waitForGenarrativePoll(node.abortController.signal, delayMs);
+    const payload = await fetchImageApiJson(queryEndpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
+      signal: node.abortController.signal,
+    });
+    const status = String(payload?.status || "unknown");
+    const progress = Number(payload?.progress);
+    const phase = payload?.phaseLabel || payload?.phaseDetail || status;
+    node.progressLabel = `${phase}${Number.isFinite(progress) ? ` ${progress}%` : ""}`;
+    node.callDetails.task = { operation_id: operationId, status, progress: payload?.progress ?? null, query_endpoint: queryEndpoint };
+    if (status === "completed") return payload;
+    if (status === "failed") throw new Error(payload?.error || "陶泥儿图片任务失败。");
+    delayMs = payload?.pollAfterMs || delayMs;
+  }
+  throw new Error("陶泥儿任务查询超时（30 分钟）；operationId 已保留在调用详情中，可稍后继续查询。");
+}
+
+async function generateWithGenarrative(node) {
+  const sources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
+  const prompt = textSources.length
+    ? textSources.map((source) => source.textInput.value.trim()).filter(Boolean).join("\n\n")
+    : node.prompt.value.trim();
+  if (!prompt) {
+    setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
+    (textSources.find((source) => !source.textInput.value.trim())?.textInput || node.prompt).focus();
+    return;
+  }
+  if (sources.length > node.spec.maxReferenceImages) {
+    setImage2Status(node, `陶泥儿 Image2 最多连接 ${node.spec.maxReferenceImages} 张图片（1 张主图 + 4 张辅助参考图）。`, "error");
+    return;
+  }
+  if (!isValidHttpUrl(genarrativeSettings.baseUrl) || !genarrativeSettings.apiKey) {
+    setImage2Status(node, "请先在设置中配置陶泥儿 API 地址和开发者 API Key。", "error");
+    openSettings("genarrative");
+    return;
+  }
+
+  node.generateButton.disabled = true;
+  node.abortController?.abort();
+  node.abortController = new AbortController();
+  const requestConfig = { ...genarrativeSettings };
+  const isEdit = sources.length > 0;
+  const endpoint = joinApiUrl(requestConfig.baseUrl, isEdit ? GENARRATIVE_EDIT_PATH : GENARRATIVE_GENERATE_PATH);
+  const idempotencyKey = createIdempotencyKey();
+  const requestBody = {
+    prompt,
+    model: "gpt-image-2",
+    aspectRatio: node.aspectRatio.value,
+    imageSize: node.resolution.value,
+  };
+
+  node.startedAt = performance.now();
+  node.elapsedMs = null;
+  node.callStatus = "准备中";
+  node.lastError = "";
+  node.progressLabel = isEdit ? "正在准备参考图" : "正在提交";
+  node.callDetails = {
+    configuration: { provider: "陶泥儿", node: node.spec.label, model: "gpt-image-2", base_url: requestConfig.baseUrl },
+    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
+    mode: isEdit ? "image-edit" : "text-to-image",
+    endpoint,
+    method: "POST",
+    headers: { Authorization: "Bearer ***", "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+    body: { ...requestBody },
+  };
+  node.hasRun = true;
+  node.detailsButton.textContent = "调用详情";
+  setImage2RunActions(node, { details: true });
+  setImage2Status(node, `${node.progressLabel} · 0 秒`);
+  node.timerId = window.setInterval(() => {
+    setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
+  }, 250);
+
+  try {
+    if (isEdit) {
+      const references = [];
+      for (let index = 0; index < sources.length; index += 1) {
+        node.progressLabel = `正在上传参考图 ${index + 1}/${sources.length}`;
+        references.push(await uploadGenarrativeReference(sources[index], index, requestConfig, node.abortController.signal));
+      }
+      node.progressLabel = "正在登记主参考图";
+      const mainSource = await registerGenarrativeMainSource(references[0], requestConfig, node.abortController.signal);
+      requestBody.sourceReferenceId = mainSource.resourceId;
+      requestBody.projectId = mainSource.projectId;
+      if (references.length > 1) requestBody.referenceImageSrcs = references.slice(1).map((reference) => reference.objectKey);
+      node.callDetails.body = {
+        ...requestBody,
+        sourceReferenceId: `<已登记 resourceId：${mainSource.resourceId}>`,
+        ...(references.length > 1 ? { referenceImageSrcs: references.slice(1).map((_, index) => `<辅助参考图 ${index + 2} objectKey>`) } : {}),
+      };
+    }
+
+    node.progressLabel = "正在提交任务";
+    node.callStatus = "提交中";
+    const submitOptions = {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${requestConfig.apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(requestBody),
+      signal: node.abortController.signal,
+    };
+    let submission;
+    try {
+      submission = await fetchImageApiJson(endpoint, submitOptions);
+    } catch (error) {
+      if (!(error instanceof TypeError)) throw error;
+      node.progressLabel = "连接中断，正在使用同一幂等键安全重试";
+      submission = await fetchImageApiJson(endpoint, submitOptions);
+      node.callDetails.network_retry = true;
+    }
+    node.callDetails.submit_response = submission;
+    node.callStatus = "查询中";
+    node.progressLabel = "任务已提交";
+    const completed = await pollGenarrativeTask(node, submission, requestConfig);
+    const results = await resolveGenarrativeResult(node, completed, requestConfig);
+
+    stopImage2Timer(node);
+    node.callStatus = "生成成功";
+    node.callDetails.response = completed;
+    const warnings = collectGenarrativeWarnings(completed);
+    node.callDetails.warnings = warnings;
+    setImage2Status(node, `${warnings.length ? `生成完成（${warnings.join("；")}）` : "生成完成"} · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
+    setImage2RunActions(node, { details: true });
+    if (nodes.has(node.id)) createImage2Results(node, results);
+  } catch (error) {
+    stopImage2Timer(node);
+    const failureMessage = error?.name === "AbortError"
+      ? "生成已停止。"
+      : error instanceof TypeError
+        ? "请求失败，请检查代理地址、网络或 CORS 设置。"
+        : error.message || String(error);
+    node.callStatus = "生成失败";
+    node.lastError = failureMessage;
+    node.callDetails = { ...node.callDetails, error: failureMessage };
+    setImage2Status(node, `生成失败 · ${formatGenerationElapsed(node.elapsedMs)}`, "error");
+    setImage2RunActions(node, { details: true, error: true });
+  } finally {
+    node.generateButton.disabled = false;
+    node.abortController = null;
+  }
+}
+
 function cloneImage2GenerationNode(node) {
   if (!isImage2GenerationNode(node)) return null;
   const inputSourceIds = Array.from(connections.values())
@@ -1273,9 +1775,13 @@ function cloneImage2GenerationNode(node) {
   clone.aspectRatio.value = node.aspectRatio.value;
   clone.count.value = node.count.value;
   if (clone.quality && node.quality) clone.quality.value = node.quality.value;
-  clone.asyncMode.value = node.asyncMode.value;
+  if (clone.asyncMode && node.asyncMode) clone.asyncMode.value = node.asyncMode.value;
   updateImage2NodeSize(clone);
   inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
+  if (clone.spec.provider === "genarrative" && Array.from(clone.aspectRatio.options).some((option) => option.value === node.aspectRatio.value)) {
+    clone.aspectRatio.value = node.aspectRatio.value;
+    updateImage2NodeSize(clone);
+  }
   selectNode(clone.id);
   return clone;
 }
@@ -1301,7 +1807,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
     body: document.createElement("div"),
   };
 
-  node.element.className = "canvas-node image2-node aicoming-image";
+  node.element.className = `canvas-node image2-node ${spec.nodeClass || "aicoming-image"}`;
   node.element.dataset.nodeId = id;
   node.element.style.left = `${node.x}px`;
   node.element.style.top = `${node.y}px`;
@@ -1357,6 +1863,11 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   const modelControl = `<select class="image2-model">${spec.modelOptions.map((option) => (
     `<option value="${option.value}"${option.value === spec.model ? " selected" : ""}>${option.label}</option>`
   )).join("")}</select>`;
+  const providerFields = spec.provider === "genarrative" ? `
+      <label class="image2-field">任务模式<input type="text" value="官方异步" disabled /></label>
+      <label class="image2-field">参考图上限<input type="text" value="5 张" disabled /></label>` : `
+      <label class="image2-field">质量<input class="image2-quality" type="text" value="high" disabled /></label>
+      <label class="image2-field">异步任务<select class="image2-async"><option value="true" selected>开启</option><option value="false">关闭</option></select></label>`;
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
     <textarea class="image2-prompt" placeholder="描述要生成的图片；连接文本节点后会在生成时同步文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
@@ -1366,8 +1877,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
       <label class="image2-field">图片比例<select class="image2-aspect">${ratioOptions}</select></label>
       <label class="image2-field">预计输出<input class="image2-final-size" type="text" disabled /></label>
       <label class="image2-field">图片数量<input class="image2-count" type="number" min="1" max="1" value="1" disabled /></label>
-      <label class="image2-field">质量<input class="image2-quality" type="text" value="high" disabled /></label>
-      <label class="image2-field">异步任务<select class="image2-async"><option value="true" selected>开启</option><option value="false">关闭</option></select></label>
+      ${providerFields}
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
@@ -1415,7 +1925,10 @@ function createImage2GenerationNode(type, { x, y } = {}) {
     event.stopPropagation();
     openGenerationDetails(node, true);
   });
-  node.generateButton.addEventListener("click", () => void generateWithAicoming(node));
+  node.generateButton.addEventListener("click", () => {
+    if (node.spec.provider === "genarrative") void generateWithGenarrative(node);
+    else void generateWithAicoming(node);
+  });
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
@@ -1492,7 +2005,10 @@ function isValidHttpUrl(value) {
 function openSettings(section = "aicoming") {
   aicomingBaseUrl.value = aicomingSettings.baseUrl;
   aicomingApiKey.value = aicomingSettings.apiKey;
+  genarrativeBaseUrl.value = genarrativeSettings.baseUrl;
+  genarrativeApiKey.value = genarrativeSettings.apiKey;
   settingsMessage.textContent = "";
+  genarrativeSettingsMessage.textContent = "";
   showSettingsSection(section);
   settingsDialog.showModal();
 }
@@ -1504,6 +2020,33 @@ function closeSettings() {
 function saveSettings() {
   const activeSection = settingsNavItems.find((item) => item.classList.contains("active"))?.dataset.settingsSection;
   if (activeSection === "image") {
+    closeSettings();
+    return;
+  }
+  if (activeSection === "genarrative") {
+    const baseUrl = cleanBaseUrl(genarrativeBaseUrl.value);
+    const apiKey = genarrativeApiKey.value.trim();
+    if (!isValidHttpUrl(baseUrl)) {
+      genarrativeSettingsMessage.textContent = "请输入有效的陶泥儿 API 或代理基础网址。";
+      genarrativeBaseUrl.focus();
+      return;
+    }
+    if (!apiKey) {
+      genarrativeSettingsMessage.textContent = "请输入陶泥儿开发者 API Key。";
+      genarrativeApiKey.focus();
+      return;
+    }
+    const projectId = apiKey === genarrativeSettings.apiKey && baseUrl === genarrativeSettings.baseUrl
+      ? genarrativeSettings.projectId
+      : "";
+    genarrativeSettings = { baseUrl, apiKey, projectId };
+    try {
+      persistGenarrativeSettings();
+    } catch {
+      genarrativeSettingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
+      return;
+    }
+    updateSettingsButtonState();
     closeSettings();
     return;
   }
@@ -1749,6 +2292,14 @@ createAicomingNodeButton.addEventListener("click", () => {
   hideContextMenu();
 });
 
+createGenarrativeNodeButton.addEventListener("click", () => {
+  createImage2GenerationNode("genarrative", {
+    x: contextCanvasPoint.x - NODE_WIDTH / 2,
+    y: contextCanvasPoint.y - NODE_HEIGHT / 2,
+  });
+  hideContextMenu();
+});
+
 zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
@@ -1763,6 +2314,10 @@ settingsNavItems.forEach((item) => {
 aicomingApiKeyClear.addEventListener("click", () => {
   aicomingApiKey.value = "";
   aicomingApiKey.focus();
+});
+genarrativeApiKeyClear.addEventListener("click", () => {
+  genarrativeApiKey.value = "";
+  genarrativeApiKey.focus();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -1821,3 +2376,4 @@ resetView();
 updateEmptyState();
 removeRetiredSettings();
 loadAicomingSettings();
+loadGenarrativeSettings();

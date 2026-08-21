@@ -904,6 +904,7 @@ kbd {
 .menu-icon.image2 { font-size: 11px; font-weight: 800; }
 .menu-icon.text { color: #8db5ff; background: rgba(141, 181, 255, 0.11); font-size: 16px; font-weight: 800; }
 .menu-icon.aicoming { color: #b8b3ff; background: rgba(139, 128, 255, 0.12); font-size: 11px; font-weight: 800; }
+.menu-icon.genarrative { color: #f1b38d; background: rgba(205, 116, 69, 0.14); font-size: 14px; font-weight: 800; }
 
 .context-menu button > span:nth-child(2) { display: grid; gap: 2px; }
 .context-menu button strong { font-size: 14px; }
@@ -1139,6 +1140,17 @@ kbd {
   border-color: rgba(139, 128, 255, 0.3);
   color: #b8b3ff;
   background: rgba(139, 128, 255, 0.1);
+}
+.settings-nav-icon.genarrative,
+.settings-service-icon.genarrative {
+  border-color: rgba(205, 116, 69, 0.34);
+  color: #f1b38d;
+  background: rgba(205, 116, 69, 0.11);
+}
+
+.canvas-node.genarrative-image .node-type-dot {
+  background: #e38b5e;
+  box-shadow: 0 0 12px rgba(227, 139, 94, 0.5);
 }
 .settings-nav-item > span:last-child { display: grid; gap: 3px; }
 .settings-nav-item strong { font-size: 13px; }
