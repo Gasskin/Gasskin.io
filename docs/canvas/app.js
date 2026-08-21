@@ -1461,7 +1461,7 @@ async function uploadGenarrativeReference(source, index, requestConfig, signal) 
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      legacyPrefix: "gasskin-editor-references",
+      legacyPrefix: "generated-character-drafts",
       pathSegments: ["editor", "external-editor-references"],
       fileName,
       contentType,
