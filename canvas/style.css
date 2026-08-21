@@ -656,6 +656,20 @@ kbd {
 }
 
 .image2-input-thumb:hover { border-color: rgba(216, 255, 87, 0.56); }
+.image2-input-thumb.main-source {
+  border-color: #ffbd57;
+  box-shadow:
+    0 0 0 2px rgba(255, 189, 87, 0.2),
+    0 0 18px rgba(255, 153, 52, 0.18);
+}
+
+.image2-input-thumb.main-source:hover {
+  border-color: #ffd48b;
+  box-shadow:
+    0 0 0 2px rgba(255, 212, 139, 0.28),
+    0 0 22px rgba(255, 153, 52, 0.24);
+}
+
 .image2-input-thumb img { width: 100%; height: 100%; object-fit: contain; }
 .image2-input-thumb > span {
   position: absolute;
@@ -671,6 +685,12 @@ kbd {
   background: rgba(8, 9, 11, 0.82);
   font-size: 9px;
   font-weight: 750;
+}
+
+.image2-input-thumb.main-source > span {
+  color: #1b1003;
+  background: linear-gradient(135deg, #ffd48b, #ffad35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.34);
 }
 
 .image2-input-empty {

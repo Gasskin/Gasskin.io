@@ -381,9 +381,11 @@ function getConnectedTextNodes(targetNode) {
     });
 }
 
-function describeImage2Inputs(imageSources, textSources) {
+function describeImage2Inputs(node, imageSources, textSources) {
   const imageSummary = imageSources.length
-    ? `已连接 ${imageSources.length} 张输入图片`
+    ? node.spec.provider === "genarrative"
+      ? `已连接 ${imageSources.length} 张输入图片（首张为主图）`
+      : `已连接 ${imageSources.length} 张输入图片`
     : "未连接图片";
   const textSummary = textSources.length
     ? `已连接 ${textSources.length} 个文本节点`
@@ -424,17 +426,25 @@ function refreshImage2Input(node) {
 
   if (sources.length) {
     sources.forEach((source, index) => {
+      const isMainSource = node.spec.provider === "genarrative" && index === 0;
       const thumbnail = document.createElement("button");
       thumbnail.type = "button";
-      thumbnail.className = "image2-input-thumb";
-      thumbnail.title = `点击预览：${source.name}`;
-      thumbnail.setAttribute("aria-label", `预览输入图片 ${index + 1}：${source.name}`);
+      thumbnail.className = `image2-input-thumb${isMainSource ? " main-source" : ""}`;
+      thumbnail.title = isMainSource
+        ? `主图（陶泥儿待编辑源素材）· 点击预览：${source.name}`
+        : `辅助参考图 ${index + 1} · 点击预览：${source.name}`;
+      thumbnail.setAttribute(
+        "aria-label",
+        isMainSource
+          ? `预览主图：${source.name}`
+          : `预览输入图片 ${index + 1}：${source.name}`,
+      );
       const image = document.createElement("img");
       image.src = source.objectUrl;
       image.alt = source.name;
       image.draggable = false;
       const number = document.createElement("span");
-      number.textContent = String(index + 1);
+      number.textContent = isMainSource ? "主图" : String(index + 1);
       thumbnail.append(image, number);
       thumbnail.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -450,7 +460,7 @@ function refreshImage2Input(node) {
     node.inputPreview.title = "未连接图片时使用文生图模式";
     node.inputPreview.appendChild(empty);
   }
-  if (!node.generateButton.disabled) setImage2Status(node, describeImage2Inputs(sources, textSources));
+  if (!node.generateButton.disabled) setImage2Status(node, describeImage2Inputs(node, sources, textSources));
   if (!node.hasRun) {
     node.detailsButton.textContent = "调用预览";
     setImage2RunActions(node, { details: sources.length > 0 });
