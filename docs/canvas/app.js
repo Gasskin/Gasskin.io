@@ -18,6 +18,7 @@ const IMAGE2_EDIT_PATH = "v1/images/edits/async";
 const IMAGE2_TASK_PATH = "v1/images/tasks";
 const IMAGE2_POLL_INTERVAL_MS = 2000;
 const DEFAULT_IMAGE2_SETTINGS = Object.freeze({
+  baseUrl: IMAGE2_API_BASE_URL,
   apiKey: "",
 });
 const IMAGE2_NODE_SPECS = Object.freeze({
@@ -58,6 +59,7 @@ const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
 const settingsNavItems = Array.from(document.querySelectorAll("[data-settings-section]"));
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
+const image2BaseUrl = document.getElementById("image2BaseUrl");
 const image2ApiKey = document.getElementById("image2ApiKey");
 const image2ApiKeyClear = document.getElementById("image2ApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
@@ -122,6 +124,7 @@ function loadImage2Settings() {
     if (stored) {
       const parsed = JSON.parse(stored);
       loaded = {
+        baseUrl: cleanBaseUrl(parsed?.baseUrl || IMAGE2_API_BASE_URL),
         apiKey: String(parsed?.apiKey || "").trim(),
       };
     }
@@ -888,11 +891,11 @@ function buildImage2CallPreview(node) {
       provider: "Image2",
       node: node.spec.label,
       model: node.model.value.trim(),
-      base_url: IMAGE2_API_BASE_URL,
+      base_url: image2Settings.baseUrl,
     },
     text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
     mode: isEdit ? "image-to-image" : "text-to-image",
-    endpoint: joinApiUrl(IMAGE2_API_BASE_URL, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH),
+    endpoint: joinApiUrl(image2Settings.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH),
     method: "POST",
     headers: {
       Authorization: "Bearer ***",
@@ -1010,7 +1013,7 @@ function extractImage2Results(payload) {
 }
 
 async function pollImage2Task(node, taskId, requestConfig) {
-  const queryEndpoint = joinApiUrl(IMAGE2_API_BASE_URL, `${IMAGE2_TASK_PATH}/${encodeURIComponent(taskId)}`);
+  const queryEndpoint = joinApiUrl(image2Settings.baseUrl, `${IMAGE2_TASK_PATH}/${encodeURIComponent(taskId)}`);
 
   while (true) {
     const payload = await fetchImageApiJson(queryEndpoint, {
@@ -1067,7 +1070,7 @@ async function generateWithImage2(node) {
 
   const requestConfig = { ...image2Settings };
   const isEdit = sources.length > 0;
-  const endpoint = joinApiUrl(IMAGE2_API_BASE_URL, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH);
+  const endpoint = joinApiUrl(image2Settings.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH);
   const requestFields = buildImage2RequestFields(node, prompt, isEdit);
   const visibleBody = { ...requestFields };
   if (isEdit) {
@@ -1085,7 +1088,7 @@ async function generateWithImage2(node) {
       provider: "Image2",
       node: node.spec.label,
       model: selectedModel,
-      base_url: IMAGE2_API_BASE_URL,
+      base_url: image2Settings.baseUrl,
     },
     text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
     mode: isEdit ? "image-to-image" : "text-to-image",
@@ -1387,6 +1390,7 @@ function showSettingsSection(section) {
 }
 
 function openSettings(section = "image2") {
+  image2BaseUrl.value = image2Settings.baseUrl;
   image2ApiKey.value = image2Settings.apiKey;
   settingsMessage.textContent = "";
   showSettingsSection(section);
@@ -1403,7 +1407,14 @@ function saveSettings() {
     closeSettings();
     return;
   }
+  const baseUrl = cleanBaseUrl(image2BaseUrl.value);
   const apiKey = image2ApiKey.value.trim();
+  if (!baseUrl) {
+    showSettingsSection("image2");
+    settingsMessage.textContent = "请输入 Image2 Base URL。";
+    image2BaseUrl.focus();
+    return;
+  }
   if (!apiKey) {
     showSettingsSection("image2");
     settingsMessage.textContent = "请输入 Image2 API Key。";
@@ -1412,14 +1423,14 @@ function saveSettings() {
   }
 
   try {
-    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, apiKey }));
+    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
   } catch {
     showSettingsSection("image2");
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
 
-  image2Settings = { apiKey };
+  image2Settings = { baseUrl, apiKey };
   updateSettingsButtonState();
   closeSettings();
 }
