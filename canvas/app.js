@@ -6,29 +6,18 @@ const CONNECTION_SNAP_RADIUS = 44;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 32;
 const ZOOM_STEP = 1.2;
-const MAX_IMAGE_EDGE = 3840;
-const MAX_IMAGE_PIXELS = 3840 * 2160;
-const IMAGE_SIZE_MULTIPLE = 16;
-const IMAGE_TIER_PIXELS = Object.freeze({
-  "1k": 1024 * 1024,
-  "2k": 2048 * 2048,
-  "4k": MAX_IMAGE_PIXELS,
+const IMAGE_TIER_LONG_EDGE = Object.freeze({
+  "1k": 1024,
+  "2k": 2560,
+  "4k": 3840,
 });
 const IMAGE2_SETTINGS_STORAGE_KEY = "canvas:image2-settings:v1";
-const RETIRED_SETTINGS_STORAGE_KEYS = Object.freeze([
-  "canvas:aicoming-settings:v1",
-  "canvas:genarrative-settings:v1",
-  "canvas:maolao-settings:v1",
-  "canvas:gpt-settings:v1",
-  "canvas:apimart-settings:v1",
-]);
+const IMAGE2_API_BASE_URL = "https://image.xiaoyiapi.xyz";
 const IMAGE2_GENERATE_PATH = "v1/images/generations/async";
 const IMAGE2_EDIT_PATH = "v1/images/edits/async";
 const IMAGE2_TASK_PATH = "v1/images/tasks";
 const IMAGE2_POLL_INTERVAL_MS = 2000;
-const IMAGE2_TASK_TIMEOUT_MS = 10 * 60 * 1000;
 const DEFAULT_IMAGE2_SETTINGS = Object.freeze({
-  baseUrl: "https://image.xiaoyiapi.xyz",
   apiKey: "",
 });
 const IMAGE2_NODE_SPECS = Object.freeze({
@@ -37,7 +26,7 @@ const IMAGE2_NODE_SPECS = Object.freeze({
     model: "gpt-image-2-vip",
     resolutions: ["1K", "2K", "4K"],
     ratios: ["1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
-    qualities: ["low", "medium", "high", "auto"],
+    qualities: ["low", "medium", "high"],
   }),
 });
 
@@ -69,7 +58,6 @@ const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
 const settingsNavItems = Array.from(document.querySelectorAll("[data-settings-section]"));
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
-const image2BaseUrl = document.getElementById("image2BaseUrl");
 const image2ApiKey = document.getElementById("image2ApiKey");
 const image2ApiKeyClear = document.getElementById("image2ApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
@@ -120,7 +108,7 @@ function isImage2GenerationNode(node) {
 }
 
 function updateSettingsButtonState() {
-  const configured = isValidHttpUrl(image2Settings.baseUrl) && Boolean(image2Settings.apiKey);
+  const configured = Boolean(image2Settings.apiKey);
   settingsButton.classList.toggle("configured", configured);
   settingsButton.title = configured
     ? "设置（Image2 已配置）"
@@ -134,7 +122,6 @@ function loadImage2Settings() {
     if (stored) {
       const parsed = JSON.parse(stored);
       loaded = {
-        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_IMAGE2_SETTINGS.baseUrl,
         apiKey: String(parsed?.apiKey || "").trim(),
       };
     }
@@ -143,14 +130,6 @@ function loadImage2Settings() {
   }
   image2Settings = loaded;
   updateSettingsButtonState();
-}
-
-function removeRetiredSettings() {
-  try {
-    RETIRED_SETTINGS_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key));
-  } catch {
-    // Ignore unavailable browser storage; retired settings are never read again.
-  }
 }
 
 function screenToCanvas(clientX, clientY) {
@@ -870,38 +849,12 @@ function getImage2Prompt(node, textSources) {
     : node.prompt.value.trim();
 }
 
-function roundImageDimension(value) {
-  return Math.max(IMAGE_SIZE_MULTIPLE, Math.round(value / IMAGE_SIZE_MULTIPLE) * IMAGE_SIZE_MULTIPLE);
-}
-
-function floorImageDimension(value) {
-  return Math.max(IMAGE_SIZE_MULTIPLE, Math.floor(value / IMAGE_SIZE_MULTIPLE) * IMAGE_SIZE_MULTIPLE);
-}
-
 function calculateImage2Size(tier, ratioValue) {
   const [ratioWidth, ratioHeight] = String(ratioValue).split(":").map(Number);
   const ratio = ratioWidth / ratioHeight || 1;
-  const targetPixels = IMAGE_TIER_PIXELS[String(tier).toLowerCase()] || IMAGE_TIER_PIXELS["1k"];
-  let width = Math.sqrt(targetPixels * ratio);
-  let height = width / ratio;
-
-  if (width > MAX_IMAGE_EDGE || height > MAX_IMAGE_EDGE) {
-    const scale = MAX_IMAGE_EDGE / Math.max(width, height);
-    width *= scale;
-    height *= scale;
-  }
-
-  width = roundImageDimension(width);
-  height = roundImageDimension(width / ratio);
-  if (width > MAX_IMAGE_EDGE || height > MAX_IMAGE_EDGE || width * height > MAX_IMAGE_PIXELS) {
-    const scale = Math.min(
-      MAX_IMAGE_EDGE / width,
-      MAX_IMAGE_EDGE / height,
-      Math.sqrt(MAX_IMAGE_PIXELS / (width * height)),
-    );
-    width = floorImageDimension(width * scale);
-    height = floorImageDimension(width / ratio);
-  }
+  const longEdge = IMAGE_TIER_LONG_EDGE[String(tier).toLowerCase()] || IMAGE_TIER_LONG_EDGE["1k"];
+  const width = ratio >= 1 ? longEdge : Math.round(longEdge * ratio);
+  const height = ratio >= 1 ? Math.round(longEdge / ratio) : longEdge;
   return `${width}x${height}`;
 }
 
@@ -909,23 +862,22 @@ function updateImage2OutputSize(node) {
   node.finalSize.value = calculateImage2Size(node.resolution.value, node.aspectRatio.value);
 }
 
-function buildImage2RequestFields(node, prompt) {
-  return {
+function buildImage2RequestFields(node, prompt, isEdit) {
+  const fields = {
     model: node.model.value.trim(),
     prompt,
     size: node.finalSize.value,
     quality: node.quality.value,
-    response_format: "b64_json",
-    output_format: "png",
-    moderation: "low",
   };
+  if (!isEdit) fields.response_format = "b64_json";
+  return fields;
 }
 
 function buildImage2CallPreview(node) {
   const sources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
   const isEdit = sources.length > 0;
-  const body = buildImage2RequestFields(node, getImage2Prompt(node, textSources));
+  const body = buildImage2RequestFields(node, getImage2Prompt(node, textSources), isEdit);
   if (isEdit) {
     const images = sources.map((source, index) => `@${source.file?.name || `input-${index + 1}.png`}`);
     body.image = images.length === 1 ? images[0] : images;
@@ -936,11 +888,11 @@ function buildImage2CallPreview(node) {
       provider: "Image2",
       node: node.spec.label,
       model: node.model.value.trim(),
-      base_url: image2Settings.baseUrl,
+      base_url: IMAGE2_API_BASE_URL,
     },
     text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
     mode: isEdit ? "image-to-image" : "text-to-image",
-    endpoint: joinApiUrl(image2Settings.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH),
+    endpoint: joinApiUrl(IMAGE2_API_BASE_URL, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH),
     method: "POST",
     headers: {
       Authorization: "Bearer ***",
@@ -1042,31 +994,25 @@ function extractImage2TaskId(payload) {
 }
 
 function extractImage2Results(payload) {
-  const images = Array.isArray(payload?.result?.data)
-    ? payload.result.data
-    : Array.isArray(payload?.data)
-      ? payload.data
-      : [];
+  const images = Array.isArray(payload?.result?.data) ? payload.result.data : [];
   return images.flatMap((image, index) => {
-    const src = image?.url || (image?.b64_json ? `data:image/png;base64,${image.b64_json}` : "");
+    const src = image?.b64_json ? `data:image/png;base64,${image.b64_json}` : "";
     if (!src) return [];
     return [{
       src,
       name: `Image2 生成图片 ${index + 1}`,
       responseDetails: {
         index: index + 1,
-        url: image?.url || null,
-        output_format: image?.url ? "url" : "b64_json",
+        response_format: "b64_json",
       },
     }];
   });
 }
 
 async function pollImage2Task(node, taskId, requestConfig) {
-  const queryEndpoint = joinApiUrl(requestConfig.baseUrl, `${IMAGE2_TASK_PATH}/${encodeURIComponent(taskId)}`);
-  const deadline = Date.now() + IMAGE2_TASK_TIMEOUT_MS;
+  const queryEndpoint = joinApiUrl(IMAGE2_API_BASE_URL, `${IMAGE2_TASK_PATH}/${encodeURIComponent(taskId)}`);
 
-  while (Date.now() < deadline) {
+  while (true) {
     const payload = await fetchImageApiJson(queryEndpoint, {
       method: "GET",
       headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
@@ -1082,7 +1028,6 @@ async function pollImage2Task(node, taskId, requestConfig) {
     }
     await waitForImage2Poll(node.abortController.signal);
   }
-  throw new Error("Image2 任务查询超时（10 分钟）。");
 }
 
 async function imageSourceToBlob(source, signal) {
@@ -1110,8 +1055,8 @@ async function generateWithImage2(node) {
     node.model.focus();
     return;
   }
-  if (!isValidHttpUrl(image2Settings.baseUrl) || !image2Settings.apiKey) {
-    setImage2Status(node, "请先在设置中配置 Image2 API 地址和 API Key。", "error");
+  if (!image2Settings.apiKey) {
+    setImage2Status(node, "请先在设置中配置 Image2 API Key。", "error");
     openSettings("image2");
     return;
   }
@@ -1122,8 +1067,8 @@ async function generateWithImage2(node) {
 
   const requestConfig = { ...image2Settings };
   const isEdit = sources.length > 0;
-  const endpoint = joinApiUrl(requestConfig.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH);
-  const requestFields = buildImage2RequestFields(node, prompt);
+  const endpoint = joinApiUrl(IMAGE2_API_BASE_URL, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH);
+  const requestFields = buildImage2RequestFields(node, prompt, isEdit);
   const visibleBody = { ...requestFields };
   if (isEdit) {
     const images = sources.map((source, index) => `@${source.file?.name || `input-${index + 1}.png`}`);
@@ -1140,7 +1085,7 @@ async function generateWithImage2(node) {
       provider: "Image2",
       node: node.spec.label,
       model: selectedModel,
-      base_url: requestConfig.baseUrl,
+      base_url: IMAGE2_API_BASE_URL,
     },
     text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
     mode: isEdit ? "image-to-image" : "text-to-image",
@@ -1334,8 +1279,6 @@ function createImage2GenerationNode(type, { x, y } = {}) {
       <label class="image2-field">图片比例<select class="image2-aspect">${ratioOptions}</select></label>
       <label class="image2-field">输出尺寸<input class="image2-final-size" type="text" disabled /></label>
       <label class="image2-field">质量<select class="image2-quality">${qualityOptions}</select></label>
-      <label class="image2-field">任务模式<input type="text" value="异步" disabled /></label>
-      <label class="image2-field">输入图片<input type="text" value="支持多张" disabled /></label>
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
@@ -1443,17 +1386,7 @@ function showSettingsSection(section) {
   });
 }
 
-function isValidHttpUrl(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
-
 function openSettings(section = "image2") {
-  image2BaseUrl.value = image2Settings.baseUrl;
   image2ApiKey.value = image2Settings.apiKey;
   settingsMessage.textContent = "";
   showSettingsSection(section);
@@ -1470,14 +1403,7 @@ function saveSettings() {
     closeSettings();
     return;
   }
-  const baseUrl = cleanBaseUrl(image2BaseUrl.value);
   const apiKey = image2ApiKey.value.trim();
-  if (!isValidHttpUrl(baseUrl)) {
-    showSettingsSection("image2");
-    settingsMessage.textContent = "请输入有效的 Image2 API 基础网址。";
-    image2BaseUrl.focus();
-    return;
-  }
   if (!apiKey) {
     showSettingsSection("image2");
     settingsMessage.textContent = "请输入 Image2 API Key。";
@@ -1486,14 +1412,14 @@ function saveSettings() {
   }
 
   try {
-    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
+    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, apiKey }));
   } catch {
     showSettingsSection("image2");
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
 
-  image2Settings = { baseUrl, apiKey };
+  image2Settings = { apiKey };
   updateSettingsButtonState();
   closeSettings();
 }
@@ -1781,5 +1707,4 @@ window.addEventListener("beforeunload", () => {
 
 resetView();
 updateEmptyState();
-removeRetiredSettings();
 loadImage2Settings();
