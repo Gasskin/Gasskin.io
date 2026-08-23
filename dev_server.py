@@ -17,8 +17,6 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 ARK_ORIGIN = "https://ark.cn-beijing.volces.com"
-GENARRATIVE_ORIGIN = "https://www.genarrative.world"
-GENARRATIVE_OSS_ORIGIN = "https://genarrative-release.oss-cn-beijing.aliyuncs.com"
 ROOT = Path(__file__).resolve().parent
 DOCS = ROOT / "docs"
 HOST = "127.0.0.1"
@@ -73,7 +71,7 @@ class DevHandler(SimpleHTTPRequestHandler):
 
     @staticmethod
     def _is_proxy_path(path):
-        return path.startswith("/api/v3") or path.startswith("/api/genarrative")
+        return path.startswith("/api/v3")
 
     def _serve_html(self, filepath, head=False, inject_api=False):
         raw = filepath.read_text(encoding="utf-8")
@@ -81,7 +79,6 @@ class DevHandler(SimpleHTTPRequestHandler):
             snippet = (
                 "<script>"
                 "window.__SEEDANCE_API_BASE__=location.origin+\"/api/v3\";"
-                "window.__GENARRATIVE_API_BASE__=location.origin+\"/api/genarrative\";"
                 "</script>\n"
             )
             if "</head>" in raw:
@@ -110,13 +107,7 @@ class DevHandler(SimpleHTTPRequestHandler):
 
     def _proxy(self, head=False):
         path = self.path.split("?", 1)[0]
-        if path == "/api/genarrative/oss-upload":
-            url = GENARRATIVE_OSS_ORIGIN + "/"
-        elif path.startswith("/api/genarrative"):
-            suffix = self.path[len("/api/genarrative"):]
-            url = f"{GENARRATIVE_ORIGIN}/api/external/v1{suffix}"
-        else:
-            url = f"{ARK_ORIGIN}{self.path}"
+        url = f"{ARK_ORIGIN}{self.path}"
         data = None
         if self.command == "POST" and not head:
             length = int(self.headers.get("Content-Length", 0))
@@ -166,8 +157,6 @@ def main() -> None:
     httpd.allow_reuse_address = True
     print(f"Serving {DOCS} at http://{HOST}:{PORT}/")
     print("API 代理: /api/v3 ->", ARK_ORIGIN + "/api/v3")
-    print("陶泥儿代理: /api/genarrative ->", GENARRATIVE_ORIGIN + "/api/external/v1")
-    print("陶泥儿 OSS 上传代理: /api/genarrative/oss-upload ->", GENARRATIVE_OSS_ORIGIN + "/")
     print("按 Ctrl+C 结束")
     httpd.serve_forever()
 

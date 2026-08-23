@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>画布</title>
-  <link rel="stylesheet" href="style.css?v=20260821-genarrative-4" />
+  <link rel="stylesheet" href="style.css?v=20260824-image2-1" />
 </head>
 <body>
   <main class="workspace" aria-label="画布工作区">
@@ -76,13 +76,9 @@
         <span class="menu-icon text" aria-hidden="true">T</span>
         <span><strong>文本节点</strong></span>
       </button>
-      <button id="createAicomingNodeButton" type="button" role="menuitem">
-        <span class="menu-icon aicoming" aria-hidden="true">AI</span>
-        <span><strong>AIComing</strong></span>
-      </button>
-      <button id="createGenarrativeNodeButton" type="button" role="menuitem">
-        <span class="menu-icon genarrative" aria-hidden="true">陶</span>
-        <span><strong>陶泥儿</strong></span>
+      <button id="createImage2NodeButton" type="button" role="menuitem">
+        <span class="menu-icon image2" aria-hidden="true">I2</span>
+        <span><strong>Image2</strong></span>
       </button>
       <div class="menu-coming-soon">更多节点即将加入</div>
     </div>
@@ -113,13 +109,9 @@
             <span class="settings-nav-icon image" aria-hidden="true">▧</span>
             <span><strong>图片节点</strong><small>Image Node</small></span>
           </button>
-          <button class="settings-nav-item active" type="button" data-settings-section="aicoming" aria-controls="aicomingSettingsPanel" aria-current="page">
-            <span class="settings-nav-icon aicoming" aria-hidden="true">AI</span>
-            <span><strong>AIComing</strong><small>服务配置</small></span>
-          </button>
-          <button class="settings-nav-item" type="button" data-settings-section="genarrative" aria-controls="genarrativeSettingsPanel">
-            <span class="settings-nav-icon genarrative" aria-hidden="true">陶</span>
-            <span><strong>陶泥儿</strong><small>外部编辑器 API</small></span>
+          <button class="settings-nav-item active" type="button" data-settings-section="image2" aria-controls="image2SettingsPanel" aria-current="page">
+            <span class="settings-nav-icon image2" aria-hidden="true">I2</span>
+            <span><strong>Image2</strong><small>服务配置</small></span>
           </button>
         </nav>
 
@@ -136,70 +128,37 @@
           </div>
         </section>
 
-        <section id="aicomingSettingsPanel" class="settings-panel" data-settings-panel="aicoming" aria-labelledby="aicomingSettingsTitle">
+        <section id="image2SettingsPanel" class="settings-panel" data-settings-panel="image2" aria-labelledby="image2SettingsTitle">
           <div class="settings-panel-head">
             <p>Provider settings</p>
-            <h3 id="aicomingSettingsTitle">AIComing</h3>
-            <span>为 AIComing 图片生成节点配置接口地址与 API Key。</span>
+            <h3 id="image2SettingsTitle">Image2</h3>
+            <span>配置 Xiaoyi Image2 异步图片生成服务。</span>
           </div>
-          <section class="settings-service-card" aria-labelledby="aicomingImageSettingsTitle">
+          <section class="settings-service-card" aria-labelledby="image2ServiceSettingsTitle">
             <header class="settings-service-head">
-              <span class="settings-service-icon aicoming" aria-hidden="true">AI</span>
+              <span class="settings-service-icon image2" aria-hidden="true">I2</span>
               <span class="settings-service-copy">
-                <strong id="aicomingImageSettingsTitle">图片生成设置</strong>
-                <small>文生图与图生图统一使用 images/generations</small>
+                <strong id="image2ServiceSettingsTitle">异步图片 API</strong>
+                <small>文生图、图生图分别提交，统一查询任务状态</small>
               </span>
             </header>
             <div class="settings-fields">
               <label class="settings-field">
                 <span>API Key</span>
                 <span class="settings-token-field">
-                  <input id="aicomingApiKey" type="password" autocomplete="off" placeholder="输入 AIComing API Key" />
-                  <button id="aicomingApiKeyClear" type="button">清除</button>
+                  <input id="image2ApiKey" type="password" autocomplete="off" placeholder="输入 XIAOYI_API_KEY" />
+                  <button id="image2ApiKeyClear" type="button">清除</button>
                 </span>
                 <small>仅保存在当前浏览器的 localStorage 中，不会随工作流导出。</small>
               </label>
               <label class="settings-field">
                 <span>API 基础网址</span>
-                <input id="aicomingBaseUrl" type="url" placeholder="https://api.aicoming.top" />
-                <small>提交使用 <code>/v1/images/generations</code>，异步查询使用 <code>/v1/images/generations/{id}</code>。</small>
+                <input id="image2BaseUrl" type="url" placeholder="https://image.xiaoyiapi.xyz" />
+                <small>提交使用 <code>/v1/images/generations/async</code> 或 <code>/v1/images/edits/async</code>，查询使用 <code>/v1/images/tasks/{taskId}</code>。</small>
               </label>
             </div>
           </section>
           <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
-        </section>
-
-        <section id="genarrativeSettingsPanel" class="settings-panel" data-settings-panel="genarrative" aria-labelledby="genarrativeSettingsTitle" hidden>
-          <div class="settings-panel-head">
-            <p>Provider settings</p>
-            <h3 id="genarrativeSettingsTitle">陶泥儿</h3>
-            <span>配置陶泥儿外部编辑器 API。节点使用官方支持的 Image2 生图与修图参数。</span>
-          </div>
-          <section class="settings-service-card" aria-labelledby="genarrativeImageSettingsTitle">
-            <header class="settings-service-head">
-              <span class="settings-service-icon genarrative" aria-hidden="true">陶</span>
-              <span class="settings-service-copy">
-                <strong id="genarrativeImageSettingsTitle">Image2 设置</strong>
-                <small>本地参考图会先上传并登记，再提交异步任务</small>
-              </span>
-            </header>
-            <div class="settings-fields">
-              <label class="settings-field">
-                <span>开发者 API Key</span>
-                <span class="settings-token-field">
-                  <input id="genarrativeApiKey" type="password" autocomplete="off" placeholder="tnr_sk_..." />
-                  <button id="genarrativeApiKeyClear" type="button">清除</button>
-                </span>
-                <small>仅保存在当前浏览器的 localStorage 中，不会写入项目文件或随 Git 上传。</small>
-              </label>
-              <label class="settings-field">
-                <span>API 或代理基础网址</span>
-                <input id="genarrativeBaseUrl" type="url" placeholder="https://www.genarrative.world/api/external/v1" />
-                <small>本地开发服务器会自动使用同源代理；静态部署需要陶泥儿开放 CORS 或填写可用的同源代理地址。</small>
-              </label>
-            </div>
-          </section>
-          <p id="genarrativeSettingsMessage" class="settings-message" role="status" aria-live="polite"></p>
         </section>
 
       </div>
@@ -232,6 +191,6 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=20260821-genarrative-4"></script>
+  <script src="app.js?v=20260824-image2-1"></script>
 </body>
 </html>

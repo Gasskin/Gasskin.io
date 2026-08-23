@@ -9,66 +9,35 @@ const ZOOM_STEP = 1.2;
 const MAX_IMAGE_EDGE = 3840;
 const MAX_IMAGE_PIXELS = 3840 * 2160;
 const IMAGE_SIZE_MULTIPLE = 16;
-const IMAGE_TIER_PIXELS = {
-  "0.5k": 512 * 512,
+const IMAGE_TIER_PIXELS = Object.freeze({
   "1k": 1024 * 1024,
   "2k": 2048 * 2048,
   "4k": MAX_IMAGE_PIXELS,
-};
-const AICOMING_SETTINGS_STORAGE_KEY = "canvas:aicoming-settings:v1";
-const GENARRATIVE_SETTINGS_STORAGE_KEY = "canvas:genarrative-settings:v1";
+});
+const IMAGE2_SETTINGS_STORAGE_KEY = "canvas:image2-settings:v1";
 const RETIRED_SETTINGS_STORAGE_KEYS = Object.freeze([
+  "canvas:aicoming-settings:v1",
+  "canvas:genarrative-settings:v1",
   "canvas:maolao-settings:v1",
   "canvas:gpt-settings:v1",
   "canvas:apimart-settings:v1",
 ]);
-const AICOMING_GENERATE_PATH = "v1/images/generations";
-const AICOMING_POLL_INTERVAL_MS = 2000;
-const AICOMING_TASK_TIMEOUT_MS = 10 * 60 * 1000;
-const GENARRATIVE_GENERATE_PATH = "editor/images/generations";
-const GENARRATIVE_EDIT_PATH = "editor/images/edits";
-const GENARRATIVE_TASK_PATH = "generations";
-const GENARRATIVE_UPLOAD_TICKET_PATH = "assets/direct-upload-tickets";
-const GENARRATIVE_CONFIRM_OBJECT_PATH = "assets/objects/confirm";
-const GENARRATIVE_READ_URL_PATH = "assets/read-url";
-const GENARRATIVE_PROJECTS_PATH = "editor/projects";
-const GENARRATIVE_TASK_TIMEOUT_MS = 30 * 60 * 1000;
-const DEFAULT_AICOMING_SETTINGS = Object.freeze({
-  baseUrl: "https://api.aicoming.top",
+const IMAGE2_GENERATE_PATH = "v1/images/generations/async";
+const IMAGE2_EDIT_PATH = "v1/images/edits/async";
+const IMAGE2_TASK_PATH = "v1/images/tasks";
+const IMAGE2_POLL_INTERVAL_MS = 2000;
+const IMAGE2_TASK_TIMEOUT_MS = 10 * 60 * 1000;
+const DEFAULT_IMAGE2_SETTINGS = Object.freeze({
+  baseUrl: "https://image.xiaoyiapi.xyz",
   apiKey: "",
-});
-const DEFAULT_GENARRATIVE_SETTINGS = Object.freeze({
-  baseUrl: cleanBaseUrl(globalThis.__GENARRATIVE_API_BASE__ || "https://www.genarrative.world/api/external/v1"),
-  apiKey: "",
-  projectId: "",
 });
 const IMAGE2_NODE_SPECS = Object.freeze({
-  aicoming: Object.freeze({
-    label: "AIComing",
-    provider: "aicoming",
-    model: "gpt-image-2",
-    modelOptions: Object.freeze([
-      Object.freeze({ value: "gpt-image-2", label: "gpt-image-2" }),
-      Object.freeze({ value: "gpt-image-2-official", label: "gpt-image-2-official" }),
-    ]),
-    maxCount: 1,
-    maxReferenceImages: 16,
-    resolutions: ["1k", "2k", "4k"],
-    ratios: ["auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
-  }),
-  genarrative: Object.freeze({
-    label: "陶泥儿",
-    provider: "genarrative",
-    model: "gpt-image-2",
-    modelOptions: Object.freeze([
-      Object.freeze({ value: "gpt-image-2", label: "gpt-image-2" }),
-    ]),
-    maxCount: 1,
-    maxReferenceImages: 5,
-    resolutions: ["1K", "2K"],
-    ratios: ["1:1", "2:3", "3:2", "9:16", "16:9"],
-    editRatios: ["1:1", "4:3", "3:2", "2:3", "9:16", "16:9"],
-    nodeClass: "genarrative-image",
+  image2: Object.freeze({
+    label: "Image2",
+    model: "gpt-image-2-vip",
+    resolutions: ["1K", "2K", "4K"],
+    ratios: ["1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
+    qualities: ["low", "medium", "high", "auto"],
   }),
 });
 
@@ -83,8 +52,7 @@ const selectionMarquee = document.getElementById("selectionMarquee");
 const contextMenu = document.getElementById("contextMenu");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
 const createTextNodeButton = document.getElementById("createTextNodeButton");
-const createAicomingNodeButton = document.getElementById("createAicomingNodeButton");
-const createGenarrativeNodeButton = document.getElementById("createGenarrativeNodeButton");
+const createImage2NodeButton = document.getElementById("createImage2NodeButton");
 const fitButton = document.getElementById("fitButton");
 const settingsButton = document.getElementById("settingsButton");
 const zoomOutButton = document.getElementById("zoomOutButton");
@@ -101,14 +69,10 @@ const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
 const settingsNavItems = Array.from(document.querySelectorAll("[data-settings-section]"));
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
-const aicomingBaseUrl = document.getElementById("aicomingBaseUrl");
-const aicomingApiKey = document.getElementById("aicomingApiKey");
-const aicomingApiKeyClear = document.getElementById("aicomingApiKeyClear");
+const image2BaseUrl = document.getElementById("image2BaseUrl");
+const image2ApiKey = document.getElementById("image2ApiKey");
+const image2ApiKeyClear = document.getElementById("image2ApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
-const genarrativeBaseUrl = document.getElementById("genarrativeBaseUrl");
-const genarrativeApiKey = document.getElementById("genarrativeApiKey");
-const genarrativeApiKeyClear = document.getElementById("genarrativeApiKeyClear");
-const genarrativeSettingsMessage = document.getElementById("genarrativeSettingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsProvider = document.getElementById("generationDetailsProvider");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
@@ -130,10 +94,8 @@ let selectedNodeId = null;
 const selectedNodeIds = new Set();
 let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
-let contextScreenPoint = { x: 0, y: 0 };
 let dragDepth = 0;
-let aicomingSettings = { ...DEFAULT_AICOMING_SETTINGS };
-let genarrativeSettings = { ...DEFAULT_GENARRATIVE_SETTINGS };
+let image2Settings = { ...DEFAULT_IMAGE2_SETTINGS };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -153,69 +115,34 @@ function joinApiUrl(baseUrl, path) {
   return `${base}/${joinedPath}`;
 }
 
-function createIdempotencyKey() {
-  const uuid = globalThis.crypto?.randomUUID?.();
-  return `canvas-${uuid || `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
-}
-
 function isImage2GenerationNode(node) {
   return Boolean(IMAGE2_NODE_SPECS[node?.type]);
 }
 
 function updateSettingsButtonState() {
-  const aicomingConfigured = isValidHttpUrl(aicomingSettings.baseUrl) && Boolean(aicomingSettings.apiKey);
-  const genarrativeConfigured = isValidHttpUrl(genarrativeSettings.baseUrl) && Boolean(genarrativeSettings.apiKey);
-  const configuredProviders = [aicomingConfigured ? "AIComing" : "", genarrativeConfigured ? "陶泥儿" : ""].filter(Boolean);
-  settingsButton.classList.toggle("configured", configuredProviders.length > 0);
-  settingsButton.title = configuredProviders.length
-    ? `设置（已配置：${configuredProviders.join("、")}）`
+  const configured = isValidHttpUrl(image2Settings.baseUrl) && Boolean(image2Settings.apiKey);
+  settingsButton.classList.toggle("configured", configured);
+  settingsButton.title = configured
+    ? "设置（Image2 已配置）"
     : "设置（图片生成 API 尚未配置）";
 }
 
-function loadAicomingSettings() {
-  let loaded = { ...DEFAULT_AICOMING_SETTINGS };
+function loadImage2Settings() {
+  let loaded = { ...DEFAULT_IMAGE2_SETTINGS };
   try {
-    const stored = window.localStorage.getItem(AICOMING_SETTINGS_STORAGE_KEY);
+    const stored = window.localStorage.getItem(IMAGE2_SETTINGS_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
       loaded = {
-        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_AICOMING_SETTINGS.baseUrl,
+        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_IMAGE2_SETTINGS.baseUrl,
         apiKey: String(parsed?.apiKey || "").trim(),
       };
     }
   } catch {
     // Ignore malformed or unavailable browser storage and keep the defaults.
   }
-  aicomingSettings = loaded;
+  image2Settings = loaded;
   updateSettingsButtonState();
-}
-
-function loadGenarrativeSettings() {
-  let loaded = { ...DEFAULT_GENARRATIVE_SETTINGS };
-  try {
-    const stored = window.localStorage.getItem(GENARRATIVE_SETTINGS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      loaded = {
-        baseUrl: cleanBaseUrl(parsed?.baseUrl) || DEFAULT_GENARRATIVE_SETTINGS.baseUrl,
-        apiKey: String(parsed?.apiKey || "").trim(),
-        projectId: String(parsed?.projectId || "").trim(),
-      };
-    }
-  } catch {
-    // Ignore malformed or unavailable browser storage and keep the defaults.
-  }
-  genarrativeSettings = loaded;
-  updateSettingsButtonState();
-}
-
-function persistGenarrativeSettings() {
-  window.localStorage.setItem(GENARRATIVE_SETTINGS_STORAGE_KEY, JSON.stringify({
-    version: 1,
-    baseUrl: genarrativeSettings.baseUrl,
-    apiKey: genarrativeSettings.apiKey,
-    projectId: genarrativeSettings.projectId,
-  }));
 }
 
 function removeRetiredSettings() {
@@ -383,9 +310,7 @@ function getConnectedTextNodes(targetNode) {
 
 function describeImage2Inputs(node, imageSources, textSources) {
   const imageSummary = imageSources.length
-    ? node.spec.provider === "genarrative"
-      ? `已连接 ${imageSources.length} 张输入图片（首张为主图）`
-      : `已连接 ${imageSources.length} 张输入图片`
+    ? `已连接 ${imageSources.length} 张输入图片`
     : "未连接图片";
   const textSummary = textSources.length
     ? `已连接 ${textSources.length} 个文本节点`
@@ -419,32 +344,26 @@ function refreshImage2Input(node) {
   const textSources = getConnectedTextNodes(node);
   node.inputSourceIds = sources.map((source) => source.id);
   node.textInputSourceIds = textSources.map((source) => source.id);
-  updateGenarrativeRatioOptions(node, sources.length > 0);
   syncImage2PromptFromTextNodes(node, textSources);
   node.inputPreview.replaceChildren();
   node.inputPreview.classList.toggle("has-image", sources.length > 0);
 
   if (sources.length) {
     sources.forEach((source, index) => {
-      const isMainSource = node.spec.provider === "genarrative" && index === 0;
       const thumbnail = document.createElement("button");
       thumbnail.type = "button";
-      thumbnail.className = `image2-input-thumb${isMainSource ? " main-source" : ""}`;
-      thumbnail.title = isMainSource
-        ? `主图（陶泥儿待编辑源素材）· 点击预览：${source.name}`
-        : `辅助参考图 ${index + 1} · 点击预览：${source.name}`;
+      thumbnail.className = "image2-input-thumb";
+      thumbnail.title = `图生图输入 · 点击预览：${source.name}`;
       thumbnail.setAttribute(
         "aria-label",
-        isMainSource
-          ? `预览主图：${source.name}`
-          : `预览输入图片 ${index + 1}：${source.name}`,
+        `预览输入图片 ${index + 1}：${source.name}`,
       );
       const image = document.createElement("img");
       image.src = source.objectUrl;
       image.alt = source.name;
       image.draggable = false;
       const number = document.createElement("span");
-      number.textContent = isMainSource ? "主图" : String(index + 1);
+      number.textContent = String(index + 1);
       thumbnail.append(image, number);
       thumbnail.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -463,7 +382,7 @@ function refreshImage2Input(node) {
   if (!node.generateButton.disabled) setImage2Status(node, describeImage2Inputs(node, sources, textSources));
   if (!node.hasRun) {
     node.detailsButton.textContent = "调用预览";
-    setImage2RunActions(node, { details: sources.length > 0 });
+    setImage2RunActions(node, { details: true });
   }
 }
 
@@ -639,14 +558,13 @@ function openPreview(node) {
   openPreviewSource(node.objectUrl, node.name);
 }
 
-function setNodeImageSource(node, { src, name, file = null, revokeOnRemove = false, genarrative = null }) {
+function setNodeImageSource(node, { src, name, file = null, revokeOnRemove = false }) {
   if (!src) return;
   if (node.objectUrl && node.revokeObjectUrl) URL.revokeObjectURL(node.objectUrl);
 
   node.file = file;
   node.objectUrl = src;
   node.revokeObjectUrl = revokeOnRemove;
-  node.genarrative = genarrative;
   node.name = name || file?.name || "未命名图片";
   node.title.textContent = node.name;
   node.body.replaceChildren();
@@ -748,7 +666,6 @@ function createImageNode({ x, y, file = null, source = null, openPicker = false 
     file: null,
     objectUrl: null,
     revokeObjectUrl: false,
-    genarrative: null,
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
@@ -912,6 +829,47 @@ function createTextNode({ x, y, text = "" } = {}) {
   return node;
 }
 
+function setImage2Status(node, message, state = "") {
+  node.status.textContent = message;
+  node.status.title = message;
+  node.status.className = `image2-status${state ? ` ${state}` : ""}`;
+}
+
+function formatGenerationElapsed(milliseconds) {
+  return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
+}
+
+function quoteShellArgument(value) {
+  return `'${String(value).replace(/'/g, `'"'"'`)}'`;
+}
+
+function buildGenerationCurl(callDetails) {
+  if (!callDetails?.endpoint) return "暂无调用信息";
+  const method = String(callDetails.method || "POST").toUpperCase();
+  const parts = [
+    `curl -X ${method} ${quoteShellArgument(callDetails.endpoint)}`,
+    `  -H ${quoteShellArgument("Authorization: Bearer ***")}`,
+  ];
+
+  if (callDetails.multipart) {
+    Object.entries(callDetails.body || {}).forEach(([key, value]) => {
+      const values = Array.isArray(value) ? value : [value];
+      values.forEach((entry) => parts.push(`  -F ${quoteShellArgument(`${key}=${entry}`)}`));
+    });
+  } else {
+    parts.push(`  -H ${quoteShellArgument("Content-Type: application/json")}`);
+    parts.push(`  --data-raw ${quoteShellArgument(JSON.stringify(callDetails.body || {}, null, 2))}`);
+  }
+
+  return parts.join(" \\\n");
+}
+
+function getImage2Prompt(node, textSources) {
+  return textSources.length
+    ? textSources.map((source) => source.textInput.value.trim()).filter(Boolean).join("\n\n")
+    : node.prompt.value.trim();
+}
+
 function roundImageDimension(value) {
   return Math.max(IMAGE_SIZE_MULTIPLE, Math.round(value / IMAGE_SIZE_MULTIPLE) * IMAGE_SIZE_MULTIPLE);
 }
@@ -921,7 +879,6 @@ function floorImageDimension(value) {
 }
 
 function calculateImage2Size(tier, ratioValue) {
-  if (ratioValue === "auto") return "服务端自动选择";
   const [ratioWidth, ratioHeight] = String(ratioValue).split(":").map(Number);
   const ratio = ratioWidth / ratioHeight || 1;
   const targetPixels = IMAGE_TIER_PIXELS[String(tier).toLowerCase()] || IMAGE_TIER_PIXELS["1k"];
@@ -948,118 +905,55 @@ function calculateImage2Size(tier, ratioValue) {
   return `${width}x${height}`;
 }
 
-function setImage2Status(node, message, state = "") {
-  node.status.textContent = message;
-  node.status.title = message;
-  node.status.className = `image2-status${state ? ` ${state}` : ""}`;
-}
-
-function updateImage2NodeSize(node) {
-  if (node.spec.provider === "genarrative") {
-    node.finalSize.value = `${node.resolution.value} · ${node.aspectRatio.value}`;
-    return;
-  }
+function updateImage2OutputSize(node) {
   node.finalSize.value = calculateImage2Size(node.resolution.value, node.aspectRatio.value);
 }
 
-function updateGenarrativeRatioOptions(node, hasImageSources) {
-  if (node.spec.provider !== "genarrative") return;
-  const ratios = hasImageSources ? node.spec.editRatios : node.spec.ratios;
-  const previous = node.aspectRatio.value;
-  node.aspectRatio.replaceChildren(...ratios.map((ratio) => {
-    const option = document.createElement("option");
-    option.value = ratio;
-    option.textContent = ratio;
-    return option;
-  }));
-  node.aspectRatio.value = ratios.includes(previous) ? previous : (ratios.includes("16:9") ? "16:9" : ratios[0]);
-  updateImage2NodeSize(node);
+function buildImage2RequestFields(node, prompt) {
+  return {
+    model: node.model.value.trim(),
+    prompt,
+    size: node.finalSize.value,
+    quality: node.quality.value,
+    response_format: "b64_json",
+    output_format: "png",
+    moderation: "low",
+  };
 }
 
-function formatGenerationElapsed(milliseconds) {
-  return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
-}
-
-function quoteShellArgument(value) {
-  return `'${String(value).replace(/'/g, `'"'"'`)}'`;
-}
-
-function buildGenerationCurl(callDetails) {
-  if (!callDetails?.endpoint) return "暂无调用信息";
-  const method = String(callDetails.method || "POST").toUpperCase();
-  const parts = [
-    `curl -X ${method} ${quoteShellArgument(callDetails.endpoint)}`,
-    `  -H ${quoteShellArgument("Authorization: Bearer ***")}`,
-  ];
-  const idempotencyKey = callDetails.headers?.["Idempotency-Key"];
-  if (idempotencyKey) parts.push(`  -H ${quoteShellArgument(`Idempotency-Key: ${idempotencyKey}`)}`);
-
-  if (callDetails.multipart) {
-    Object.entries(callDetails.body || {}).forEach(([key, value]) => {
-      const values = Array.isArray(value) ? value : [value];
-      values.forEach((entry) => parts.push(`  -F ${quoteShellArgument(`${key}=${entry}`)}`));
-    });
-  } else {
-    parts.push(`  -H ${quoteShellArgument("Content-Type: application/json")}`);
-    parts.push(`  --data-raw ${quoteShellArgument(JSON.stringify(callDetails.body || {}, null, 2))}`);
-  }
-
-  return parts.join(" \\\n");
-}
-
-function buildAicomingCallPreview(node) {
+function buildImage2CallPreview(node) {
   const sources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
-  const linkedPromptParts = textSources
-    .map((source) => source.textInput.value.trim())
-    .filter(Boolean);
-  const prompt = textSources.length
-    ? linkedPromptParts.join("\n\n")
-    : node.prompt.value.trim();
-  const outputSize = node.finalSize.value === "服务端自动选择"
-    ? calculateImage2Size(node.resolution.value, "1:1")
-    : node.finalSize.value;
-  const body = {
-    model: node.model.value,
-    prompt,
-    size: outputSize,
-    quality: "high",
-    n: 1,
-  };
-  if (node.asyncMode.value === "true") body.async = true;
-  if (sources.length) {
-    const imageDetails = sources.map((source, index) => (
-      source.file || String(source.objectUrl || "").startsWith("blob:")
-        ? `[参考图 ${index + 1}：base64 data URI]`
-        : source.objectUrl
-    ));
-    body.image = imageDetails.length === 1 ? imageDetails[0] : imageDetails;
+  const isEdit = sources.length > 0;
+  const body = buildImage2RequestFields(node, getImage2Prompt(node, textSources));
+  if (isEdit) {
+    const images = sources.map((source, index) => `@${source.file?.name || `input-${index + 1}.png`}`);
+    body.image = images.length === 1 ? images[0] : images;
   }
+
   return {
     configuration: {
-      provider: "AIComing",
+      provider: "Image2",
       node: node.spec.label,
-      model: node.model.value,
-      base_url: aicomingSettings.baseUrl,
+      model: node.model.value.trim(),
+      base_url: image2Settings.baseUrl,
     },
     text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
-    mode: sources.length ? "image-to-image" : "text-to-image",
-    endpoint: joinApiUrl(aicomingSettings.baseUrl, AICOMING_GENERATE_PATH),
+    mode: isEdit ? "image-to-image" : "text-to-image",
+    endpoint: joinApiUrl(image2Settings.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH),
     method: "POST",
     headers: {
       Authorization: "Bearer ***",
-      "Content-Type": "application/json",
-      "Idempotency-Key": "<生成时自动创建>",
+      ...(isEdit ? {} : { "Content-Type": "application/json" }),
     },
     body,
+    multipart: isEdit,
   };
 }
 
 function openGenerationDetails(node, errorOnly = false, { preview = false } = {}) {
-  const callDetails = preview
-    ? node.spec.provider === "genarrative" ? buildGenarrativeCallPreview(node) : buildAicomingCallPreview(node)
-    : node.callDetails;
-  generationDetailsProvider.textContent = `${node.spec?.label || "Image"} image generation`;
+  const callDetails = preview ? buildImage2CallPreview(node) : node.callDetails;
+  generationDetailsProvider.textContent = "Image2 image generation";
   generationDetailsTitle.textContent = errorOnly ? "错误信息" : preview ? "调用预览" : "生成详情";
   generationDetailsCodeLabel.textContent = errorOnly ? "错误内容" : "cURL";
   generationDetailsSummary.hidden = !errorOnly;
@@ -1097,26 +991,16 @@ function createImage2Results(node, results) {
       y: node.y + row * (NODE_HEIGHT + 70),
       source: {
         src: result.src,
-        name: `生成图片 ${index + 1}`,
-        file: result.file || null,
-        revokeOnRemove: Boolean(result.revokeOnRemove),
-        genarrative: result.genarrative || null,
+        name: result.name || `Image2 生成图片 ${index + 1}`,
+        file: null,
+        revokeOnRemove: false,
       },
     });
     connectNodes(node.id, imageNode.id);
   });
 }
 
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => resolve(String(reader.result || "")), { once: true });
-    reader.addEventListener("error", () => reject(reader.error || new Error(`无法读取图片：${file.name}`)), { once: true });
-    reader.readAsDataURL(file);
-  });
-}
-
-async function waitForAicomingPoll(signal) {
+async function waitForImage2Poll(signal) {
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
   await new Promise((resolve, reject) => {
     const onAbort = () => {
@@ -1126,7 +1010,7 @@ async function waitForAicomingPoll(signal) {
     const timer = window.setTimeout(() => {
       signal.removeEventListener("abort", onAbort);
       resolve();
-    }, AICOMING_POLL_INTERVAL_MS);
+    }, IMAGE2_POLL_INTERVAL_MS);
     signal.addEventListener("abort", onAbort, { once: true });
   });
 }
@@ -1145,14 +1029,30 @@ async function fetchImageApiJson(url, options) {
   return payload;
 }
 
-function extractAicomingResults(payload) {
-  const images = Array.isArray(payload?.data) ? payload.data : [];
+function extractImage2TaskId(payload) {
+  return String(
+    payload?.task_id
+    || payload?.taskId
+    || payload?.id
+    || payload?.data?.task_id
+    || payload?.data?.taskId
+    || payload?.data?.id
+    || "",
+  ).trim();
+}
+
+function extractImage2Results(payload) {
+  const images = Array.isArray(payload?.result?.data)
+    ? payload.result.data
+    : Array.isArray(payload?.data)
+      ? payload.data
+      : [];
   return images.flatMap((image, index) => {
     const src = image?.url || (image?.b64_json ? `data:image/png;base64,${image.b64_json}` : "");
     if (!src) return [];
     return [{
       src,
-      name: `AIComing 生成图片 ${index + 1}`,
+      name: `Image2 生成图片 ${index + 1}`,
       responseDetails: {
         index: index + 1,
         url: image?.url || null,
@@ -1162,541 +1062,96 @@ function extractAicomingResults(payload) {
   });
 }
 
-async function pollAicomingTask(node, taskId, requestConfig) {
-  const queryEndpoint = `${joinApiUrl(requestConfig.baseUrl, AICOMING_GENERATE_PATH)}/${encodeURIComponent(taskId)}`;
-  const deadline = Date.now() + AICOMING_TASK_TIMEOUT_MS;
+async function pollImage2Task(node, taskId, requestConfig) {
+  const queryEndpoint = joinApiUrl(requestConfig.baseUrl, `${IMAGE2_TASK_PATH}/${encodeURIComponent(taskId)}`);
+  const deadline = Date.now() + IMAGE2_TASK_TIMEOUT_MS;
+
   while (Date.now() < deadline) {
-    await waitForAicomingPoll(node.abortController.signal);
     const payload = await fetchImageApiJson(queryEndpoint, {
       method: "GET",
       headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
       signal: node.abortController.signal,
     });
-    const status = String(payload?.status || "unknown");
-    const progressValue = Number(payload?.progress);
-    const progress = Number.isFinite(progressValue) ? ` ${progressValue}%` : "";
-    node.progressLabel = status === "processing" ? `处理中${progress}` : `任务 ${status}${progress}`;
-    node.callDetails.task = {
-      id: taskId,
-      status,
-      progress: payload?.progress ?? null,
-      query_endpoint: queryEndpoint,
-    };
+    const status = String(payload?.status || "unknown").toLowerCase();
+    node.progressLabel = status === "running" ? "生成中" : `任务 ${status}`;
+    node.callDetails.task = { id: taskId, status, query_endpoint: queryEndpoint };
 
-    if (status === "completed") return { payload, results: extractAicomingResults(payload) };
+    if (status === "success") return { payload, results: extractImage2Results(payload) };
     if (status === "failed") {
-      throw new Error(payload?.error?.message || payload?.error || "AIComing 图片生成任务失败。");
+      throw new Error(payload?.error?.message || payload?.error || "Image2 图片生成任务失败。");
     }
+    await waitForImage2Poll(node.abortController.signal);
   }
-  throw new Error("AIComing 任务查询超时（10 分钟）。");
+  throw new Error("Image2 任务查询超时（10 分钟）。");
 }
 
-async function generateWithAicoming(node) {
-  const sources = getConnectedImageNodes(node);
-  const textSources = getConnectedTextNodes(node);
-  const linkedPromptParts = textSources
-    .map((source) => source.textInput.value.trim())
-    .filter(Boolean);
-  const prompt = textSources.length
-    ? linkedPromptParts.join("\n\n")
-    : node.prompt.value.trim();
-  const count = Math.max(1, Math.min(node.spec.maxCount, Number.parseInt(node.count.value, 10) || 1));
-  const selectedModel = node.model.value;
-
-  if (!prompt) {
-    setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
-    const emptyTextSource = textSources.find((source) => !source.textInput.value.trim());
-    (emptyTextSource?.textInput || node.prompt).focus();
-    return;
-  }
-  if (sources.length > node.spec.maxReferenceImages) {
-    setImage2Status(node, `${node.spec.label} 最多支持 ${node.spec.maxReferenceImages} 张参考图。`, "error");
-    return;
-  }
-  if (!isValidHttpUrl(aicomingSettings.baseUrl) || !aicomingSettings.apiKey) {
-    setImage2Status(node, "请先在设置中配置 AIComing API 地址和 API Key。", "error");
-    openSettings("aicoming");
-    return;
-  }
-
-  node.count.value = String(count);
-  node.generateButton.disabled = true;
-  node.abortController?.abort();
-  node.abortController = new AbortController();
-
-  const requestConfig = { ...aicomingSettings };
-  const endpoint = joinApiUrl(requestConfig.baseUrl, AICOMING_GENERATE_PATH);
-  const idempotencyKey = createIdempotencyKey();
-  const useAsync = node.asyncMode.value === "true";
-  const outputSize = node.finalSize.value === "服务端自动选择"
-    ? calculateImage2Size(node.resolution.value, "1:1")
-    : node.finalSize.value;
-  const requestBody = {
-    model: selectedModel,
-    prompt,
-    size: outputSize,
-    quality: "high",
-    n: 1,
-  };
-  if (useAsync) requestBody.async = true;
-  node.startedAt = performance.now();
-  node.elapsedMs = null;
-  node.callStatus = "提交中";
-  node.lastError = "";
-  node.progressLabel = "提交中";
-  node.callDetails = {
-    configuration: {
-      provider: "AIComing",
-      node: node.spec.label,
-      model: selectedModel,
-      base_url: requestConfig.baseUrl,
-    },
-    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
-    mode: sources.length ? "image-to-image" : "text-to-image",
-    endpoint,
-    method: "POST",
-    headers: {
-      Authorization: "Bearer ***",
-      "Content-Type": "application/json",
-      "Idempotency-Key": idempotencyKey,
-    },
-    body: { ...requestBody },
-  };
-  node.hasRun = true;
-  node.detailsButton.textContent = "调用详情";
-  setImage2RunActions(node, { details: true });
-  setImage2Status(node, "提交中 · 0 秒");
-  node.timerId = window.setInterval(() => {
-    setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
-  }, 250);
-
-  try {
-    if (sources.length) {
-      node.progressLabel = "正在读取参考图";
-      const images = await Promise.all(sources.map((source) => (
-        source.file ? fileToDataUrl(source.file) : source.objectUrl
-      )));
-      requestBody.image = images.length === 1 ? images[0] : images;
-      const imageDetails = images.map((url, index) => (
-        url.startsWith("data:") ? `[参考图 ${index + 1}：base64 data URI]` : url
-      ));
-      node.callDetails.body.image = images.length === 1 ? imageDetails[0] : imageDetails;
-    }
-    const submitOptions = {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${requestConfig.apiKey}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotencyKey,
-      },
-      body: JSON.stringify(requestBody),
-      signal: node.abortController.signal,
-    };
-    let submitPayload;
-    try {
-      submitPayload = await fetchImageApiJson(endpoint, submitOptions);
-    } catch (error) {
-      if (!(error instanceof TypeError)) throw error;
-      node.progressLabel = "连接中断，正在安全重试";
-      submitPayload = await fetchImageApiJson(endpoint, submitOptions);
-      node.callDetails.network_retry = true;
-    }
-    let resultPayload = submitPayload;
-    let results;
-    if (useAsync) {
-      const taskId = submitPayload?.id;
-      if (!taskId) throw new Error("AIComing 异步接口未返回任务 id。");
-      node.callDetails.submit_response = submitPayload;
-      node.progressLabel = "任务已提交";
-      node.callStatus = "查询中";
-      const polled = await pollAicomingTask(node, taskId, requestConfig);
-      resultPayload = polled.payload;
-      results = polled.results;
-    } else {
-      results = extractAicomingResults(submitPayload);
-    }
-    if (!results.length) throw new Error("AIComing 接口返回成功，但没有找到生成图片。");
-
-    stopImage2Timer(node);
-    node.callStatus = "生成成功";
-    node.callDetails = {
-      ...node.callDetails,
-      response: {
-        id: resultPayload?.id || null,
-        status: resultPayload?.status || (useAsync ? null : "completed"),
-        created: resultPayload?.created || null,
-        completed: resultPayload?.completed || null,
-        image_count: results.length,
-        images: results.map((result) => result.responseDetails),
-      },
-    };
-    setImage2Status(node, `生成完成 · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
-    setImage2RunActions(node, { details: true });
-    if (nodes.has(node.id)) createImage2Results(node, results);
-  } catch (error) {
-    stopImage2Timer(node);
-    let failureMessage;
-    if (error?.name === "AbortError") {
-      failureMessage = "生成已停止。";
-    } else if (error instanceof TypeError) {
-      failureMessage = "请求失败，请检查网络、网址或 CORS 设置。";
-    } else {
-      failureMessage = error.message || String(error);
-    }
-    node.callStatus = "生成失败";
-    node.lastError = failureMessage;
-    node.callDetails = { ...node.callDetails, error: failureMessage };
-    setImage2Status(node, `生成失败 · ${formatGenerationElapsed(node.elapsedMs)}`, "error");
-    setImage2RunActions(node, { details: true, error: true });
-  } finally {
-    node.generateButton.disabled = false;
-    node.abortController = null;
-  }
-}
-
-function buildGenarrativeCallPreview(node) {
-  const sources = getConnectedImageNodes(node);
-  const textSources = getConnectedTextNodes(node);
-  const prompt = textSources.length
-    ? textSources.map((source) => source.textInput.value.trim()).filter(Boolean).join("\n\n")
-    : node.prompt.value.trim();
-  const isEdit = sources.length > 0;
-  const body = {
-    prompt,
-    model: "gpt-image-2",
-    aspectRatio: node.aspectRatio.value,
-    imageSize: node.resolution.value,
-  };
-  if (isEdit) {
-    body.sourceReferenceId = "<首张参考图上传并登记后的 resourceId>";
-    if (sources.length > 1) {
-      body.referenceImageSrcs = sources.slice(1).map((_, index) => `<辅助参考图 ${index + 2} 的 objectKey>`);
-    }
-  }
-  return {
-    configuration: {
-      provider: "陶泥儿",
-      node: node.spec.label,
-      model: "gpt-image-2",
-      base_url: genarrativeSettings.baseUrl,
-    },
-    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
-    mode: isEdit ? "image-edit" : "text-to-image",
-    endpoint: joinApiUrl(genarrativeSettings.baseUrl, isEdit ? GENARRATIVE_EDIT_PATH : GENARRATIVE_GENERATE_PATH),
-    method: "POST",
-    headers: {
-      Authorization: "Bearer ***",
-      "Content-Type": "application/json",
-      "Idempotency-Key": "<生成时自动创建>",
-    },
-    body,
-  };
-}
-
-async function waitForGenarrativePoll(signal, delayMs) {
-  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-  await new Promise((resolve, reject) => {
-    const onAbort = () => {
-      window.clearTimeout(timer);
-      reject(new DOMException("Aborted", "AbortError"));
-    };
-    const timer = window.setTimeout(() => {
-      signal.removeEventListener("abort", onAbort);
-      resolve();
-    }, Math.max(250, Math.min(10000, Number(delayMs) || 1500)));
-    signal.addEventListener("abort", onAbort, { once: true });
-  });
-}
-
-function imageMimeExtension(mimeType) {
-  if (mimeType === "image/jpeg") return "jpg";
-  if (mimeType === "image/webp") return "webp";
-  if (mimeType === "image/gif") return "gif";
-  return "png";
-}
-
-function resolveGenarrativeUploadEndpoint(baseUrl, directUploadHost) {
-  try {
-    const proxyUrl = new URL(baseUrl);
-    const normalizedPath = proxyUrl.pathname.replace(/\/+$/, "");
-    if (normalizedPath.endsWith("/api/genarrative")) {
-      return joinApiUrl(baseUrl, "oss-upload");
-    }
-  } catch {
-    // The settings validator reports malformed base URLs before generation.
-  }
-  return directUploadHost;
-}
-
-async function getGenarrativeSourceBlob(source, index, signal) {
-  if (source.file instanceof Blob) return source.file;
+async function imageSourceToBlob(source, signal) {
+  if (source.file) return source.file;
   const response = await fetch(source.objectUrl, { signal });
-  if (!response.ok) throw new Error(`无法读取参考图 ${index + 1}：${response.status} ${response.statusText}`);
+  if (!response.ok) throw new Error(`无法读取输入图片：${response.status} ${response.statusText}`);
   const blob = await response.blob();
-  if (blob.type && !blob.type.startsWith("image/")) throw new Error(`参考图 ${index + 1} 不是有效图片。`);
+  if (!blob.type.startsWith("image/")) throw new Error("输入素材不是有效图片。");
   return blob;
 }
 
-async function getGenarrativeSourceDimensions(source, blob) {
-  const image = source.body?.querySelector("img");
-  if (image?.naturalWidth && image?.naturalHeight) {
-    return { width: image.naturalWidth, height: image.naturalHeight };
-  }
-  if (globalThis.createImageBitmap) {
-    const bitmap = await createImageBitmap(blob);
-    const dimensions = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-    return dimensions;
-  }
-  throw new Error(`无法读取参考图尺寸：${source.name}`);
-}
-
-async function uploadGenarrativeReference(source, index, requestConfig, signal) {
-  if (source.genarrative?.objectKey) {
-    const image = source.body?.querySelector("img");
-    return {
-      objectKey: source.genarrative.objectKey,
-      assetObjectId: source.genarrative.assetObjectId || null,
-      legacyPublicPath: source.genarrative.imageSrc || source.genarrative.objectKey,
-      width: source.genarrative.width || image?.naturalWidth || 1,
-      height: source.genarrative.height || image?.naturalHeight || 1,
-    };
-  }
-
-  const blob = await getGenarrativeSourceBlob(source, index, signal);
-  const dimensions = await getGenarrativeSourceDimensions(source, blob);
-  const contentType = blob.type || "image/png";
-  const fileName = source.file?.name || `gasskin-reference-${index + 1}.${imageMimeExtension(contentType)}`;
-  const ticketPayload = await fetchImageApiJson(joinApiUrl(requestConfig.baseUrl, GENARRATIVE_UPLOAD_TICKET_PATH), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${requestConfig.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      legacyPrefix: "generated-character-drafts",
-      pathSegments: ["editor", "external-editor-references"],
-      fileName,
-      contentType,
-      access: "private",
-      maxSizeBytes: blob.size,
-      successActionStatus: 204,
-    }),
-    signal,
-  });
-  const upload = ticketPayload?.upload || ticketPayload?.data?.upload;
-  if (!upload?.host || !upload?.objectKey || !upload?.formFields) throw new Error("陶泥儿未返回完整的参考图上传凭证。");
-
-  const formData = new FormData();
-  Object.entries(upload.formFields).forEach(([key, value]) => {
-    if (value != null) formData.append(key, String(value));
-  });
-  formData.append("file", blob, fileName);
-  const uploadEndpoint = resolveGenarrativeUploadEndpoint(requestConfig.baseUrl, upload.host);
-  const uploadResponse = await fetch(uploadEndpoint, { method: "POST", body: formData, signal });
-  if (!uploadResponse.ok) throw new Error(`参考图 ${index + 1} 上传失败：${uploadResponse.status} ${uploadResponse.statusText}`);
-
-  const confirmation = await fetchImageApiJson(joinApiUrl(requestConfig.baseUrl, GENARRATIVE_CONFIRM_OBJECT_PATH), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${requestConfig.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      objectKey: upload.objectKey,
-      contentType,
-      contentLength: blob.size,
-      assetKind: "editor_reference_image",
-      accessPolicy: "private",
-    }),
-    signal,
-  });
-  const assetObject = confirmation?.assetObject || confirmation?.data?.assetObject;
-  return {
-    objectKey: assetObject?.objectKey || upload.objectKey,
-    assetObjectId: assetObject?.assetObjectId || null,
-    legacyPublicPath: upload.legacyPublicPath || upload.objectKey,
-    width: dimensions.width,
-    height: dimensions.height,
-  };
-}
-
-async function ensureGenarrativeProject(requestConfig, signal, { forceNew = false } = {}) {
-  if (!forceNew && genarrativeSettings.projectId) return genarrativeSettings.projectId;
-  const payload = await fetchImageApiJson(joinApiUrl(requestConfig.baseUrl, GENARRATIVE_PROJECTS_PATH), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${requestConfig.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ title: "Gasskin Canvas" }),
-    signal,
-  });
-  const projectId = payload?.project?.projectId || payload?.data?.project?.projectId;
-  if (!projectId) throw new Error("陶泥儿创建项目后未返回 projectId。");
-  genarrativeSettings = { ...genarrativeSettings, projectId };
-  try { persistGenarrativeSettings(); } catch { /* Project reuse is an optimization; generation can continue. */ }
-  return projectId;
-}
-
-async function registerGenarrativeMainSource(reference, requestConfig, signal) {
-  let projectId = await ensureGenarrativeProject(requestConfig, signal);
-  const createResource = async () => fetchImageApiJson(
-    joinApiUrl(requestConfig.baseUrl, `editor/projects/${encodeURIComponent(projectId)}/resources`),
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${requestConfig.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        imageSrc: reference.legacyPublicPath || reference.objectKey,
-        objectKey: reference.objectKey,
-        assetObjectId: reference.assetObjectId,
-        width: reference.width,
-        height: reference.height,
-        sourceType: "external-upload",
-      }),
-      signal,
-    },
-  );
-  let payload;
-  try {
-    payload = await createResource();
-  } catch (error) {
-    if (error.status !== 404) throw error;
-    projectId = await ensureGenarrativeProject(requestConfig, signal, { forceNew: true });
-    payload = await createResource();
-  }
-  const resourceId = payload?.resource?.resourceId || payload?.data?.resource?.resourceId;
-  if (!resourceId) throw new Error("陶泥儿登记主参考图后未返回 resourceId。");
-  return { projectId, resourceId };
-}
-
-function findGenarrativeArtifact(result) {
-  const candidates = [
-    result,
-    result?.resource,
-    result?.asset,
-    result?.spritesheetResource,
-    result?.spritesheetAsset,
-  ].filter(Boolean);
-  const withObjectKey = candidates.find((candidate) => candidate?.objectKey);
-  if (!withObjectKey) return null;
-  return {
-    objectKey: withObjectKey.objectKey,
-    assetObjectId: withObjectKey.assetObjectId || result?.assetObjectId || null,
-    resourceId: result?.resourceId || result?.resource?.resourceId || null,
-    assetId: result?.assetId || result?.asset?.assetId || null,
-    imageSrc: withObjectKey.imageSrc || withObjectKey.objectKey,
-    width: withObjectKey.width || result?.width || null,
-    height: withObjectKey.height || result?.height || null,
-  };
-}
-
-function collectGenarrativeWarnings(payload) {
-  return [
-    payload?.warning,
-    payload?.result?.warning?.message || payload?.result?.warning,
-    payload?.result?.sliceWarning?.message || payload?.result?.sliceWarning,
-  ]
-    .filter((warning) => typeof warning === "string" && warning.trim())
-    .map((warning) => warning.trim())
-    .filter((warning, index, warnings) => warnings.indexOf(warning) === index);
-}
-
-async function resolveGenarrativeResult(node, payload, requestConfig) {
-  const artifact = findGenarrativeArtifact(payload?.result);
-  if (!artifact?.objectKey) throw new Error("陶泥儿任务已完成，但没有返回图片 objectKey。");
-  const readEndpoint = `${joinApiUrl(requestConfig.baseUrl, GENARRATIVE_READ_URL_PATH)}?objectKey=${encodeURIComponent(artifact.objectKey)}`;
-  const readPayload = await fetchImageApiJson(readEndpoint, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
-    signal: node.abortController.signal,
-  });
-  const signedUrl = readPayload?.read?.signedUrl || readPayload?.data?.read?.signedUrl;
-  if (!signedUrl) throw new Error("陶泥儿未返回图片的临时读取地址。");
-  return [{
-    src: signedUrl,
-    name: "陶泥儿生成图片",
-    genarrative: artifact,
-    responseDetails: artifact,
-  }];
-}
-
-async function pollGenarrativeTask(node, submission, requestConfig) {
-  const operationId = submission?.operationId || submission?.data?.operationId;
-  if (!operationId) throw new Error("陶泥儿提交成功但未返回 operationId。");
-  const queryEndpoint = joinApiUrl(requestConfig.baseUrl, `${GENARRATIVE_TASK_PATH}/${encodeURIComponent(operationId)}`);
-  const deadline = Date.now() + GENARRATIVE_TASK_TIMEOUT_MS;
-  let delayMs = submission?.pollAfterMs || submission?.data?.pollAfterMs || 1500;
-  while (Date.now() < deadline) {
-    await waitForGenarrativePoll(node.abortController.signal, delayMs);
-    const payload = await fetchImageApiJson(queryEndpoint, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
-      signal: node.abortController.signal,
-    });
-    const status = String(payload?.status || "unknown");
-    const progress = Number(payload?.progress);
-    const phase = payload?.phaseLabel || payload?.phaseDetail || status;
-    node.progressLabel = `${phase}${Number.isFinite(progress) ? ` ${progress}%` : ""}`;
-    node.callDetails.task = { operation_id: operationId, status, progress: payload?.progress ?? null, query_endpoint: queryEndpoint };
-    if (status === "completed") return payload;
-    if (status === "failed") throw new Error(payload?.error || "陶泥儿图片任务失败。");
-    delayMs = payload?.pollAfterMs || delayMs;
-  }
-  throw new Error("陶泥儿任务查询超时（30 分钟）；operationId 已保留在调用详情中，可稍后继续查询。");
-}
-
-async function generateWithGenarrative(node) {
+async function generateWithImage2(node) {
   const sources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
-  const prompt = textSources.length
-    ? textSources.map((source) => source.textInput.value.trim()).filter(Boolean).join("\n\n")
-    : node.prompt.value.trim();
+  const prompt = getImage2Prompt(node, textSources);
+  const selectedModel = node.model.value.trim();
+
   if (!prompt) {
     setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
     (textSources.find((source) => !source.textInput.value.trim())?.textInput || node.prompt).focus();
     return;
   }
-  if (sources.length > node.spec.maxReferenceImages) {
-    setImage2Status(node, `陶泥儿 Image2 最多连接 ${node.spec.maxReferenceImages} 张图片（1 张主图 + 4 张辅助参考图）。`, "error");
+  if (!selectedModel) {
+    setImage2Status(node, "请填写模型名称。", "error");
+    node.model.focus();
     return;
   }
-  if (!isValidHttpUrl(genarrativeSettings.baseUrl) || !genarrativeSettings.apiKey) {
-    setImage2Status(node, "请先在设置中配置陶泥儿 API 地址和开发者 API Key。", "error");
-    openSettings("genarrative");
+  if (!isValidHttpUrl(image2Settings.baseUrl) || !image2Settings.apiKey) {
+    setImage2Status(node, "请先在设置中配置 Image2 API 地址和 API Key。", "error");
+    openSettings("image2");
     return;
   }
 
   node.generateButton.disabled = true;
   node.abortController?.abort();
   node.abortController = new AbortController();
-  const requestConfig = { ...genarrativeSettings };
+
+  const requestConfig = { ...image2Settings };
   const isEdit = sources.length > 0;
-  const endpoint = joinApiUrl(requestConfig.baseUrl, isEdit ? GENARRATIVE_EDIT_PATH : GENARRATIVE_GENERATE_PATH);
-  const idempotencyKey = createIdempotencyKey();
-  const requestBody = {
-    prompt,
-    model: "gpt-image-2",
-    aspectRatio: node.aspectRatio.value,
-    imageSize: node.resolution.value,
-  };
+  const endpoint = joinApiUrl(requestConfig.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH);
+  const requestFields = buildImage2RequestFields(node, prompt);
+  const visibleBody = { ...requestFields };
+  if (isEdit) {
+    const images = sources.map((source, index) => `@${source.file?.name || `input-${index + 1}.png`}`);
+    visibleBody.image = images.length === 1 ? images[0] : images;
+  }
 
   node.startedAt = performance.now();
   node.elapsedMs = null;
-  node.callStatus = "准备中";
+  node.callStatus = "提交中";
   node.lastError = "";
-  node.progressLabel = isEdit ? "正在准备参考图" : "正在提交";
+  node.progressLabel = isEdit ? "正在读取输入图片" : "正在提交";
   node.callDetails = {
-    configuration: { provider: "陶泥儿", node: node.spec.label, model: "gpt-image-2", base_url: requestConfig.baseUrl },
+    configuration: {
+      provider: "Image2",
+      node: node.spec.label,
+      model: selectedModel,
+      base_url: requestConfig.baseUrl,
+    },
     text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
-    mode: isEdit ? "image-edit" : "text-to-image",
+    mode: isEdit ? "image-to-image" : "text-to-image",
     endpoint,
     method: "POST",
-    headers: { Authorization: "Bearer ***", "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
-    body: { ...requestBody },
+    headers: {
+      Authorization: "Bearer ***",
+      ...(isEdit ? {} : { "Content-Type": "application/json" }),
+    },
+    body: visibleBody,
+    multipart: isEdit,
   };
   node.hasRun = true;
   node.detailsButton.textContent = "调用详情";
@@ -1707,57 +1162,47 @@ async function generateWithGenarrative(node) {
   }, 250);
 
   try {
+    const headers = { Authorization: `Bearer ${requestConfig.apiKey}` };
+    let body;
     if (isEdit) {
-      const references = [];
+      const form = new FormData();
+      Object.entries(requestFields).forEach(([key, value]) => form.append(key, value));
       for (let index = 0; index < sources.length; index += 1) {
-        node.progressLabel = `正在上传参考图 ${index + 1}/${sources.length}`;
-        references.push(await uploadGenarrativeReference(sources[index], index, requestConfig, node.abortController.signal));
+        node.progressLabel = `正在读取输入图片 ${index + 1}/${sources.length}`;
+        const imageBlob = await imageSourceToBlob(sources[index], node.abortController.signal);
+        form.append("image", imageBlob, sources[index].file?.name || `input-${index + 1}.png`);
       }
-      node.progressLabel = "正在登记主参考图";
-      const mainSource = await registerGenarrativeMainSource(references[0], requestConfig, node.abortController.signal);
-      requestBody.sourceReferenceId = mainSource.resourceId;
-      requestBody.projectId = mainSource.projectId;
-      if (references.length > 1) requestBody.referenceImageSrcs = references.slice(1).map((reference) => reference.objectKey);
-      node.callDetails.body = {
-        ...requestBody,
-        sourceReferenceId: `<已登记 resourceId：${mainSource.resourceId}>`,
-        ...(references.length > 1 ? { referenceImageSrcs: references.slice(1).map((_, index) => `<辅助参考图 ${index + 2} objectKey>`) } : {}),
-      };
+      body = form;
+    } else {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify(requestFields);
     }
 
     node.progressLabel = "正在提交任务";
-    node.callStatus = "提交中";
-    const submitOptions = {
+    const submitPayload = await fetchImageApiJson(endpoint, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${requestConfig.apiKey}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": idempotencyKey,
-      },
-      body: JSON.stringify(requestBody),
+      headers,
+      body,
       signal: node.abortController.signal,
-    };
-    let submission;
-    try {
-      submission = await fetchImageApiJson(endpoint, submitOptions);
-    } catch (error) {
-      if (!(error instanceof TypeError)) throw error;
-      node.progressLabel = "连接中断，正在使用同一幂等键安全重试";
-      submission = await fetchImageApiJson(endpoint, submitOptions);
-      node.callDetails.network_retry = true;
-    }
-    node.callDetails.submit_response = submission;
+    });
+    const taskId = extractImage2TaskId(submitPayload);
+    if (!taskId) throw new Error("Image2 异步接口未返回任务 ID。");
+
+    node.callDetails.submit_response = submitPayload;
     node.callStatus = "查询中";
     node.progressLabel = "任务已提交";
-    const completed = await pollGenarrativeTask(node, submission, requestConfig);
-    const results = await resolveGenarrativeResult(node, completed, requestConfig);
+    const { payload: resultPayload, results } = await pollImage2Task(node, taskId, requestConfig);
+    if (!results.length) throw new Error("Image2 任务成功，但没有找到生成图片。");
 
     stopImage2Timer(node);
     node.callStatus = "生成成功";
-    node.callDetails.response = completed;
-    const warnings = collectGenarrativeWarnings(completed);
-    node.callDetails.warnings = warnings;
-    setImage2Status(node, `${warnings.length ? `生成完成（${warnings.join("；")}）` : "生成完成"} · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
+    node.callDetails.response = {
+      status: resultPayload?.status || null,
+      created: resultPayload?.result?.created || null,
+      image_count: results.length,
+      images: results.map((result) => result.responseDetails),
+    };
+    setImage2Status(node, `生成完成 · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
     setImage2RunActions(node, { details: true });
     if (nodes.has(node.id)) createImage2Results(node, results);
   } catch (error) {
@@ -1765,8 +1210,8 @@ async function generateWithGenarrative(node) {
     const failureMessage = error?.name === "AbortError"
       ? "生成已停止。"
       : error instanceof TypeError
-        ? "请求失败，请检查代理地址、网络或 CORS 设置。"
-        : error.message || String(error);
+        ? "请求失败，请检查网络、网址或 CORS 设置。"
+        : (error.message || String(error));
     node.callStatus = "生成失败";
     node.lastError = failureMessage;
     node.callDetails = { ...node.callDetails, error: failureMessage };
@@ -1777,7 +1222,6 @@ async function generateWithGenarrative(node) {
     node.abortController = null;
   }
 }
-
 function cloneImage2GenerationNode(node) {
   if (!isImage2GenerationNode(node)) return null;
   const inputSourceIds = Array.from(connections.values())
@@ -1797,15 +1241,9 @@ function cloneImage2GenerationNode(node) {
   clone.model.value = node.model.value;
   clone.resolution.value = node.resolution.value;
   clone.aspectRatio.value = node.aspectRatio.value;
-  clone.count.value = node.count.value;
-  if (clone.quality && node.quality) clone.quality.value = node.quality.value;
-  if (clone.asyncMode && node.asyncMode) clone.asyncMode.value = node.asyncMode.value;
-  updateImage2NodeSize(clone);
+  clone.quality.value = node.quality.value;
+  updateImage2OutputSize(clone);
   inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
-  if (clone.spec.provider === "genarrative" && Array.from(clone.aspectRatio.options).some((option) => option.value === node.aspectRatio.value)) {
-    clone.aspectRatio.value = node.aspectRatio.value;
-    updateImage2NodeSize(clone);
-  }
   selectNode(clone.id);
   return clone;
 }
@@ -1831,7 +1269,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
     body: document.createElement("div"),
   };
 
-  node.element.className = `canvas-node image2-node ${spec.nodeClass || "aicoming-image"}`;
+  node.element.className = "canvas-node image2-node";
   node.element.dataset.nodeId = id;
   node.element.style.left = `${node.x}px`;
   node.element.style.top = `${node.y}px`;
@@ -1878,30 +1316,26 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   header.append(titleWrap, headerActions);
 
   node.body.className = "node-body image2-body";
-  const ratioOptions = spec.ratios
-    .map((ratio) => `<option value="${ratio}"${ratio === "16:9" ? " selected" : ""}>${ratio}</option>`)
-    .join("");
   const resolutionOptions = spec.resolutions
-    .map((resolution) => `<option value="${resolution}"${resolution.toLowerCase() === "1k" ? " selected" : ""}>${resolution}</option>`)
+    .map((resolution) => `<option value="${resolution}"${resolution === "1K" ? " selected" : ""}>${resolution}</option>`)
     .join("");
-  const modelControl = `<select class="image2-model">${spec.modelOptions.map((option) => (
-    `<option value="${option.value}"${option.value === spec.model ? " selected" : ""}>${option.label}</option>`
-  )).join("")}</select>`;
-  const providerFields = spec.provider === "genarrative" ? `
-      <label class="image2-field">任务模式<input type="text" value="官方异步" disabled /></label>
-      <label class="image2-field">参考图上限<input type="text" value="5 张" disabled /></label>` : `
-      <label class="image2-field">质量<input class="image2-quality" type="text" value="high" disabled /></label>
-      <label class="image2-field">异步任务<select class="image2-async"><option value="true" selected>开启</option><option value="false">关闭</option></select></label>`;
+  const ratioOptions = spec.ratios
+    .map((ratio) => `<option value="${ratio}"${ratio === "1:1" ? " selected" : ""}>${ratio}</option>`)
+    .join("");
+  const qualityOptions = spec.qualities
+    .map((quality) => `<option value="${quality}"${quality === "high" ? " selected" : ""}>${quality}</option>`)
+    .join("");
   node.body.innerHTML = `
     <div class="image2-input-preview" aria-label="输入图片预览"></div>
     <textarea class="image2-prompt" placeholder="描述要生成的图片；连接文本节点后会在生成时同步文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
     <div class="image2-config">
-      <label class="image2-field wide">模型${modelControl}</label>
-      <label class="image2-field">分辨率<select class="image2-resolution">${resolutionOptions}</select></label>
+      <label class="image2-field wide">模型<input class="image2-model" type="text" value="${spec.model}" autocomplete="off" spellcheck="false" /></label>
+      <label class="image2-field">图片尺寸<select class="image2-resolution">${resolutionOptions}</select></label>
       <label class="image2-field">图片比例<select class="image2-aspect">${ratioOptions}</select></label>
-      <label class="image2-field">预计输出<input class="image2-final-size" type="text" disabled /></label>
-      <label class="image2-field">图片数量<input class="image2-count" type="number" min="1" max="1" value="1" disabled /></label>
-      ${providerFields}
+      <label class="image2-field">输出尺寸<input class="image2-final-size" type="text" disabled /></label>
+      <label class="image2-field">质量<select class="image2-quality">${qualityOptions}</select></label>
+      <label class="image2-field">任务模式<input type="text" value="异步" disabled /></label>
+      <label class="image2-field">输入图片<input type="text" value="支持多张" disabled /></label>
     </div>
     <div class="image2-generate-row">
       <div class="image2-run-summary">
@@ -1924,9 +1358,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   node.resolution = node.body.querySelector(".image2-resolution");
   node.aspectRatio = node.body.querySelector(".image2-aspect");
   node.finalSize = node.body.querySelector(".image2-final-size");
-  node.count = node.body.querySelector(".image2-count");
   node.quality = node.body.querySelector(".image2-quality");
-  node.asyncMode = node.body.querySelector(".image2-async");
   node.status = node.body.querySelector(".image2-status");
   node.detailsButton = node.body.querySelector(".image2-details");
   node.errorButton = node.body.querySelector(".image2-error-info");
@@ -1935,12 +1367,9 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   node.prompt.addEventListener("input", () => {
     if (!node.prompt.readOnly) node.localPromptValue = node.prompt.value;
   });
+  node.resolution.addEventListener("change", () => updateImage2OutputSize(node));
+  node.aspectRatio.addEventListener("change", () => updateImage2OutputSize(node));
 
-  node.resolution.addEventListener("change", () => updateImage2NodeSize(node));
-  node.aspectRatio.addEventListener("change", () => updateImage2NodeSize(node));
-  node.count.addEventListener("change", () => {
-    node.count.value = String(Math.max(1, Math.min(spec.maxCount, Number.parseInt(node.count.value, 10) || 1)));
-  });
   node.detailsButton.addEventListener("click", (event) => {
     event.stopPropagation();
     openGenerationDetails(node, false, { preview: !node.hasRun });
@@ -1949,10 +1378,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
     event.stopPropagation();
     openGenerationDetails(node, true);
   });
-  node.generateButton.addEventListener("click", () => {
-    if (node.spec.provider === "genarrative") void generateWithGenarrative(node);
-    else void generateWithAicoming(node);
-  });
+  node.generateButton.addEventListener("click", () => void generateWithImage2(node));
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
@@ -1960,7 +1386,7 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   surface.appendChild(node.element);
   nodes.set(id, node);
   refreshImage2Input(node);
-  updateImage2NodeSize(node);
+  updateImage2OutputSize(node);
   selectNode(id);
   updateEmptyState();
   return node;
@@ -2026,13 +1452,10 @@ function isValidHttpUrl(value) {
   }
 }
 
-function openSettings(section = "aicoming") {
-  aicomingBaseUrl.value = aicomingSettings.baseUrl;
-  aicomingApiKey.value = aicomingSettings.apiKey;
-  genarrativeBaseUrl.value = genarrativeSettings.baseUrl;
-  genarrativeApiKey.value = genarrativeSettings.apiKey;
+function openSettings(section = "image2") {
+  image2BaseUrl.value = image2Settings.baseUrl;
+  image2ApiKey.value = image2Settings.apiKey;
   settingsMessage.textContent = "";
-  genarrativeSettingsMessage.textContent = "";
   showSettingsSection(section);
   settingsDialog.showModal();
 }
@@ -2047,57 +1470,30 @@ function saveSettings() {
     closeSettings();
     return;
   }
-  if (activeSection === "genarrative") {
-    const baseUrl = cleanBaseUrl(genarrativeBaseUrl.value);
-    const apiKey = genarrativeApiKey.value.trim();
-    if (!isValidHttpUrl(baseUrl)) {
-      genarrativeSettingsMessage.textContent = "请输入有效的陶泥儿 API 或代理基础网址。";
-      genarrativeBaseUrl.focus();
-      return;
-    }
-    if (!apiKey) {
-      genarrativeSettingsMessage.textContent = "请输入陶泥儿开发者 API Key。";
-      genarrativeApiKey.focus();
-      return;
-    }
-    const projectId = apiKey === genarrativeSettings.apiKey && baseUrl === genarrativeSettings.baseUrl
-      ? genarrativeSettings.projectId
-      : "";
-    genarrativeSettings = { baseUrl, apiKey, projectId };
-    try {
-      persistGenarrativeSettings();
-    } catch {
-      genarrativeSettingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
-      return;
-    }
-    updateSettingsButtonState();
-    closeSettings();
-    return;
-  }
-  const baseUrl = cleanBaseUrl(aicomingBaseUrl.value);
-  const apiKey = aicomingApiKey.value.trim();
+  const baseUrl = cleanBaseUrl(image2BaseUrl.value);
+  const apiKey = image2ApiKey.value.trim();
   if (!isValidHttpUrl(baseUrl)) {
-    showSettingsSection("aicoming");
-    settingsMessage.textContent = "请输入有效的 AIComing API 基础网址。";
-    aicomingBaseUrl.focus();
+    showSettingsSection("image2");
+    settingsMessage.textContent = "请输入有效的 Image2 API 基础网址。";
+    image2BaseUrl.focus();
     return;
   }
   if (!apiKey) {
-    showSettingsSection("aicoming");
-    settingsMessage.textContent = "请输入 AIComing API Key。";
-    aicomingApiKey.focus();
+    showSettingsSection("image2");
+    settingsMessage.textContent = "请输入 Image2 API Key。";
+    image2ApiKey.focus();
     return;
   }
 
   try {
-    window.localStorage.setItem(AICOMING_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
+    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
   } catch {
-    showSettingsSection("aicoming");
+    showSettingsSection("image2");
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
 
-  aicomingSettings = { baseUrl, apiKey };
+  image2Settings = { baseUrl, apiKey };
   updateSettingsButtonState();
   closeSettings();
 }
@@ -2109,7 +1505,6 @@ function hideContextMenu() {
 
 function showContextMenu(clientX, clientY) {
   contextCanvasPoint = screenToCanvas(clientX, clientY);
-  contextScreenPoint = { x: clientX, y: clientY };
   contextMenu.classList.add("open");
   contextMenu.setAttribute("aria-hidden", "false");
 
@@ -2308,16 +1703,8 @@ createTextNodeButton.addEventListener("click", () => {
   hideContextMenu();
 });
 
-createAicomingNodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("aicoming", {
-    x: contextCanvasPoint.x - NODE_WIDTH / 2,
-    y: contextCanvasPoint.y - NODE_HEIGHT / 2,
-  });
-  hideContextMenu();
-});
-
-createGenarrativeNodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("genarrative", {
+createImage2NodeButton.addEventListener("click", () => {
+  createImage2GenerationNode("image2", {
     x: contextCanvasPoint.x - NODE_WIDTH / 2,
     y: contextCanvasPoint.y - NODE_HEIGHT / 2,
   });
@@ -2328,20 +1715,16 @@ zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
-settingsButton.addEventListener("click", () => openSettings("aicoming"));
+settingsButton.addEventListener("click", () => openSettings("image2"));
 settingsCloseButton.addEventListener("click", closeSettings);
 settingsCancelButton.addEventListener("click", closeSettings);
 settingsSaveButton.addEventListener("click", saveSettings);
 settingsNavItems.forEach((item) => {
   item.addEventListener("click", () => showSettingsSection(item.dataset.settingsSection));
 });
-aicomingApiKeyClear.addEventListener("click", () => {
-  aicomingApiKey.value = "";
-  aicomingApiKey.focus();
-});
-genarrativeApiKeyClear.addEventListener("click", () => {
-  genarrativeApiKey.value = "";
-  genarrativeApiKey.focus();
+image2ApiKeyClear.addEventListener("click", () => {
+  image2ApiKey.value = "";
+  image2ApiKey.focus();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -2399,5 +1782,4 @@ window.addEventListener("beforeunload", () => {
 resetView();
 updateEmptyState();
 removeRetiredSettings();
-loadAicomingSettings();
-loadGenarrativeSettings();
+loadImage2Settings();
