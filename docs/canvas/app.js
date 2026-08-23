@@ -997,16 +997,24 @@ function extractImage2TaskId(payload) {
 }
 
 function extractImage2Results(payload) {
-  const images = Array.isArray(payload?.result?.data) ? payload.result.data : [];
+  let result = payload?.result;
+  if (typeof result === "string") {
+    try { result = JSON.parse(result); } catch { result = null; }
+  }
+  const images = Array.isArray(result?.data) ? result.data : [];
   return images.flatMap((image, index) => {
-    const src = image?.b64_json ? `data:image/png;base64,${image.b64_json}` : "";
+    const base64 = String(image?.b64_json || "").trim();
+    const url = String(image?.url || "").trim();
+    const src = base64
+      ? (base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`)
+      : url;
     if (!src) return [];
     return [{
       src,
       name: `Image2 生成图片 ${index + 1}`,
       responseDetails: {
         index: index + 1,
-        response_format: "b64_json",
+        response_format: base64 ? "b64_json" : "url",
       },
     }];
   });
