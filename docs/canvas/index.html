@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>画布</title>
-  <link rel="stylesheet" href="style.css?v=20260824-image2-2" />
+  <link rel="stylesheet" href="style.css?v=20260901-kie-1" />
 </head>
 <body>
   <main class="workspace" aria-label="画布工作区">
@@ -19,7 +19,7 @@
 
       <div class="topbar-actions">
         <button id="fitButton" class="action-button" type="button" title="将全部节点适应到当前屏幕">适应屏幕</button>
-        <button id="settingsButton" class="icon-button" type="button" aria-label="打开画布设置" title="设置">
+        <button id="settingsButton" class="icon-button" type="button" aria-label="打开 KIE 设置" title="KIE 设置">
           <span aria-hidden="true">&#9881;&#xfe0e;</span>
         </button>
       </div>
@@ -76,9 +76,9 @@
         <span class="menu-icon text" aria-hidden="true">T</span>
         <span><strong>文本节点</strong></span>
       </button>
-      <button id="createImage2NodeButton" type="button" role="menuitem">
-        <span class="menu-icon image2" aria-hidden="true">I2</span>
-        <span><strong>Image2</strong></span>
+      <button id="createKieNodeButton" type="button" role="menuitem">
+        <span class="menu-icon kie" aria-hidden="true">K</span>
+        <span><strong>KIE Image2</strong></span>
       </button>
       <div class="menu-coming-soon">更多节点即将加入</div>
     </div>
@@ -97,72 +97,27 @@
     <div class="settings-shell">
       <header class="settings-head">
         <div>
-          <p class="settings-eyebrow">Canvas preferences</p>
-          <h2 id="settingsTitle">设置</h2>
+          <p>KIE provider</p>
+          <h2 id="settingsTitle">KIE Image2 设置</h2>
         </div>
-        <button id="settingsCloseButton" class="settings-close" type="button" aria-label="关闭设置">×</button>
+        <button id="settingsCloseButton" class="dialog-close" type="button" aria-label="关闭设置">×</button>
       </header>
-
-      <div class="settings-layout">
-        <nav class="settings-nav" aria-label="设置栏目">
-          <button class="settings-nav-item" type="button" data-settings-section="image" aria-controls="imageNodeSettingsPanel">
-            <span class="settings-nav-icon image" aria-hidden="true">▧</span>
-            <span><strong>图片节点</strong><small>Image Node</small></span>
-          </button>
-          <button class="settings-nav-item active" type="button" data-settings-section="image2" aria-controls="image2SettingsPanel" aria-current="page">
-            <span class="settings-nav-icon image2" aria-hidden="true">I2</span>
-            <span><strong>Image2</strong><small>服务配置</small></span>
-          </button>
-        </nav>
-
-        <section id="imageNodeSettingsPanel" class="settings-panel" data-settings-panel="image" aria-labelledby="imageNodeSettingsTitle" hidden>
-          <div class="settings-panel-head">
-            <p>Node settings</p>
-            <h3 id="imageNodeSettingsTitle">图片节点</h3>
-            <span>图片节点当前没有需要配置的选项。</span>
-          </div>
-          <div class="settings-empty-state">
-            <span aria-hidden="true">▧</span>
-            <strong>暂无设置</strong>
-            <small>以后新增的图片节点选项会显示在这里。</small>
-          </div>
-        </section>
-
-        <section id="image2SettingsPanel" class="settings-panel" data-settings-panel="image2" aria-labelledby="image2SettingsTitle">
-          <div class="settings-panel-head">
-            <p>Provider settings</p>
-            <h3 id="image2SettingsTitle">Image2</h3>
-            <span>配置 Xiaoyi Image2 异步图片生成服务。</span>
-          </div>
-          <section class="settings-service-card" aria-labelledby="image2ServiceSettingsTitle">
-            <header class="settings-service-head">
-              <span class="settings-service-icon image2" aria-hidden="true">I2</span>
-              <span class="settings-service-copy">
-                <strong id="image2ServiceSettingsTitle">异步图片 API</strong>
-                <small>文生图、图生图分别提交，统一查询任务状态</small>
-              </span>
-            </header>
-            <div class="settings-fields">
-              <label class="settings-field">
-                <span>Base URL</span>
-                <input id="image2BaseUrl" type="url" autocomplete="off" spellcheck="false" placeholder="输入 Image2 API Base URL" />
-                <small>请求路径会自动拼接到此地址之后。</small>
-              </label>
-              <label class="settings-field">
-                <span>API Key</span>
-                <span class="settings-token-field">
-                  <input id="image2ApiKey" type="password" autocomplete="off" placeholder="输入 XIAOYI_API_KEY" />
-                  <button id="image2ApiKeyClear" type="button">清除</button>
-                </span>
-                <small>仅保存在当前浏览器的 localStorage 中，不会随工作流导出。</small>
-              </label>
-            </div>
-          </section>
-          <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
-        </section>
-
+      <div class="settings-content">
+        <label class="settings-field">
+          <span>Base URL</span>
+          <input id="kieBaseUrl" type="url" autocomplete="off" spellcheck="false" placeholder="https://api.kie.ai" />
+          <small>创建任务与任务查询路径会自动拼接到此地址。</small>
+        </label>
+        <label class="settings-field">
+          <span>API Key</span>
+          <span class="settings-token-field">
+            <input id="kieApiKey" type="password" autocomplete="off" placeholder="输入 KIE API Key" />
+            <button id="kieApiKeyClear" type="button">清除</button>
+          </span>
+          <small>仅保存在当前浏览器的 localStorage 中。</small>
+        </label>
+        <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
       </div>
-
       <footer class="settings-actions">
         <button id="settingsCancelButton" class="settings-button secondary" type="button">取消</button>
         <button id="settingsSaveButton" class="settings-button primary" type="button">保存设置</button>
@@ -174,23 +129,23 @@
     <div class="details-shell">
       <header class="details-head">
         <div>
-          <p id="generationDetailsProvider">Image generation</p>
-          <h2 id="generationDetailsTitle">生成详情</h2>
+          <p>KIE Image2</p>
+          <h2 id="generationDetailsTitle">调用详情</h2>
         </div>
-        <button id="generationDetailsClose" type="button" aria-label="关闭生成详情">×</button>
+        <button id="generationDetailsClose" class="dialog-close" type="button" aria-label="关闭调用详情">×</button>
       </header>
       <div id="generationDetailsSummary" class="details-summary">
         <div><span>状态</span><strong id="generationDetailsStatus">—</strong></div>
         <div><span>花费时间</span><strong id="generationDetailsElapsed">—</strong></div>
       </div>
       <div class="details-code-head">
-        <span id="generationDetailsCodeLabel">本次调用</span>
-        <small id="generationDetailsTokenNote">鉴权 Token 已隐藏</small>
+        <span id="generationDetailsCodeLabel">cURL</span>
+        <small id="generationDetailsTokenNote">API Key 已隐藏</small>
       </div>
       <pre id="generationDetailsCode" class="details-code"></pre>
     </div>
   </dialog>
 
-  <script src="app.js?v=20260824-image2-4"></script>
+  <script src="app.js?v=20260901-kie-1"></script>
 </body>
 </html>

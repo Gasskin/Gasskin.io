@@ -6,30 +6,19 @@ const CONNECTION_SNAP_RADIUS = 44;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 32;
 const ZOOM_STEP = 1.2;
-const IMAGE_TIER_LONG_EDGE = Object.freeze({
-  "1k": 1024,
-  "2k": 2560,
-  "4k": 3840,
-});
-const IMAGE2_SETTINGS_STORAGE_KEY = "canvas:image2-settings:v1";
-const IMAGE2_API_BASE_URL = "https://image.xiaoyiapi.xyz";
-const IMAGE2_GENERATE_PATH = "v1/images/generations/async";
-const IMAGE2_EDIT_PATH = "v1/images/edits/async";
-const IMAGE2_TASK_PATH = "v1/images/tasks";
-const IMAGE2_POLL_INTERVAL_MS = 2000;
-const DEFAULT_IMAGE2_SETTINGS = Object.freeze({
-  baseUrl: IMAGE2_API_BASE_URL,
-  apiKey: "",
-});
-const IMAGE2_NODE_SPECS = Object.freeze({
-  image2: Object.freeze({
-    label: "Image2",
-    model: "gpt-image-2-vip",
-    resolutions: ["1K", "2K", "4K"],
-    ratios: ["1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5", "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21"],
-    qualities: ["low", "medium", "high"],
-  }),
-});
+const KIE_SETTINGS_STORAGE_KEY = "canvas:kie-settings:v1";
+const KIE_DEFAULT_BASE_URL = "https://api.kie.ai";
+const KIE_CREATE_TASK_PATH = "api/v1/jobs/createTask";
+const KIE_TASK_DETAILS_PATH = "api/v1/jobs/recordInfo";
+const KIE_POLL_INTERVAL_MS = 2000;
+const KIE_POLL_TIMEOUT_MS = 15 * 60 * 1000;
+const KIE_TEXT_MODEL = "gpt-image-2-text-to-image";
+const KIE_IMAGE_MODEL = "gpt-image-2-image-to-image";
+const KIE_RATIOS = Object.freeze([
+  "auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5",
+  "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21",
+]);
+const KIE_RESOLUTIONS = Object.freeze(["1K", "2K", "4K"]);
 
 const viewport = document.getElementById("canvasViewport");
 const panLayer = document.getElementById("canvasPanLayer");
@@ -42,7 +31,7 @@ const selectionMarquee = document.getElementById("selectionMarquee");
 const contextMenu = document.getElementById("contextMenu");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
 const createTextNodeButton = document.getElementById("createTextNodeButton");
-const createImage2NodeButton = document.getElementById("createImage2NodeButton");
+const createKieNodeButton = document.getElementById("createKieNodeButton");
 const fitButton = document.getElementById("fitButton");
 const settingsButton = document.getElementById("settingsButton");
 const zoomOutButton = document.getElementById("zoomOutButton");
@@ -57,14 +46,11 @@ const settingsDialog = document.getElementById("settingsDialog");
 const settingsCloseButton = document.getElementById("settingsCloseButton");
 const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
-const settingsNavItems = Array.from(document.querySelectorAll("[data-settings-section]"));
-const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
-const image2BaseUrl = document.getElementById("image2BaseUrl");
-const image2ApiKey = document.getElementById("image2ApiKey");
-const image2ApiKeyClear = document.getElementById("image2ApiKeyClear");
+const kieBaseUrl = document.getElementById("kieBaseUrl");
+const kieApiKey = document.getElementById("kieApiKey");
+const kieApiKeyClear = document.getElementById("kieApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
-const generationDetailsProvider = document.getElementById("generationDetailsProvider");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
 const generationDetailsClose = document.getElementById("generationDetailsClose");
 const generationDetailsSummary = document.getElementById("generationDetailsSummary");
@@ -85,7 +71,7 @@ const selectedNodeIds = new Set();
 let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let dragDepth = 0;
-let image2Settings = { ...DEFAULT_IMAGE2_SETTINGS };
+let kieSettings = { baseUrl: KIE_DEFAULT_BASE_URL, apiKey: "" };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -97,41 +83,27 @@ function cleanBaseUrl(value) {
 }
 
 function joinApiUrl(baseUrl, path) {
-  const base = cleanBaseUrl(baseUrl);
-  const normalizedPath = String(path || "").replace(/^\/+/, "");
-  const joinedPath = base.endsWith("/v1") && normalizedPath.startsWith("v1/")
-    ? normalizedPath.slice(3)
-    : normalizedPath;
-  return `${base}/${joinedPath}`;
-}
-
-function isImage2GenerationNode(node) {
-  return Boolean(IMAGE2_NODE_SPECS[node?.type]);
+  return `${cleanBaseUrl(baseUrl)}/${String(path || "").replace(/^\/+/, "")}`;
 }
 
 function updateSettingsButtonState() {
-  const configured = Boolean(image2Settings.apiKey);
-  settingsButton.classList.toggle("configured", configured);
-  settingsButton.title = configured
-    ? "设置（Image2 已配置）"
-    : "设置（图片生成 API 尚未配置）";
+  settingsButton.classList.toggle("configured", Boolean(kieSettings.apiKey));
+  settingsButton.title = kieSettings.apiKey ? "KIE 设置（已配置）" : "KIE 设置（尚未配置 API Key）";
 }
 
-function loadImage2Settings() {
-  let loaded = { ...DEFAULT_IMAGE2_SETTINGS };
+function loadKieSettings() {
   try {
-    const stored = window.localStorage.getItem(IMAGE2_SETTINGS_STORAGE_KEY);
+    const stored = window.localStorage.getItem(KIE_SETTINGS_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      loaded = {
-        baseUrl: cleanBaseUrl(parsed?.baseUrl || IMAGE2_API_BASE_URL),
+      kieSettings = {
+        baseUrl: cleanBaseUrl(parsed?.baseUrl || KIE_DEFAULT_BASE_URL),
         apiKey: String(parsed?.apiKey || "").trim(),
       };
     }
   } catch {
-    // Ignore malformed or unavailable browser storage and keep the defaults.
+    // Keep defaults when browser storage is unavailable or malformed.
   }
-  image2Settings = loaded;
   updateSettingsButtonState();
 }
 
@@ -265,14 +237,17 @@ function refreshPortStates() {
   });
 }
 
+function isKieNode(node) {
+  return node?.type === "kie";
+}
+
 function getConnectedImageNodes(targetNode) {
   const seen = new Set();
   return Array.from(connections.values())
     .filter((connection) => connection.toNodeId === targetNode.id)
     .map((connection) => nodes.get(connection.fromNodeId))
     .filter((node) => {
-      const usableSource = node?.file || /^https?:\/\//i.test(node?.objectUrl || "") || /^data:image\//i.test(node?.objectUrl || "");
-      if (node?.type !== "image" || !node.objectUrl || !usableSource || seen.has(node.id)) return false;
+      if (node?.type !== "image" || !node.objectUrl || seen.has(node.id)) return false;
       seen.add(node.id);
       return true;
     });
@@ -290,56 +265,41 @@ function getConnectedTextNodes(targetNode) {
     });
 }
 
-function describeImage2Inputs(node, imageSources, textSources) {
-  const imageSummary = imageSources.length
-    ? `已连接 ${imageSources.length} 张输入图片`
-    : "未连接图片";
-  const textSummary = textSources.length
-    ? `已连接 ${textSources.length} 个文本节点`
-    : "未连接文本节点";
-  return `${imageSummary} · ${textSummary} · ${imageSources.length ? "图生图模式" : "文生图模式"}`;
-}
-
-function syncImage2PromptFromTextNodes(node, textSources) {
-  if (!node.prompt) return;
-  const hasTextSources = textSources.length > 0;
-  if (hasTextSources) {
+function syncKiePromptFromTextNodes(node, textSources) {
+  const linked = textSources.length > 0;
+  if (linked) {
     if (!node.prompt.readOnly) node.localPromptValue = node.prompt.value;
     node.prompt.value = textSources.map((source) => source.textInput.value).join("\n\n");
   } else if (node.prompt.readOnly) {
     node.prompt.value = node.localPromptValue || "";
   }
-  node.prompt.readOnly = hasTextSources;
-  node.prompt.classList.toggle("linked-text", hasTextSources);
-  node.prompt.setAttribute("aria-readonly", String(hasTextSources));
-  node.prompt.placeholder = hasTextSources
-    ? "提示词由已连接的文本节点提供，请在文本节点中输入内容。"
-    : "描述要生成的图片；连接文本节点后会在生成时同步文本，连接图片后进行图生图…";
-  node.prompt.title = hasTextSources
-    ? "当前提示词跟随已连接的文本节点，不能在此编辑。"
-    : "";
+  node.prompt.readOnly = linked;
+  node.prompt.classList.toggle("linked-text", linked);
+  node.prompt.placeholder = linked
+    ? "提示词由已连接的文本节点提供。"
+    : "输入图片生成提示词；连接图片后自动切换为图生图。";
 }
 
-function refreshImage2Input(node) {
-  if (!isImage2GenerationNode(node) || !node.inputPreview) return;
-  const sources = getConnectedImageNodes(node);
-  const textSources = getConnectedTextNodes(node);
-  node.inputSourceIds = sources.map((source) => source.id);
-  node.textInputSourceIds = textSources.map((source) => source.id);
-  syncImage2PromptFromTextNodes(node, textSources);
-  node.inputPreview.replaceChildren();
-  node.inputPreview.classList.toggle("has-image", sources.length > 0);
+function setKieStatus(node, message, state = "") {
+  node.status.textContent = message;
+  node.status.title = message;
+  node.status.className = `kie-status${state ? ` ${state}` : ""}`;
+}
 
-  if (sources.length) {
-    sources.forEach((source, index) => {
+function refreshKieInput(node) {
+  if (!isKieNode(node)) return;
+  const imageSources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
+  syncKiePromptFromTextNodes(node, textSources);
+  node.model.value = imageSources.length ? KIE_IMAGE_MODEL : KIE_TEXT_MODEL;
+  node.inputPreview.replaceChildren();
+
+  if (imageSources.length) {
+    imageSources.forEach((source, index) => {
       const thumbnail = document.createElement("button");
       thumbnail.type = "button";
-      thumbnail.className = "image2-input-thumb";
-      thumbnail.title = `图生图输入 · 点击预览：${source.name}`;
-      thumbnail.setAttribute(
-        "aria-label",
-        `预览输入图片 ${index + 1}：${source.name}`,
-      );
+      thumbnail.className = "kie-input-thumb";
+      thumbnail.title = `输入图片 ${index + 1}：${source.name}`;
       const image = document.createElement("img");
       image.src = source.objectUrl;
       image.alt = source.name;
@@ -353,24 +313,28 @@ function refreshImage2Input(node) {
       });
       node.inputPreview.appendChild(thumbnail);
     });
-    node.inputPreview.title = "";
   } else {
     const empty = document.createElement("span");
-    empty.className = "image2-input-empty";
-    empty.innerHTML = "<span>↦</span><strong>可直接文生图</strong><small>可连接图片或文本节点作为输入</small>";
-    node.inputPreview.title = "未连接图片时使用文生图模式";
+    empty.className = "kie-input-empty";
+    empty.innerHTML = "<span>↦</span><strong>文生图模式</strong><small>连接图片后切换为图生图</small>";
     node.inputPreview.appendChild(empty);
   }
-  if (!node.generateButton.disabled) setImage2Status(node, describeImage2Inputs(node, sources, textSources));
-  if (!node.hasRun) {
-    node.detailsButton.textContent = "调用预览";
-    setImage2RunActions(node, { details: true });
+
+  if (!node.generateButton.disabled) {
+    const mode = imageSources.length ? `图生图 · ${imageSources.length} 张图片` : "文生图";
+    const textInfo = textSources.length ? ` · ${textSources.length} 个文本节点` : "";
+    const hasLocalImage = imageSources.some((source) => !/^https?:\/\//i.test(source.objectUrl || ""));
+    setKieStatus(
+      node,
+      `${mode}${textInfo}${hasLocalImage ? " · 含无法提交的本地图片" : ""}`,
+      hasLocalImage ? "error" : "",
+    );
   }
 }
 
 function refreshNodeInput(nodeId) {
   const node = nodes.get(nodeId);
-  if (isImage2GenerationNode(node)) refreshImage2Input(node);
+  if (isKieNode(node)) refreshKieInput(node);
 }
 
 function refreshConsumers(sourceNodeId) {
@@ -443,33 +407,29 @@ function startConnectionDrag(node, event) {
   event.preventDefault();
   event.stopPropagation();
   if (!selectedNodeIds.has(node.id)) selectNode(node.id);
-  const batchSourceIds = node.type === "image"
-    ? new Set(Array.from(selectedNodeIds).filter((id) => {
-      const candidate = nodes.get(id);
-      return candidate?.type === "image" && Boolean(candidate.objectUrl);
-    }))
+  const sourceNodeIds = node.type === "image"
+    ? new Set(Array.from(selectedNodeIds).filter((id) => nodes.get(id)?.type === "image"))
     : new Set([node.id]);
-  if (!batchSourceIds.size) batchSourceIds.add(node.id);
+  if (!sourceNodeIds.size) sourceNodeIds.add(node.id);
   const start = getPortPoint(node, "output");
   nodes.forEach((candidate) => {
-    if (!batchSourceIds.has(candidate.id)) candidate.inputPort?.classList.add("compatible");
+    if (!sourceNodeIds.has(candidate.id)) candidate.inputPort?.classList.add("compatible");
   });
 
   const onMove = (moveEvent) => {
     nodes.forEach((candidate) => candidate.inputPort?.classList.remove("snap-target"));
-    const target = findConnectionTarget(moveEvent.clientX, moveEvent.clientY, batchSourceIds);
+    const target = findConnectionTarget(moveEvent.clientX, moveEvent.clientY, sourceNodeIds);
     if (target) target.node.inputPort?.classList.add("snap-target");
     const end = target?.point || screenToCanvas(moveEvent.clientX, moveEvent.clientY);
     connectionDraft.setAttribute("d", makeConnectionPath(start, end));
   };
   const onUp = (upEvent) => {
-    const target = findConnectionTarget(upEvent.clientX, upEvent.clientY, batchSourceIds);
-    const targetNodeId = target?.node.id;
-    if (targetNodeId) {
-      if (batchSourceIds.size > 1 && isImage2GenerationNode(target.node)) {
-        batchSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, targetNodeId));
+    const target = findConnectionTarget(upEvent.clientX, upEvent.clientY, sourceNodeIds);
+    if (target) {
+      if (sourceNodeIds.size > 1 && isKieNode(target.node)) {
+        sourceNodeIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, target.node.id));
       } else {
-        connectNodes(node.id, targetNodeId);
+        connectNodes(node.id, target.node.id);
       }
     }
     connectionDraft.setAttribute("d", "");
@@ -511,7 +471,6 @@ function removeNode(id) {
     .filter((connection) => connection.fromNodeId === id || connection.toNodeId === id)
     .forEach((connection) => removeConnection(connection.id));
   if (node.objectUrl && node.revokeObjectUrl) URL.revokeObjectURL(node.objectUrl);
-  (node.generatedObjectUrls || []).forEach((url) => URL.revokeObjectURL(url));
   if (node.timerId) window.clearInterval(node.timerId);
   node.abortController?.abort();
   node.element.remove();
@@ -811,12 +770,6 @@ function createTextNode({ x, y, text = "" } = {}) {
   return node;
 }
 
-function setImage2Status(node, message, state = "") {
-  node.status.textContent = message;
-  node.status.title = message;
-  node.status.className = `image2-status${state ? ` ${state}` : ""}`;
-}
-
 function formatGenerationElapsed(milliseconds) {
   return `${Math.floor(Math.max(0, milliseconds) / 1000)} 秒`;
 }
@@ -827,93 +780,49 @@ function quoteShellArgument(value) {
 
 function buildGenerationCurl(callDetails) {
   if (!callDetails?.endpoint) return "暂无调用信息";
-  const method = String(callDetails.method || "POST").toUpperCase();
-  const parts = [
-    `curl -X ${method} ${quoteShellArgument(callDetails.endpoint)}`,
+  return [
+    `curl -X POST ${quoteShellArgument(callDetails.endpoint)}`,
     `  -H ${quoteShellArgument("Authorization: Bearer ***")}`,
-  ];
-
-  if (callDetails.multipart) {
-    Object.entries(callDetails.body || {}).forEach(([key, value]) => {
-      const values = Array.isArray(value) ? value : [value];
-      values.forEach((entry) => parts.push(`  -F ${quoteShellArgument(`${key}=${entry}`)}`));
-    });
-  } else {
-    parts.push(`  -H ${quoteShellArgument("Content-Type: application/json")}`);
-    parts.push(`  --data-raw ${quoteShellArgument(JSON.stringify(callDetails.body || {}, null, 2))}`);
-  }
-
-  return parts.join(" \\\n");
+    `  -H ${quoteShellArgument("Content-Type: application/json")}`,
+    `  --data-raw ${quoteShellArgument(JSON.stringify(callDetails.body || {}, null, 2))}`,
+  ].join(" \\\n");
 }
 
-function getImage2Prompt(node, textSources) {
+function getKiePrompt(node, textSources) {
   return textSources.length
     ? textSources.map((source) => source.textInput.value.trim()).filter(Boolean).join("\n\n")
     : node.prompt.value.trim();
 }
 
-function calculateImage2Size(tier, ratioValue) {
-  const [ratioWidth, ratioHeight] = String(ratioValue).split(":").map(Number);
-  const ratio = ratioWidth / ratioHeight || 1;
-  const longEdge = IMAGE_TIER_LONG_EDGE[String(tier).toLowerCase()] || IMAGE_TIER_LONG_EDGE["1k"];
-  const width = ratio >= 1 ? longEdge : Math.round(longEdge * ratio);
-  const height = ratio >= 1 ? Math.round(longEdge / ratio) : longEdge;
-  return `${width}x${height}`;
-}
-
-function updateImage2OutputSize(node) {
-  node.finalSize.value = calculateImage2Size(node.resolution.value, node.aspectRatio.value);
-}
-
-function buildImage2RequestFields(node, prompt, isEdit) {
-  const fields = {
-    model: node.model.value.trim(),
-    prompt,
-    size: node.finalSize.value,
-    quality: node.quality.value,
+function buildKieRequest(node, imageSources, textSources) {
+  const isImageToImage = imageSources.length > 0;
+  const input = {
+    prompt: getKiePrompt(node, textSources),
+    aspect_ratio: node.aspectRatio.value,
+    resolution: node.resolution.value,
   };
-  if (!isEdit) fields.response_format = "b64_json";
-  return fields;
-}
-
-function buildImage2CallPreview(node) {
-  const sources = getConnectedImageNodes(node);
-  const textSources = getConnectedTextNodes(node);
-  const isEdit = sources.length > 0;
-  const body = buildImage2RequestFields(node, getImage2Prompt(node, textSources), isEdit);
-  if (isEdit) {
-    const images = sources.map((source, index) => `@${source.file?.name || `input-${index + 1}.png`}`);
-    body.image = images.length === 1 ? images[0] : images;
-  }
-
+  if (isImageToImage) input.input_urls = imageSources.map((source) => source.objectUrl);
   return {
-    configuration: {
-      provider: "Image2",
-      node: node.spec.label,
-      model: node.model.value.trim(),
-      base_url: image2Settings.baseUrl,
-    },
-    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
-    mode: isEdit ? "image-to-image" : "text-to-image",
-    endpoint: joinApiUrl(image2Settings.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH),
-    method: "POST",
-    headers: {
-      Authorization: "Bearer ***",
-      ...(isEdit ? {} : { "Content-Type": "application/json" }),
-    },
-    body,
-    multipart: isEdit,
+    model: isImageToImage ? KIE_IMAGE_MODEL : KIE_TEXT_MODEL,
+    input,
   };
 }
 
-function openGenerationDetails(node, errorOnly = false, { preview = false } = {}) {
-  const callDetails = preview ? buildImage2CallPreview(node) : node.callDetails;
-  generationDetailsProvider.textContent = "Image2 image generation";
-  generationDetailsTitle.textContent = errorOnly ? "错误信息" : preview ? "调用预览" : "生成详情";
+function buildKieCallPreview(node) {
+  const imageSources = getConnectedImageNodes(node);
+  const textSources = getConnectedTextNodes(node);
+  return {
+    endpoint: joinApiUrl(kieSettings.baseUrl, KIE_CREATE_TASK_PATH),
+    body: buildKieRequest(node, imageSources, textSources),
+  };
+}
+
+function openGenerationDetails(node, errorOnly = false, preview = false) {
+  const callDetails = preview ? buildKieCallPreview(node) : node.callDetails;
+  generationDetailsTitle.textContent = errorOnly ? "错误信息" : preview ? "调用预览" : "调用详情";
   generationDetailsCodeLabel.textContent = errorOnly ? "错误内容" : "cURL";
-  generationDetailsSummary.hidden = !errorOnly;
+  generationDetailsSummary.hidden = preview;
   generationDetailsTokenNote.hidden = errorOnly;
-  generationDetailsDialog.classList.toggle("curl-only", !errorOnly);
   generationDetailsStatus.textContent = preview ? "尚未调用" : (node.callStatus || "—");
   generationDetailsElapsed.textContent = preview
     ? "—"
@@ -926,27 +835,27 @@ function openGenerationDetails(node, errorOnly = false, { preview = false } = {}
   generationDetailsDialog.showModal();
 }
 
-function setImage2RunActions(node, { details = false, error = false } = {}) {
+function setKieRunActions(node, { details = false, error = false } = {}) {
   node.detailsButton.classList.toggle("hidden", !details);
   node.errorButton.classList.toggle("hidden", !error);
 }
 
-function stopImage2Timer(node) {
+function stopKieTimer(node) {
   if (node.timerId) window.clearInterval(node.timerId);
   node.timerId = null;
   node.elapsedMs = performance.now() - node.startedAt;
 }
 
-function createImage2Results(node, results) {
-  results.forEach((result, index) => {
+function createKieResults(node, urls) {
+  urls.forEach((url, index) => {
     const column = index % 2;
     const row = Math.floor(index / 2);
     const imageNode = createImageNode({
       x: node.x + node.width + 140 + column * (NODE_WIDTH + 100),
       y: node.y + row * (NODE_HEIGHT + 70),
       source: {
-        src: result.src,
-        name: result.name || `Image2 生成图片 ${index + 1}`,
+        src: url,
+        name: `KIE 生成图片 ${index + 1}`,
         file: null,
         revokeOnRemove: false,
       },
@@ -955,7 +864,7 @@ function createImage2Results(node, results) {
   });
 }
 
-async function waitForImage2Poll(signal) {
+async function waitForKiePoll(signal) {
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
   await new Promise((resolve, reject) => {
     const onAbort = () => {
@@ -965,267 +874,202 @@ async function waitForImage2Poll(signal) {
     const timer = window.setTimeout(() => {
       signal.removeEventListener("abort", onAbort);
       resolve();
-    }, IMAGE2_POLL_INTERVAL_MS);
+    }, KIE_POLL_INTERVAL_MS);
     signal.addEventListener("abort", onAbort, { once: true });
   });
 }
 
-async function fetchImageApiJson(url, options) {
+async function fetchKieJson(url, options) {
   const response = await fetch(url, options);
   const text = await response.text();
   let payload = null;
   try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
-  if (!response.ok || payload?.error || (Number(payload?.code) >= 400)) {
-    const error = new Error(payload?.error?.message || payload?.message || text || `${response.status} ${response.statusText}`);
-    error.status = response.status;
-    error.code = payload?.error?.code || payload?.code || null;
-    throw error;
+  const apiFailed = Number.isFinite(Number(payload?.code))
+    && Number(payload.code) !== 200
+    && !(String(payload?.msg || "").toLowerCase() === "success" && payload?.data);
+  if (!response.ok || apiFailed) {
+    throw new Error(payload?.msg || text || `${response.status} ${response.statusText}`);
   }
   return payload;
 }
 
-function extractImage2TaskId(payload) {
-  return String(
-    payload?.task_id
-    || payload?.taskId
-    || payload?.id
-    || payload?.data?.task_id
-    || payload?.data?.taskId
-    || payload?.data?.id
-    || "",
-  ).trim();
+function extractKieTaskId(payload) {
+  return String(payload?.data?.taskId || payload?.taskId || "").trim();
 }
 
-function extractImage2Results(payload) {
-  let result = payload?.result;
+function extractKieResultUrls(payload) {
+  let result = payload?.data?.resultJson;
   if (typeof result === "string") {
     try { result = JSON.parse(result); } catch { result = null; }
   }
-  const images = Array.isArray(result?.data) ? result.data : [];
-  return images.flatMap((image, index) => {
-    const base64 = String(image?.b64_json || "").trim();
-    const url = String(image?.url || "").trim();
-    const src = base64
-      ? (base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`)
-      : url;
-    if (!src) return [];
-    return [{
-      src,
-      name: `Image2 生成图片 ${index + 1}`,
-      responseDetails: {
-        index: index + 1,
-        response_format: base64 ? "b64_json" : "url",
-      },
-    }];
-  });
+  return Array.isArray(result?.resultUrls)
+    ? result.resultUrls.map((url) => String(url || "").trim()).filter(Boolean)
+    : [];
 }
 
-async function pollImage2Task(node, taskId, requestConfig) {
-  const queryEndpoint = joinApiUrl(image2Settings.baseUrl, `${IMAGE2_TASK_PATH}/${encodeURIComponent(taskId)}`);
+async function pollKieTask(node, taskId, requestConfig) {
+  const endpoint = joinApiUrl(requestConfig.baseUrl, KIE_TASK_DETAILS_PATH);
+  const queryEndpoint = `${endpoint}?taskId=${encodeURIComponent(taskId)}`;
 
   while (true) {
-    const payload = await fetchImageApiJson(queryEndpoint, {
+    if (performance.now() - node.startedAt > KIE_POLL_TIMEOUT_MS) {
+      throw new Error("任务查询超时，请稍后通过任务 ID 查询结果。");
+    }
+    const payload = await fetchKieJson(queryEndpoint, {
       method: "GET",
       headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
       signal: node.abortController.signal,
     });
-    const status = String(payload?.status || "unknown").toLowerCase();
-    node.progressLabel = status === "running" ? "生成中" : `任务 ${status}`;
-    node.callDetails.task = { id: taskId, status, query_endpoint: queryEndpoint };
+    const state = String(payload?.data?.state || "unknown").toLowerCase();
+    node.progressLabel = state === "generating" ? "生成中" : `任务 ${state}`;
+    node.callDetails.task = { id: taskId, state, query_endpoint: queryEndpoint };
 
-    if (status === "success") return { payload, results: extractImage2Results(payload) };
-    if (status === "failed") {
-      throw new Error(payload?.error?.message || payload?.error || "Image2 图片生成任务失败。");
+    if (state === "success") return { payload, urls: extractKieResultUrls(payload) };
+    if (state === "fail") {
+      throw new Error(payload?.data?.failMsg || payload?.msg || "KIE 图片生成任务失败。");
     }
-    await waitForImage2Poll(node.abortController.signal);
+    await waitForKiePoll(node.abortController.signal);
   }
 }
 
-async function imageSourceToBlob(source, signal) {
-  if (source.file) return source.file;
-  const response = await fetch(source.objectUrl, { signal });
-  if (!response.ok) throw new Error(`无法读取输入图片：${response.status} ${response.statusText}`);
-  const blob = await response.blob();
-  if (!blob.type.startsWith("image/")) throw new Error("输入素材不是有效图片。");
-  return blob;
+function validateKieRequest(node, imageSources, prompt) {
+  if (!prompt) return "请在本节点或已连接的文本节点中填写提示词。";
+  if (prompt.length > 20000) return "提示词不能超过 20,000 个字符。";
+  if (imageSources.length > 16) return "KIE 图生图最多支持 16 张输入图片。";
+  if (imageSources.some((source) => !/^https?:\/\//i.test(source.objectUrl || ""))) {
+    return "KIE 图生图只接受公网图片 URL；本地上传图片无法直接提交。";
+  }
+
+  const ratio = node.aspectRatio.value;
+  const resolution = node.resolution.value;
+  if (ratio === "auto" && resolution !== "1K") return "自动比例仅支持 1K 分辨率。";
+  if (ratio === "1:1" && resolution === "4K") return "1:1 比例不支持 4K 分辨率。";
+  if (imageSources.length && ["5:4", "4:5"].includes(ratio) && resolution !== "1K") {
+    return `${ratio} 图生图仅支持 1K 分辨率。`;
+  }
+  if (!imageSources.length && resolution !== "1K" && ["5:4", "4:5", "3:1", "1:3", "9:21"].includes(ratio)) {
+    return `${ratio} 文生图不支持 ${resolution} 分辨率。`;
+  }
+  return "";
 }
 
-async function generateWithImage2(node) {
-  const sources = getConnectedImageNodes(node);
+async function generateWithKie(node) {
+  const imageSources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
-  const prompt = getImage2Prompt(node, textSources);
-  const selectedModel = node.model.value.trim();
-
-  if (!prompt) {
-    setImage2Status(node, "请在本节点或已连接的文本节点中填写提示词。", "error");
-    (textSources.find((source) => !source.textInput.value.trim())?.textInput || node.prompt).focus();
+  const prompt = getKiePrompt(node, textSources);
+  const validationError = validateKieRequest(node, imageSources, prompt);
+  if (validationError) {
+    setKieStatus(node, validationError, "error");
     return;
   }
-  if (!selectedModel) {
-    setImage2Status(node, "请填写模型名称。", "error");
-    node.model.focus();
-    return;
-  }
-  if (!image2Settings.apiKey) {
-    setImage2Status(node, "请先在设置中配置 Image2 API Key。", "error");
-    openSettings("image2");
+  if (!kieSettings.apiKey) {
+    setKieStatus(node, "请先配置 KIE API Key。", "error");
+    openSettings();
     return;
   }
 
   node.generateButton.disabled = true;
   node.abortController?.abort();
   node.abortController = new AbortController();
-
-  const requestConfig = { ...image2Settings };
-  const isEdit = sources.length > 0;
-  const endpoint = joinApiUrl(image2Settings.baseUrl, isEdit ? IMAGE2_EDIT_PATH : IMAGE2_GENERATE_PATH);
-  const requestFields = buildImage2RequestFields(node, prompt, isEdit);
-  const visibleBody = { ...requestFields };
-  if (isEdit) {
-    const images = sources.map((source, index) => `@${source.file?.name || `input-${index + 1}.png`}`);
-    visibleBody.image = images.length === 1 ? images[0] : images;
-  }
+  const requestConfig = { ...kieSettings };
+  const endpoint = joinApiUrl(requestConfig.baseUrl, KIE_CREATE_TASK_PATH);
+  const requestBody = buildKieRequest(node, imageSources, textSources);
 
   node.startedAt = performance.now();
   node.elapsedMs = null;
   node.callStatus = "提交中";
   node.lastError = "";
-  node.progressLabel = isEdit ? "正在读取输入图片" : "正在提交";
-  node.callDetails = {
-    configuration: {
-      provider: "Image2",
-      node: node.spec.label,
-      model: selectedModel,
-      base_url: image2Settings.baseUrl,
-    },
-    text_inputs: textSources.map((source) => ({ node: source.name, text: source.textInput.value })),
-    mode: isEdit ? "image-to-image" : "text-to-image",
-    endpoint,
-    method: "POST",
-    headers: {
-      Authorization: "Bearer ***",
-      ...(isEdit ? {} : { "Content-Type": "application/json" }),
-    },
-    body: visibleBody,
-    multipart: isEdit,
-  };
+  node.progressLabel = "正在提交任务";
+  node.callDetails = { endpoint, body: requestBody };
   node.hasRun = true;
   node.detailsButton.textContent = "调用详情";
-  setImage2RunActions(node, { details: true });
-  setImage2Status(node, `${node.progressLabel} · 0 秒`);
+  setKieRunActions(node, { details: true });
+  setKieStatus(node, "正在提交任务 · 0 秒");
   node.timerId = window.setInterval(() => {
-    setImage2Status(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
+    setKieStatus(node, `${node.progressLabel} · ${formatGenerationElapsed(performance.now() - node.startedAt)}`);
   }, 250);
 
   try {
-    const headers = { Authorization: `Bearer ${requestConfig.apiKey}` };
-    let body;
-    if (isEdit) {
-      const form = new FormData();
-      Object.entries(requestFields).forEach(([key, value]) => form.append(key, value));
-      for (let index = 0; index < sources.length; index += 1) {
-        node.progressLabel = `正在读取输入图片 ${index + 1}/${sources.length}`;
-        const imageBlob = await imageSourceToBlob(sources[index], node.abortController.signal);
-        form.append("image", imageBlob, sources[index].file?.name || `input-${index + 1}.png`);
-      }
-      body = form;
-    } else {
-      headers["Content-Type"] = "application/json";
-      body = JSON.stringify(requestFields);
-    }
-
-    node.progressLabel = "正在提交任务";
-    const submitPayload = await fetchImageApiJson(endpoint, {
+    const submitPayload = await fetchKieJson(endpoint, {
       method: "POST",
-      headers,
-      body,
+      headers: {
+        Authorization: `Bearer ${requestConfig.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
       signal: node.abortController.signal,
     });
-    const taskId = extractImage2TaskId(submitPayload);
-    if (!taskId) throw new Error("Image2 异步接口未返回任务 ID。");
+    const taskId = extractKieTaskId(submitPayload);
+    if (!taskId) throw new Error("KIE 创建任务接口未返回 taskId。");
 
     node.callDetails.submit_response = submitPayload;
     node.callStatus = "查询中";
     node.progressLabel = "任务已提交";
-    const { payload: resultPayload, results } = await pollImage2Task(node, taskId, requestConfig);
-    if (!results.length) throw new Error("Image2 任务成功，但没有找到生成图片。");
+    const { payload, urls } = await pollKieTask(node, taskId, requestConfig);
+    if (!urls.length) throw new Error("KIE 任务成功，但未返回图片 URL。");
 
-    stopImage2Timer(node);
+    stopKieTimer(node);
     node.callStatus = "生成成功";
     node.callDetails.response = {
-      status: resultPayload?.status || null,
-      created: resultPayload?.result?.created || null,
-      image_count: results.length,
-      images: results.map((result) => result.responseDetails),
+      state: payload?.data?.state || null,
+      costTime: payload?.data?.costTime || null,
+      creditsConsumed: payload?.data?.creditsConsumed || null,
+      resultUrls: urls,
     };
-    setImage2Status(node, `生成完成 · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
-    setImage2RunActions(node, { details: true });
-    if (nodes.has(node.id)) createImage2Results(node, results);
+    setKieStatus(node, `生成完成 · ${formatGenerationElapsed(node.elapsedMs)}`, "done");
+    setKieRunActions(node, { details: true });
+    if (nodes.has(node.id)) createKieResults(node, urls);
   } catch (error) {
-    stopImage2Timer(node);
+    stopKieTimer(node);
     const failureMessage = error?.name === "AbortError"
       ? "生成已停止。"
       : error instanceof TypeError
-        ? "请求失败，请检查网络、网址或 CORS 设置。"
+        ? "请求失败，请检查网络、Base URL 或 CORS 设置。"
         : (error.message || String(error));
     node.callStatus = "生成失败";
     node.lastError = failureMessage;
     node.callDetails = { ...node.callDetails, error: failureMessage };
-    setImage2Status(node, `生成失败 · ${formatGenerationElapsed(node.elapsedMs)}`, "error");
-    setImage2RunActions(node, { details: true, error: true });
+    setKieStatus(node, `生成失败 · ${formatGenerationElapsed(node.elapsedMs)}`, "error");
+    setKieRunActions(node, { details: true, error: true });
   } finally {
     node.generateButton.disabled = false;
     node.abortController = null;
   }
 }
-function cloneImage2GenerationNode(node) {
-  if (!isImage2GenerationNode(node)) return null;
-  const inputSourceIds = Array.from(connections.values())
-    .filter((connection) => {
-      const sourceType = nodes.get(connection.fromNodeId)?.type;
-      return connection.toNodeId === node.id && (sourceType === "image" || sourceType === "text");
-    })
-    .map((connection) => connection.fromNodeId);
-  const clone = createImage2GenerationNode(node.type, {
-    x: node.x + 52,
-    y: node.y + 52,
-  });
-  if (!clone) return null;
 
+function cloneKieNode(node) {
+  const inputSourceIds = Array.from(connections.values())
+    .filter((connection) => connection.toNodeId === node.id)
+    .map((connection) => connection.fromNodeId);
+  const clone = createKieNode({ x: node.x + 52, y: node.y + 52 });
   clone.localPromptValue = node.localPromptValue ?? (node.prompt.readOnly ? "" : node.prompt.value);
   clone.prompt.value = clone.localPromptValue;
-  clone.model.value = node.model.value;
   clone.resolution.value = node.resolution.value;
   clone.aspectRatio.value = node.aspectRatio.value;
-  clone.quality.value = node.quality.value;
-  updateImage2OutputSize(clone);
   inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
   selectNode(clone.id);
   return clone;
 }
 
-function createImage2GenerationNode(type, { x, y } = {}) {
-  const spec = IMAGE2_NODE_SPECS[type];
-  if (!spec) return null;
+function createKieNode({ x, y } = {}) {
   nodeSequence += 1;
-  const id = `${type}-${nodeSequence}`;
+  const id = `kie-${nodeSequence}`;
   const center = canvasCenter();
   const node = {
     id,
-    type,
-    spec,
+    type: "kie",
     x: Number.isFinite(x) ? x : center.x - NODE_WIDTH / 2,
     y: Number.isFinite(y) ? y : center.y - NODE_HEIGHT / 2,
     width: NODE_WIDTH,
     height: NODE_HEIGHT,
-    name: `${spec.label} ${nodeSequence}`,
+    name: `KIE Image2 ${nodeSequence}`,
     wasDragged: false,
     element: document.createElement("article"),
     title: document.createElement("span"),
     body: document.createElement("div"),
   };
 
-  node.element.className = "canvas-node image2-node";
+  node.element.className = "canvas-node kie-node";
   node.element.dataset.nodeId = id;
   node.element.style.left = `${node.x}px`;
   node.element.style.top = `${node.y}px`;
@@ -1242,105 +1086,81 @@ function createImage2GenerationNode(type, { x, y } = {}) {
   node.title.textContent = node.name;
   titleWrap.append(typeDot, node.title);
 
+  const cloneButton = document.createElement("button");
+  cloneButton.className = "node-tool-button";
+  cloneButton.type = "button";
+  cloneButton.textContent = "克隆";
+  cloneButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+  cloneButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    cloneKieNode(node);
+  });
   const deleteButton = document.createElement("button");
   deleteButton.className = "node-delete";
   deleteButton.type = "button";
   deleteButton.textContent = "×";
-  deleteButton.title = "删除节点（多选时批量删除）";
-  deleteButton.setAttribute("aria-label", `删除${node.name}`);
   deleteButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   deleteButton.addEventListener("click", (event) => {
     event.stopPropagation();
     removeNodeOrSelection(id);
   });
-
-  const cloneButton = document.createElement("button");
-  cloneButton.className = "node-tool-button";
-  cloneButton.type = "button";
-  cloneButton.textContent = "克隆";
-  cloneButton.title = "克隆节点并复制输入连接";
-  cloneButton.setAttribute("aria-label", `克隆${node.name}`);
-  cloneButton.addEventListener("pointerdown", (event) => event.stopPropagation());
-  cloneButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    cloneImage2GenerationNode(node);
-  });
-
   const headerActions = document.createElement("div");
   headerActions.className = "node-header-actions";
   headerActions.append(cloneButton, deleteButton);
   header.append(titleWrap, headerActions);
 
-  node.body.className = "node-body image2-body";
-  const resolutionOptions = spec.resolutions
-    .map((resolution) => `<option value="${resolution}"${resolution === "1K" ? " selected" : ""}>${resolution}</option>`)
-    .join("");
-  const ratioOptions = spec.ratios
-    .map((ratio) => `<option value="${ratio}"${ratio === "1:1" ? " selected" : ""}>${ratio}</option>`)
-    .join("");
-  const qualityOptions = spec.qualities
-    .map((quality) => `<option value="${quality}"${quality === "high" ? " selected" : ""}>${quality}</option>`)
-    .join("");
+  const ratioOptions = KIE_RATIOS.map((ratio) => `<option value="${ratio}">${ratio}</option>`).join("");
+  const resolutionOptions = KIE_RESOLUTIONS.map((resolution) => `<option value="${resolution}">${resolution}</option>`).join("");
+  node.body.className = "node-body kie-body";
   node.body.innerHTML = `
-    <div class="image2-input-preview" aria-label="输入图片预览"></div>
-    <textarea class="image2-prompt" placeholder="描述要生成的图片；连接文本节点后会在生成时同步文本，连接图片后进行图生图…" aria-label="${spec.label} 提示词"></textarea>
-    <div class="image2-config">
-      <label class="image2-field wide">模型<input class="image2-model" type="text" value="${spec.model}" autocomplete="off" spellcheck="false" /></label>
-      <label class="image2-field">图片尺寸<select class="image2-resolution">${resolutionOptions}</select></label>
-      <label class="image2-field">图片比例<select class="image2-aspect">${ratioOptions}</select></label>
-      <label class="image2-field">输出尺寸<input class="image2-final-size" type="text" disabled /></label>
-      <label class="image2-field">质量<select class="image2-quality">${qualityOptions}</select></label>
+    <div class="kie-input-preview" aria-label="输入图片预览"></div>
+    <textarea class="kie-prompt" maxlength="20000" placeholder="输入图片生成提示词；连接图片后自动切换为图生图。" aria-label="KIE 提示词"></textarea>
+    <div class="kie-config">
+      <label class="kie-field wide">模型<input class="kie-model" type="text" disabled /></label>
+      <label class="kie-field">分辨率<select class="kie-resolution">${resolutionOptions}</select></label>
+      <label class="kie-field">图片比例<select class="kie-aspect">${ratioOptions}</select></label>
     </div>
-    <div class="image2-generate-row">
-      <div class="image2-run-summary">
-        <span class="image2-status">未连接图片 · 未连接文本节点 · 文生图模式</span>
-        <div class="image2-run-actions">
-          <button class="image2-run-action image2-details hidden" type="button">调用详情</button>
-          <button class="image2-run-action image2-error-info hidden" type="button">错误信息</button>
+    <div class="kie-generate-row">
+      <div class="kie-run-summary">
+        <span class="kie-status">文生图</span>
+        <div class="kie-run-actions">
+          <button class="kie-run-action kie-details" type="button">调用预览</button>
+          <button class="kie-run-action kie-error-info hidden" type="button">错误信息</button>
         </div>
       </div>
-      <div class="image2-generate-actions">
-        <button class="image2-generate" type="button">生成图片</button>
-      </div>
+      <button class="kie-generate" type="button">生成图片</button>
     </div>
   `;
 
-  node.inputPreview = node.body.querySelector(".image2-input-preview");
-  node.prompt = node.body.querySelector(".image2-prompt");
+  node.inputPreview = node.body.querySelector(".kie-input-preview");
+  node.prompt = node.body.querySelector(".kie-prompt");
   node.localPromptValue = "";
-  node.model = node.body.querySelector(".image2-model");
-  node.resolution = node.body.querySelector(".image2-resolution");
-  node.aspectRatio = node.body.querySelector(".image2-aspect");
-  node.finalSize = node.body.querySelector(".image2-final-size");
-  node.quality = node.body.querySelector(".image2-quality");
-  node.status = node.body.querySelector(".image2-status");
-  node.detailsButton = node.body.querySelector(".image2-details");
-  node.errorButton = node.body.querySelector(".image2-error-info");
-  node.generateButton = node.body.querySelector(".image2-generate");
-
+  node.model = node.body.querySelector(".kie-model");
+  node.resolution = node.body.querySelector(".kie-resolution");
+  node.aspectRatio = node.body.querySelector(".kie-aspect");
+  node.status = node.body.querySelector(".kie-status");
+  node.detailsButton = node.body.querySelector(".kie-details");
+  node.errorButton = node.body.querySelector(".kie-error-info");
+  node.generateButton = node.body.querySelector(".kie-generate");
   node.prompt.addEventListener("input", () => {
     if (!node.prompt.readOnly) node.localPromptValue = node.prompt.value;
   });
-  node.resolution.addEventListener("change", () => updateImage2OutputSize(node));
-  node.aspectRatio.addEventListener("change", () => updateImage2OutputSize(node));
-
   node.detailsButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    openGenerationDetails(node, false, { preview: !node.hasRun });
+    openGenerationDetails(node, false, !node.hasRun);
   });
   node.errorButton.addEventListener("click", (event) => {
     event.stopPropagation();
     openGenerationDetails(node, true);
   });
-  node.generateButton.addEventListener("click", () => void generateWithImage2(node));
+  node.generateButton.addEventListener("click", () => void generateWithKie(node));
 
   node.element.append(header, node.body);
   attachConnectionPorts(node);
   attachNodeDrag(node);
   surface.appendChild(node.element);
   nodes.set(id, node);
-  refreshImage2Input(node);
-  updateImage2OutputSize(node);
+  refreshKieInput(node);
   selectNode(id);
   updateEmptyState();
   return node;
@@ -1385,23 +1205,10 @@ function fitToNodes() {
   applyView();
 }
 
-function showSettingsSection(section) {
-  settingsNavItems.forEach((item) => {
-    const active = item.dataset.settingsSection === section;
-    item.classList.toggle("active", active);
-    if (active) item.setAttribute("aria-current", "page");
-    else item.removeAttribute("aria-current");
-  });
-  settingsPanels.forEach((panel) => {
-    panel.hidden = panel.dataset.settingsPanel !== section;
-  });
-}
-
-function openSettings(section = "image2") {
-  image2BaseUrl.value = image2Settings.baseUrl;
-  image2ApiKey.value = image2Settings.apiKey;
+function openSettings() {
+  kieBaseUrl.value = kieSettings.baseUrl;
+  kieApiKey.value = kieSettings.apiKey;
   settingsMessage.textContent = "";
-  showSettingsSection(section);
   settingsDialog.showModal();
 }
 
@@ -1410,35 +1217,25 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  const activeSection = settingsNavItems.find((item) => item.classList.contains("active"))?.dataset.settingsSection;
-  if (activeSection === "image") {
-    closeSettings();
-    return;
-  }
-  const baseUrl = cleanBaseUrl(image2BaseUrl.value);
-  const apiKey = image2ApiKey.value.trim();
+  const baseUrl = cleanBaseUrl(kieBaseUrl.value);
+  const apiKey = kieApiKey.value.trim();
   if (!baseUrl) {
-    showSettingsSection("image2");
-    settingsMessage.textContent = "请输入 Image2 Base URL。";
-    image2BaseUrl.focus();
+    settingsMessage.textContent = "请输入 KIE Base URL。";
+    kieBaseUrl.focus();
     return;
   }
   if (!apiKey) {
-    showSettingsSection("image2");
-    settingsMessage.textContent = "请输入 Image2 API Key。";
-    image2ApiKey.focus();
+    settingsMessage.textContent = "请输入 KIE API Key。";
+    kieApiKey.focus();
     return;
   }
-
   try {
-    window.localStorage.setItem(IMAGE2_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
+    window.localStorage.setItem(KIE_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
   } catch {
-    showSettingsSection("image2");
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
-
-  image2Settings = { baseUrl, apiKey };
+  kieSettings = { baseUrl, apiKey };
   updateSettingsButtonState();
   closeSettings();
 }
@@ -1462,7 +1259,7 @@ function showContextMenu(clientX, clientY) {
 }
 
 viewport.addEventListener("wheel", (event) => {
-  if (event.target instanceof Element && event.target.closest(".image2-prompt, .text-node-input")) return;
+  if (event.target instanceof Element && event.target.closest(".text-node-input, .kie-prompt")) return;
   event.preventDefault();
   hideContextMenu();
   const factor = Math.exp(-event.deltaY * 0.0012);
@@ -1648,8 +1445,8 @@ createTextNodeButton.addEventListener("click", () => {
   hideContextMenu();
 });
 
-createImage2NodeButton.addEventListener("click", () => {
-  createImage2GenerationNode("image2", {
+createKieNodeButton.addEventListener("click", () => {
+  createKieNode({
     x: contextCanvasPoint.x - NODE_WIDTH / 2,
     y: contextCanvasPoint.y - NODE_HEIGHT / 2,
   });
@@ -1660,16 +1457,13 @@ zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
-settingsButton.addEventListener("click", () => openSettings("image2"));
+settingsButton.addEventListener("click", openSettings);
 settingsCloseButton.addEventListener("click", closeSettings);
 settingsCancelButton.addEventListener("click", closeSettings);
 settingsSaveButton.addEventListener("click", saveSettings);
-settingsNavItems.forEach((item) => {
-  item.addEventListener("click", () => showSettingsSection(item.dataset.settingsSection));
-});
-image2ApiKeyClear.addEventListener("click", () => {
-  image2ApiKey.value = "";
-  image2ApiKey.focus();
+kieApiKeyClear.addEventListener("click", () => {
+  kieApiKey.value = "";
+  kieApiKey.focus();
 });
 settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
@@ -1680,7 +1474,7 @@ document.addEventListener("pointerdown", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (settingsDialog.open || previewDialog.open || generationDetailsDialog.open) return;
+  if (previewDialog.open || settingsDialog.open || generationDetailsDialog.open) return;
   const editable = event.target instanceof HTMLInputElement
     || event.target instanceof HTMLTextAreaElement
     || event.target instanceof HTMLSelectElement;
@@ -1726,4 +1520,10 @@ window.addEventListener("beforeunload", () => {
 
 resetView();
 updateEmptyState();
-loadImage2Settings();
+loadKieSettings();
+
+try {
+  window.localStorage.removeItem("canvas:image2-settings:v1");
+} catch {
+  // Ignore unavailable browser storage while removing the obsolete credentials.
+}
