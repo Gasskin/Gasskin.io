@@ -8,8 +8,10 @@ const MAX_SCALE = 32;
 const ZOOM_STEP = 1.2;
 const KIE_SETTINGS_STORAGE_KEY = "canvas:kie-settings:v1";
 const KIE_DEFAULT_BASE_URL = "https://api.kie.ai";
+const KIE_DEFAULT_UPLOAD_BASE_URL = "https://kieai.redpandaai.co";
 const KIE_CREATE_TASK_PATH = "api/v1/jobs/createTask";
 const KIE_TASK_DETAILS_PATH = "api/v1/jobs/recordInfo";
+const KIE_FILE_UPLOAD_PATH = "api/file-stream-upload";
 const KIE_POLL_INTERVAL_MS = 2000;
 const KIE_POLL_TIMEOUT_MS = 15 * 60 * 1000;
 const KIE_TEXT_MODEL = "gpt-image-2-text-to-image";
@@ -47,6 +49,7 @@ const settingsCloseButton = document.getElementById("settingsCloseButton");
 const settingsCancelButton = document.getElementById("settingsCancelButton");
 const settingsSaveButton = document.getElementById("settingsSaveButton");
 const kieBaseUrl = document.getElementById("kieBaseUrl");
+const kieUploadBaseUrl = document.getElementById("kieUploadBaseUrl");
 const kieApiKey = document.getElementById("kieApiKey");
 const kieApiKeyClear = document.getElementById("kieApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
@@ -71,7 +74,11 @@ const selectedNodeIds = new Set();
 let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let dragDepth = 0;
-let kieSettings = { baseUrl: KIE_DEFAULT_BASE_URL, apiKey: "" };
+let kieSettings = {
+  baseUrl: KIE_DEFAULT_BASE_URL,
+  uploadBaseUrl: KIE_DEFAULT_UPLOAD_BASE_URL,
+  apiKey: "",
+};
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -98,6 +105,7 @@ function loadKieSettings() {
       const parsed = JSON.parse(stored);
       kieSettings = {
         baseUrl: cleanBaseUrl(parsed?.baseUrl || KIE_DEFAULT_BASE_URL),
+        uploadBaseUrl: cleanBaseUrl(parsed?.uploadBaseUrl || KIE_DEFAULT_UPLOAD_BASE_URL),
         apiKey: String(parsed?.apiKey || "").trim(),
       };
     }
@@ -326,8 +334,7 @@ function refreshKieInput(node) {
     const hasLocalImage = imageSources.some((source) => !/^https?:\/\//i.test(source.objectUrl || ""));
     setKieStatus(
       node,
-      `${mode}${textInfo}${hasLocalImage ? " · 含无法提交的本地图片" : ""}`,
-      hasLocalImage ? "error" : "",
+      `${mode}${textInfo}${hasLocalImage ? " · 本地图片将在生成前自动上传" : ""}`,
     );
   }
 }
@@ -506,6 +513,7 @@ function setNodeImageSource(node, { src, name, file = null, revokeOnRemove = fal
   node.file = file;
   node.objectUrl = src;
   node.revokeObjectUrl = revokeOnRemove;
+  node.kieUploadUrl = "";
   node.name = name || file?.name || "未命名图片";
   node.title.textContent = node.name;
   node.body.replaceChildren();
@@ -794,14 +802,20 @@ function getKiePrompt(node, textSources) {
     : node.prompt.value.trim();
 }
 
-function buildKieRequest(node, imageSources, textSources) {
+function buildKieRequest(node, imageSources, textSources, inputUrls = null) {
   const isImageToImage = imageSources.length > 0;
   const input = {
     prompt: getKiePrompt(node, textSources),
     aspect_ratio: node.aspectRatio.value,
     resolution: node.resolution.value,
   };
-  if (isImageToImage) input.input_urls = imageSources.map((source) => source.objectUrl);
+  if (isImageToImage) {
+    input.input_urls = inputUrls || imageSources.map((source) => (
+      /^https?:\/\//i.test(source.objectUrl || "")
+        ? source.objectUrl
+        : `[上传后生成的 URL：${source.name}]`
+    ));
+  }
   return {
     model: isImageToImage ? KIE_IMAGE_MODEL : KIE_TEXT_MODEL,
     input,
@@ -884,13 +898,74 @@ async function fetchKieJson(url, options) {
   const text = await response.text();
   let payload = null;
   try { payload = text ? JSON.parse(text) : null; } catch { payload = null; }
-  const apiFailed = Number.isFinite(Number(payload?.code))
+  const apiFailed = payload?.success === false || (
+    Number.isFinite(Number(payload?.code))
     && Number(payload.code) !== 200
-    && !(String(payload?.msg || "").toLowerCase() === "success" && payload?.data);
+    && !(String(payload?.msg || "").toLowerCase() === "success" && payload?.data)
+  );
   if (!response.ok || apiFailed) {
     throw new Error(payload?.msg || text || `${response.status} ${response.statusText}`);
   }
   return payload;
+}
+
+async function getImageSourceBlob(source, signal) {
+  if (source.file) return source.file;
+  const response = await fetch(source.objectUrl, { signal });
+  if (!response.ok) throw new Error(`无法读取本地图片：${response.status} ${response.statusText}`);
+  const blob = await response.blob();
+  if (!blob.type.startsWith("image/")) throw new Error(`${source.name} 不是有效图片。`);
+  return blob;
+}
+
+async function uploadKieImage(source, requestConfig, signal) {
+  if (/^https?:\/\//i.test(source.objectUrl || "")) return source.objectUrl;
+  if (/^https?:\/\//i.test(source.kieUploadUrl || "")) return source.kieUploadUrl;
+
+  const originalObjectUrl = source.objectUrl;
+  const blob = await getImageSourceBlob(source, signal);
+  const originalName = source.file?.name || source.name || "canvas-image.png";
+  const safeName = originalName.replace(/[^a-zA-Z0-9._-]+/g, "-");
+  const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${safeName}`;
+  const form = new FormData();
+  form.append("file", blob, originalName);
+  form.append("uploadPath", "images/user-uploads");
+  form.append("fileName", uniqueName);
+
+  const payload = await fetchKieJson(
+    joinApiUrl(requestConfig.uploadBaseUrl, KIE_FILE_UPLOAD_PATH),
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${requestConfig.apiKey}` },
+      body: form,
+      signal,
+    },
+  );
+  const uploadUrl = String(
+    payload?.data?.downloadUrl
+    || payload?.data?.fileUrl
+    || payload?.data?.url
+    || "",
+  ).trim();
+  if (!/^https?:\/\//i.test(uploadUrl)) {
+    throw new Error(`KIE 已上传 ${source.name}，但响应中没有可用的图片 URL。`);
+  }
+  if (source.objectUrl === originalObjectUrl) source.kieUploadUrl = uploadUrl;
+  return uploadUrl;
+}
+
+async function prepareKieInputUrls(node, imageSources, requestConfig) {
+  const urls = [];
+  const uploaded = [];
+  for (let index = 0; index < imageSources.length; index += 1) {
+    const source = imageSources[index];
+    const isLocal = !/^https?:\/\//i.test(source.objectUrl || "");
+    if (isLocal) node.progressLabel = `正在上传图片 ${index + 1}/${imageSources.length}`;
+    const url = await uploadKieImage(source, requestConfig, node.abortController.signal);
+    urls.push(url);
+    if (isLocal) uploaded.push({ node: source.name, url });
+  }
+  return { urls, uploaded };
 }
 
 function extractKieTaskId(payload) {
@@ -936,9 +1011,6 @@ function validateKieRequest(node, imageSources, prompt) {
   if (!prompt) return "请在本节点或已连接的文本节点中填写提示词。";
   if (prompt.length > 20000) return "提示词不能超过 20,000 个字符。";
   if (imageSources.length > 16) return "KIE 图生图最多支持 16 张输入图片。";
-  if (imageSources.some((source) => !/^https?:\/\//i.test(source.objectUrl || ""))) {
-    return "KIE 图生图只接受公网图片 URL；本地上传图片无法直接提交。";
-  }
 
   const ratio = node.aspectRatio.value;
   const resolution = node.resolution.value;
@@ -973,14 +1045,14 @@ async function generateWithKie(node) {
   node.abortController = new AbortController();
   const requestConfig = { ...kieSettings };
   const endpoint = joinApiUrl(requestConfig.baseUrl, KIE_CREATE_TASK_PATH);
-  const requestBody = buildKieRequest(node, imageSources, textSources);
+  const previewBody = buildKieRequest(node, imageSources, textSources);
 
   node.startedAt = performance.now();
   node.elapsedMs = null;
   node.callStatus = "提交中";
   node.lastError = "";
-  node.progressLabel = "正在提交任务";
-  node.callDetails = { endpoint, body: requestBody };
+  node.progressLabel = imageSources.length ? "正在准备输入图片" : "正在提交任务";
+  node.callDetails = { endpoint, body: previewBody, uploads: [] };
   node.hasRun = true;
   node.detailsButton.textContent = "调用详情";
   setKieRunActions(node, { details: true });
@@ -990,6 +1062,11 @@ async function generateWithKie(node) {
   }, 250);
 
   try {
+    const { urls: inputUrls, uploaded } = await prepareKieInputUrls(node, imageSources, requestConfig);
+    const requestBody = buildKieRequest(node, imageSources, textSources, inputUrls);
+    node.callDetails.body = requestBody;
+    node.callDetails.uploads = uploaded;
+    node.progressLabel = "正在提交任务";
     const submitPayload = await fetchKieJson(endpoint, {
       method: "POST",
       headers: {
@@ -1207,6 +1284,7 @@ function fitToNodes() {
 
 function openSettings() {
   kieBaseUrl.value = kieSettings.baseUrl;
+  kieUploadBaseUrl.value = kieSettings.uploadBaseUrl;
   kieApiKey.value = kieSettings.apiKey;
   settingsMessage.textContent = "";
   settingsDialog.showModal();
@@ -1218,10 +1296,16 @@ function closeSettings() {
 
 function saveSettings() {
   const baseUrl = cleanBaseUrl(kieBaseUrl.value);
+  const uploadBaseUrl = cleanBaseUrl(kieUploadBaseUrl.value);
   const apiKey = kieApiKey.value.trim();
   if (!baseUrl) {
     settingsMessage.textContent = "请输入 KIE Base URL。";
     kieBaseUrl.focus();
+    return;
+  }
+  if (!uploadBaseUrl) {
+    settingsMessage.textContent = "请输入 KIE Upload Base URL。";
+    kieUploadBaseUrl.focus();
     return;
   }
   if (!apiKey) {
@@ -1230,12 +1314,15 @@ function saveSettings() {
     return;
   }
   try {
-    window.localStorage.setItem(KIE_SETTINGS_STORAGE_KEY, JSON.stringify({ version: 1, baseUrl, apiKey }));
+    window.localStorage.setItem(
+      KIE_SETTINGS_STORAGE_KEY,
+      JSON.stringify({ version: 1, baseUrl, uploadBaseUrl, apiKey }),
+    );
   } catch {
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
-  kieSettings = { baseUrl, apiKey };
+  kieSettings = { baseUrl, uploadBaseUrl, apiKey };
   updateSettingsButtonState();
   closeSettings();
 }
