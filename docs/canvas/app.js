@@ -7,21 +7,13 @@ const MIN_SCALE = 0.05;
 const MAX_SCALE = 32;
 const ZOOM_STEP = 1.2;
 const KIE_SETTINGS_STORAGE_KEY = "canvas:kie-settings:v1";
-const KIE_DEFAULT_BASE_URL = "https://api.kie.ai";
-const KIE_DEFAULT_UPLOAD_BASE_URL = "https://kieai.redpandaai.co";
+const KIE_TOKEN_STORAGE_KEY = "canvas:kie-api-key:v1";
+const KIE_CONFIG_FILE = "kie-image2.json";
 const KIE_CREATE_TASK_PATH = "api/v1/jobs/createTask";
 const KIE_TASK_DETAILS_PATH = "api/v1/jobs/recordInfo";
 const KIE_FILE_UPLOAD_PATH = "api/file-stream-upload";
 const KIE_POLL_INTERVAL_MS = 2000;
 const KIE_POLL_TIMEOUT_MS = 15 * 60 * 1000;
-const KIE_TEXT_MODEL = "gpt-image-2-text-to-image";
-const KIE_IMAGE_MODEL = "gpt-image-2-image-to-image";
-const KIE_DEFAULT_MODEL_GROUP = Object.freeze({
-  id: "image2",
-  name: "GPT Image2",
-  textModel: KIE_TEXT_MODEL,
-  imageModel: KIE_IMAGE_MODEL,
-});
 const KIE_RATIOS = Object.freeze([
   "auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5",
   "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21",
@@ -41,6 +33,9 @@ const createImageNodeButton = document.getElementById("createImageNodeButton");
 const createTextNodeButton = document.getElementById("createTextNodeButton");
 const createKieNodeButton = document.getElementById("createKieNodeButton");
 const fitButton = document.getElementById("fitButton");
+const promptGuideButton = document.getElementById("promptGuideButton");
+const promptGuideDialog = document.getElementById("promptGuideDialog");
+const promptGuideFrame = document.getElementById("promptGuideFrame");
 const settingsButton = document.getElementById("settingsButton");
 const zoomOutButton = document.getElementById("zoomOutButton");
 const zoomInButton = document.getElementById("zoomInButton");
@@ -62,6 +57,9 @@ const settingsMessage = document.getElementById("settingsMessage");
 const kieModelGroups = document.getElementById("kieModelGroups");
 const kieModelGroupTemplate = document.getElementById("kieModelGroupTemplate");
 const kieAddModelGroup = document.getElementById("kieAddModelGroup");
+const kieDefaultResolution = document.getElementById("kieDefaultResolution");
+const kieDefaultRatio = document.getElementById("kieDefaultRatio");
+const kieConfigNotice = document.getElementById("kieConfigNotice");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
 const generationDetailsClose = document.getElementById("generationDetailsClose");
@@ -83,13 +81,8 @@ const selectedNodeIds = new Set();
 let selectedConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let dragDepth = 0;
-let kieSettings = {
-  baseUrl: KIE_DEFAULT_BASE_URL,
-  uploadBaseUrl: KIE_DEFAULT_UPLOAD_BASE_URL,
-  apiKey: "",
-  modelGroups: [{ ...KIE_DEFAULT_MODEL_GROUP }],
-  defaultModelGroupId: KIE_DEFAULT_MODEL_GROUP.id,
-};
+let kieSettings = null;
+let kieConfigNoticeText = "";
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
 function clamp(value, minimum, maximum) {
@@ -109,25 +102,36 @@ function updateSettingsButtonState() {
   settingsButton.title = kieSettings.apiKey ? "KIE 设置（已配置）" : "KIE 设置（尚未配置 API Key）";
 }
 
-function loadKieSettings() {
+async function loadKieSettings() {
+  const response = await fetch(KIE_CONFIG_FILE, { cache: "no-store" });
+  if (!response.ok) throw new Error(`无法读取 ${KIE_CONFIG_FILE}（${response.status}）。`);
+  let config = parseKieConfig(await response.json());
+  let apiKey = "";
   try {
-    const stored = window.localStorage.getItem(KIE_SETTINGS_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      kieSettings = {
-        baseUrl: cleanBaseUrl(parsed?.baseUrl || KIE_DEFAULT_BASE_URL),
-        uploadBaseUrl: cleanBaseUrl(parsed?.uploadBaseUrl || KIE_DEFAULT_UPLOAD_BASE_URL),
-        apiKey: String(parsed?.apiKey || "").trim(),
-        ...normalizeKieModelGroups(parsed),
-      };
+    const storedToken = window.localStorage.getItem(KIE_TOKEN_STORAGE_KEY);
+    const legacy = JSON.parse(window.localStorage.getItem(KIE_SETTINGS_STORAGE_KEY) || "null");
+    apiKey = storedToken ?? String(legacy?.apiKey || "").trim();
+    if (legacy) {
+      config = parseKieConfig({ ...config, ...legacy, version: 1 });
+      kieConfigNoticeText = "已载入旧浏览器配置，请保存到 JSON 完成迁移。";
     }
+    if (storedToken === null && apiKey) window.localStorage.setItem(KIE_TOKEN_STORAGE_KEY, apiKey);
   } catch {
-    // Keep defaults when browser storage is unavailable or malformed.
+    // Keep the file configuration if legacy data or browser storage is unavailable.
   }
+  kieSettings = { ...config, apiKey };
   updateSettingsButtonState();
 }
 
-function normalizeKieModelGroups(settings) {
+function parseKieConfig(settings) {
+  if (settings?.version !== 1) throw new Error("不支持的 KIE 配置版本。请选择 version 为 1 的 JSON。");
+  for (const field of ["baseUrl", "uploadBaseUrl"]) {
+    let url;
+    try { url = new URL(settings[field]); } catch { throw new Error(`${field} 必须是完整的 HTTP(S) 地址。`); }
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
+      throw new Error(`${field} 不得包含账号、密码、查询参数或锚点。`);
+    }
+  }
   const ids = new Set();
   const modelGroups = (Array.isArray(settings?.modelGroups) ? settings.modelGroups : [])
     .filter((group) => group && typeof group === "object")
@@ -142,12 +146,37 @@ function normalizeKieModelGroups(settings) {
       ids.add(group.id);
       return true;
     });
-  if (!modelGroups.length) modelGroups.push({ ...KIE_DEFAULT_MODEL_GROUP });
+  if (!modelGroups.length || modelGroups.length !== settings.modelGroups?.length) {
+    throw new Error("每组模型必须包含唯一 ID、名称、文生图模型和图生图模型。");
+  }
+  const resolution = settings.defaults?.resolution;
+  const aspectRatio = settings.defaults?.aspectRatio;
+  if (!KIE_RESOLUTIONS.includes(resolution) || !KIE_RATIOS.includes(aspectRatio)) {
+    throw new Error("默认分辨率或比例无效。");
+  }
+  const defaultsError = validateKieRequest({ aspectRatio: { value: aspectRatio }, resolution: { value: resolution } }, [], "defaults")
+    || validateKieRequest({ aspectRatio: { value: aspectRatio }, resolution: { value: resolution } }, [{}], "defaults");
+  if (defaultsError) throw new Error(`默认参数：${defaultsError}`);
   return {
+    version: 1,
+    baseUrl: cleanBaseUrl(settings.baseUrl),
+    uploadBaseUrl: cleanBaseUrl(settings.uploadBaseUrl),
     modelGroups,
     defaultModelGroupId: modelGroups.some((group) => group.id === settings?.defaultModelGroupId)
       ? settings.defaultModelGroupId : modelGroups[0].id,
+    defaults: { resolution, aspectRatio },
   };
+}
+
+function downloadKieConfig(config) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(config, null, 2) + "\n"], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = KIE_CONFIG_FILE;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function getKieModelGroup(node) {
@@ -1251,6 +1280,7 @@ function cloneKieNode(node) {
 }
 
 function createKieNode({ x, y } = {}) {
+  if (!kieSettings) return null;
   nodeSequence += 1;
   const id = `kie-${nodeSequence}`;
   const center = canvasCenter();
@@ -1337,6 +1367,8 @@ function createKieNode({ x, y } = {}) {
   node.model = node.body.querySelector(".kie-model");
   node.resolution = node.body.querySelector(".kie-resolution");
   node.aspectRatio = node.body.querySelector(".kie-aspect");
+  node.resolution.value = kieSettings.defaults.resolution;
+  node.aspectRatio.value = kieSettings.defaults.aspectRatio;
   node.status = node.body.querySelector(".kie-status");
   node.detailsButton = node.body.querySelector(".kie-details");
   node.errorButton = node.body.querySelector(".kie-error-info");
@@ -1406,9 +1438,15 @@ function fitToNodes() {
 }
 
 function openSettings() {
+  if (!kieSettings) return;
   kieBaseUrl.value = kieSettings.baseUrl;
   kieUploadBaseUrl.value = kieSettings.uploadBaseUrl;
   kieApiKey.value = kieSettings.apiKey;
+  kieDefaultResolution.value = kieSettings.defaults.resolution;
+  kieDefaultRatio.value = kieSettings.defaults.aspectRatio;
+  kieConfigNotice.textContent = kieConfigNoticeText || (globalThis.__CANVAS_CONFIG_SAVE_URL__
+    ? "保存将写入 canvas/kie-image2.json，API Key 仅保存在浏览器。"
+    : "保存将下载 kie-image2.json。请将文件放入项目 canvas 目录并发布；当前页面立即生效，重新加载时读取项目文件。API Key 不包含在文件中。");
   kieModelGroups.replaceChildren();
   kieSettings.modelGroups.forEach((group) => {
     appendKieModelGroup(group, group.id === kieSettings.defaultModelGroupId);
@@ -1421,7 +1459,8 @@ function closeSettings() {
   settingsDialog.close();
 }
 
-function saveSettings() {
+async function saveSettings() {
+  if (settingsSaveButton.disabled) return;
   const baseUrl = cleanBaseUrl(kieBaseUrl.value);
   const uploadBaseUrl = cleanBaseUrl(kieUploadBaseUrl.value);
   const apiKey = kieApiKey.value.trim();
@@ -1437,22 +1476,44 @@ function saveSettings() {
   }
   const modelSettings = readKieModelGroupDraft();
   if (!modelSettings) return;
-  const nextSettings = { baseUrl, uploadBaseUrl, apiKey, ...modelSettings };
+  let config;
   try {
-    window.localStorage.setItem(
-      KIE_SETTINGS_STORAGE_KEY,
-      JSON.stringify({ version: 2, ...nextSettings }),
-    );
-  } catch {
-    settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
+    config = parseKieConfig({
+      version: 1, baseUrl, uploadBaseUrl, ...modelSettings,
+      defaults: { resolution: kieDefaultResolution.value, aspectRatio: kieDefaultRatio.value },
+    });
+  } catch (error) {
+    settingsMessage.textContent = error.message;
     return;
   }
-  kieSettings = nextSettings;
-  nodes.forEach((node) => {
-    if (isKieNode(node)) refreshKieModelOptions(node);
-  });
-  updateSettingsButtonState();
-  closeSettings();
+  settingsSaveButton.disabled = true;
+  try {
+    window.localStorage.setItem(KIE_TOKEN_STORAGE_KEY, apiKey);
+    if (globalThis.__CANVAS_CONFIG_SAVE_URL__) {
+      const endpoint = new URL(globalThis.__CANVAS_CONFIG_SAVE_URL__, location.href);
+      if (endpoint.origin !== location.origin) throw new Error("配置保存地址必须与页面同源。");
+      const response = await fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config),
+      });
+      if (!response.ok) throw new Error(`JSON 写入失败（${response.status}）。`);
+    } else {
+      downloadKieConfig(config);
+    }
+    kieSettings = { ...config, apiKey };
+    try { window.localStorage.removeItem(KIE_SETTINGS_STORAGE_KEY); } catch { /* Token and JSON are already saved. */ }
+    kieConfigNoticeText = "";
+    nodes.forEach((node) => {
+      if (isKieNode(node)) refreshKieModelOptions(node);
+    });
+    updateSettingsButtonState();
+    closeSettings();
+  } catch (error) {
+    settingsMessage.textContent = error.message || "配置保存失败。";
+  } finally {
+    settingsSaveButton.disabled = false;
+  }
 }
 
 function hideContextMenu() {
@@ -1672,6 +1733,16 @@ zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
+promptGuideButton.addEventListener("click", () => {
+  hideContextMenu();
+  promptGuideFrame.src = "prompt-guide.html";
+  promptGuideDialog.showModal();
+});
+document.getElementById("promptGuideClose").addEventListener("click", () => promptGuideDialog.close());
+window.addEventListener("message", (event) => {
+  if (event.origin === location.origin && event.source === promptGuideFrame.contentWindow
+      && event.data?.type === "prompt-guide:close") promptGuideDialog.close();
+});
 settingsButton.addEventListener("click", openSettings);
 settingsCloseButton.addEventListener("click", closeSettings);
 settingsCancelButton.addEventListener("click", closeSettings);
@@ -1698,6 +1769,7 @@ document.addEventListener("pointerdown", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (promptGuideDialog.open) return;
   if (previewDialog.open || settingsDialog.open || generationDetailsDialog.open) return;
   const editable = event.target instanceof HTMLInputElement
     || event.target instanceof HTMLTextAreaElement
@@ -1744,7 +1816,18 @@ window.addEventListener("beforeunload", () => {
 
 resetView();
 updateEmptyState();
-loadKieSettings();
+kieDefaultResolution.replaceChildren(...KIE_RESOLUTIONS.map((value) => new Option(value, value)));
+kieDefaultRatio.replaceChildren(...KIE_RATIOS.map((value) => new Option(value, value)));
+settingsButton.disabled = true;
+createKieNodeButton.disabled = true;
+loadKieSettings().then(() => {
+  settingsButton.disabled = false;
+  createKieNodeButton.disabled = false;
+}).catch((error) => {
+  settingsButton.title = `配置加载失败：${error.message}`;
+  emptyGuide.querySelector("p").textContent = `KIE 配置加载失败：${error.message} 请检查 canvas/${KIE_CONFIG_FILE} 后刷新。`;
+  console.error(error.message);
+});
 
 try {
   window.localStorage.removeItem("canvas:image2-settings:v1");

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "baseUrl": "https://api.kie.ai",
+  "uploadBaseUrl": "https://kieai.redpandaai.co",
+  "modelGroups": [
+    {
+      "id": "image2",
+      "name": "GPT2",
+      "textModel": "gpt-image-2-text-to-image",
+      "imageModel": "gpt-image-2-image-to-image"
+    },
+    {
+      "id": "image2.5F",
+      "name": "GPT2.5F",
+      "textModel": "gpt-image-2-5-flare-text-to-image",
+      "imageModel": "gpt-image-2-5-flare-image-to-image"
+    },
+    {
+      "id": "image2.5S",
+      "name": "GPT2.5S",
+      "textModel": "gpt-image-2-5-sunburst-text-to-image",
+      "imageModel": "gpt-image-2-5-sunburst-image-to-image"
+    }
+  ],
+  "defaultModelGroupId": "image2.5S",
+  "defaults": {
+    "resolution": "2K",
+    "aspectRatio": "16:9"
+  }
+}

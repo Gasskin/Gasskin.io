@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>画布</title>
-  <link rel="stylesheet" href="style.css?v=20260909-kie-model-groups-1" />
+  <link rel="stylesheet" href="style.css?v=20260909-prompt-guide-1" />
 </head>
 <body>
   <main class="workspace" aria-label="画布工作区">
@@ -19,6 +19,7 @@
 
       <div class="topbar-actions">
         <button id="fitButton" class="action-button" type="button" title="将全部节点适应到当前屏幕">适应屏幕</button>
+        <button id="promptGuideButton" class="action-button" type="button" aria-haspopup="dialog">提示词指南</button>
         <button id="settingsButton" class="icon-button" type="button" aria-label="打开 KIE 设置" title="KIE 设置">
           <span aria-hidden="true">&#9881;&#xfe0e;</span>
         </button>
@@ -85,6 +86,14 @@
 
   </main>
 
+  <dialog id="promptGuideDialog" class="prompt-guide-dialog" aria-labelledby="promptGuideTitle">
+    <header class="prompt-guide-bar">
+      <h2 id="promptGuideTitle">提示词指南</h2>
+      <button id="promptGuideClose" class="action-button" type="button" autofocus>返回画布</button>
+    </header>
+    <iframe id="promptGuideFrame" title="本地提示词列表"></iframe>
+  </dialog>
+
   <dialog id="previewDialog" class="preview-dialog">
     <button id="previewCloseButton" class="preview-close" type="button" aria-label="关闭预览">×</button>
     <figure>
@@ -129,6 +138,15 @@
           <p class="model-groups-help">每组包含文生图和图生图模型，连接图片后自动切换。勾选默认分组，新建节点将优先使用该组。</p>
           <div id="kieModelGroups" class="model-groups-list"></div>
         </section>
+        <label class="settings-field">
+          <span>新建节点默认分辨率</span>
+          <select id="kieDefaultResolution"></select>
+        </label>
+        <label class="settings-field">
+          <span>新建节点默认比例</span>
+          <select id="kieDefaultRatio"></select>
+        </label>
+        <p id="kieConfigNotice" class="model-groups-help"></p>
         <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
       </div>
       <footer class="settings-actions">
@@ -179,6 +197,6 @@
       </label>
     </div>
   </template>
-  <script src="app.js?v=20260909-kie-model-groups-1"></script>
+  <script src="app.js?v=20260909-prompt-guide-1"></script>
 </body>
 </html>

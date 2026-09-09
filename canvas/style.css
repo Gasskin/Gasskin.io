@@ -1058,7 +1058,8 @@ kbd {
   line-height: 1.45;
 }
 
-.settings-field input {
+.settings-field input,
+.settings-field select {
   width: 100%;
   height: 44px;
   min-width: 0;
@@ -1071,7 +1072,8 @@ kbd {
   font-size: 13px;
 }
 
-.settings-field input:focus {
+.settings-field input:focus,
+.settings-field select:focus {
   border-color: rgba(155, 145, 255, 0.65);
   box-shadow: 0 0 0 3px rgba(155, 145, 255, 0.08);
 }
@@ -1177,6 +1179,29 @@ kbd {
 }
 
 
+.prompt-guide-dialog {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--canvas);
+  color: var(--ink);
+}
+.prompt-guide-dialog[open] { display: flex; flex-direction: column; }
+.prompt-guide-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.prompt-guide-bar h2 { margin: 0; font-size: 17px; }
+.prompt-guide-dialog iframe { width: 100%; flex: 1; min-height: 0; border: 0; }
+
 @media (max-width: 680px) {
   .topbar { top: 12px; left: 12px; right: 12px; }
   .brand p, .canvas-help { display: none; }
@@ -1185,6 +1210,11 @@ kbd {
   .action-button { height: 36px; padding-inline: 10px; font-size: 12px; }
   .icon-button { width: 36px; height: 36px; }
   .zoom-control { right: 12px; bottom: 12px; }
+}
+
+@media (max-width: 420px) {
+  .topbar { flex-wrap: wrap; gap: 8px; }
+  .topbar-actions { margin-left: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

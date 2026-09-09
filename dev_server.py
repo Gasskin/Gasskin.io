@@ -11,7 +11,11 @@
 from __future__ import annotations
 
 import ssl
+import json
+import os
+import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -21,6 +25,63 @@ ROOT = Path(__file__).resolve().parent
 DOCS = ROOT / "docs"
 HOST = "127.0.0.1"
 PORT = 8765
+CANVAS_CONFIG_PATH = "/api/canvas-config/kie-image2.json"
+KIE_CONFIG_FILE = ROOT / "canvas" / "kie-image2.json"
+
+
+def validate_kie_config(config):
+    # Only non-secret settings are accepted; never serialize the caller's arbitrary object.
+    fields = {"version", "baseUrl", "uploadBaseUrl", "modelGroups", "defaultModelGroupId", "defaults"}
+    if not isinstance(config, dict) or set(config) != fields or config["version"] != 1:
+        raise ValueError("Invalid configuration fields")
+    for name in ("baseUrl", "uploadBaseUrl"):
+        value = config[name]
+        if not isinstance(value, str):
+            raise ValueError("Invalid URL")
+        url = urllib.parse.urlsplit(value)
+        if url.scheme not in ("http", "https") or not url.netloc or url.username or url.password or url.query or url.fragment:
+            raise ValueError("Invalid URL")
+    groups = config["modelGroups"]
+    if not isinstance(groups, list) or not groups:
+        raise ValueError("Missing model groups")
+    ids = set()
+    for group in groups:
+        if not isinstance(group, dict) or set(group) != {"id", "name", "textModel", "imageModel"}:
+            raise ValueError("Invalid model group fields")
+        if any(not isinstance(v, str) or not v.strip() for v in group.values()) or group["id"] in ids:
+            raise ValueError("Invalid model group")
+        ids.add(group["id"])
+    if config["defaultModelGroupId"] not in ids:
+        raise ValueError("Invalid default group")
+    defaults = config["defaults"]
+    if not isinstance(defaults, dict) or set(defaults) != {"resolution", "aspectRatio"}:
+        raise ValueError("Invalid defaults")
+    ratio, resolution = defaults["aspectRatio"], defaults["resolution"]
+    if resolution not in ("1K", "2K", "4K") or ratio not in (
+        "auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5",
+        "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21",
+    ):
+        raise ValueError("Invalid defaults")
+    if (ratio == "1:1" and resolution == "4K") or (resolution != "1K" and ratio in ("auto", "5:4", "4:5", "3:1", "1:3", "9:21")):
+        raise ValueError("Unsupported default resolution and ratio")
+    return config
+
+
+def write_json_atomic(target, config):
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=target.parent, delete=False) as output:
+        temporary = output.name
+        try:
+            json.dump(config, output, ensure_ascii=False, indent=2)
+            output.write("\n")
+        except Exception:
+            output.close()
+            os.unlink(temporary)
+            raise
+    try:
+        os.replace(temporary, target)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 class DevHandler(SimpleHTTPRequestHandler):
@@ -38,6 +99,15 @@ class DevHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split("?", 1)[0]
+        if path in ("/canvas/kie-image2.json", "/canvas/prompt-guide.json"):
+            config_file = KIE_CONFIG_FILE if path.endswith("/kie-image2.json") else ROOT / "canvas" / "prompt-guide.json"
+            try:
+                body = config_file.read_bytes()
+            except OSError:
+                self.send_error(404, "Canvas configuration file unavailable")
+                return
+            self._write_upstream(200, {"Content-Type": "application/json; charset=utf-8"}, body)
+            return
         if self._is_proxy_path(path):
             self._proxy()
             return
@@ -69,6 +139,34 @@ class DevHandler(SimpleHTTPRequestHandler):
             return
         self.send_error(404, "Not Found")
 
+    def do_PUT(self):
+        if self.path != CANVAS_CONFIG_PATH:
+            self.send_error(404, "Not Found")
+            return
+        port = self.server.server_address[1]
+        host = self.headers.get("Host", "")
+        if host not in (f"127.0.0.1:{port}", f"localhost:{port}") or self.headers.get("Origin") != f"http://{host}":
+            self.send_error(403, "Only same-origin local requests may save configuration")
+            return
+        if self.headers.get_content_type() != "application/json":
+            self.send_error(415, "Expected application/json")
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 < length <= 65536:
+                raise ValueError("Invalid content length")
+            config = validate_kie_config(json.loads(self.rfile.read(length)))
+        except (ValueError, TypeError, KeyError):
+            self.send_error(400, "Invalid non-secret KIE configuration")
+            return
+        try:
+            write_json_atomic(KIE_CONFIG_FILE, config)
+            write_json_atomic(DOCS / "canvas" / "kie-image2.json", config)
+        except OSError:
+            self.send_error(500, "Could not save configuration file")
+            return
+        self._write_upstream(200, {"Content-Type": "application/json"}, b'{"ok":true}')
+
     @staticmethod
     def _is_proxy_path(path):
         return path.startswith("/api/v3")
@@ -79,6 +177,7 @@ class DevHandler(SimpleHTTPRequestHandler):
             snippet = (
                 "<script>"
                 "window.__SEEDANCE_API_BASE__=location.origin+\"/api/v3\";"
+                "window.__CANVAS_CONFIG_SAVE_URL__=\"/api/canvas-config/kie-image2.json\";"
                 "</script>\n"
             )
             if "</head>" in raw:
