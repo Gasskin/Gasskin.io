@@ -408,15 +408,22 @@ function getConnectedImageNodes(targetNode) {
 }
 
 function getConnectedTextNodes(targetNode) {
-  const seen = new Set();
-  return Array.from(connections.values())
-    .filter((connection) => connection.toNodeId === targetNode.id)
-    .map((connection) => nodes.get(connection.fromNodeId))
-    .filter((node) => {
-      if (node?.type !== "text" || !node.textInput || seen.has(node.id)) return false;
-      seen.add(node.id);
-      return true;
+  const seen = new Set([targetNode.id]);
+  const sources = [];
+  // Post-order traversal keeps upstream text before downstream text. Map order
+  // preserves connection order for branches; shared ancestors contribute once.
+  function visitInputs(nodeId) {
+    connections.forEach((connection) => {
+      if (connection.toNodeId !== nodeId) return;
+      const source = nodes.get(connection.fromNodeId);
+      if (source?.type !== "text" || !source.textInput || seen.has(source.id)) return;
+      seen.add(source.id);
+      visitInputs(source.id);
+      sources.push(source);
     });
+  }
+  visitInputs(targetNode.id);
+  return sources;
 }
 
 function syncKiePromptFromTextNodes(node, textSources) {
@@ -488,12 +495,40 @@ function refreshKieInput(node) {
 function refreshNodeInput(nodeId) {
   const node = nodes.get(nodeId);
   if (isKieNode(node)) refreshKieInput(node);
+  else if (node?.type === "text") refreshConsumers(nodeId);
 }
 
-function refreshConsumers(sourceNodeId) {
+function refreshConsumers(sourceNodeId, visited = new Set()) {
+  if (visited.has(sourceNodeId)) return;
+  visited.add(sourceNodeId);
   connections.forEach((connection) => {
-    if (connection.fromNodeId === sourceNodeId) refreshNodeInput(connection.toNodeId);
+    if (connection.fromNodeId !== sourceNodeId) return;
+    const target = nodes.get(connection.toNodeId);
+    if (target?.type === "text") refreshConsumers(target.id, visited);
+    else if (isKieNode(target) && !visited.has(target.id)) {
+      visited.add(target.id);
+      refreshKieInput(target);
+    }
   });
+}
+
+function canConnectNodes(fromNodeId, toNodeId) {
+  if (fromNodeId === toNodeId || !nodes.has(fromNodeId) || !nodes.has(toNodeId)) return false;
+  if (nodes.get(fromNodeId).type !== "text" || nodes.get(toNodeId).type !== "text") return true;
+  const pending = [toNodeId];
+  const seen = new Set();
+  while (pending.length) {
+    const id = pending.pop();
+    if (id === fromNodeId) return false;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    connections.forEach((connection) => {
+      if (connection.fromNodeId === id && nodes.get(connection.toNodeId)?.type === "text") {
+        pending.push(connection.toNodeId);
+      }
+    });
+  }
+  return true;
 }
 
 function removeConnection(id) {
@@ -507,7 +542,7 @@ function removeConnection(id) {
 }
 
 function connectNodes(fromNodeId, toNodeId) {
-  if (fromNodeId === toNodeId || !nodes.has(fromNodeId) || !nodes.has(toNodeId)) return;
+  if (!canConnectNodes(fromNodeId, toNodeId)) return;
   const duplicate = Array.from(connections.values()).some(
     (connection) => connection.fromNodeId === fromNodeId && connection.toNodeId === toNodeId,
   );
@@ -542,7 +577,7 @@ function findConnectionTarget(clientX, clientY, sourceNodeIds) {
   let nearestDistance = CONNECTION_SNAP_RADIUS;
 
   nodes.forEach((candidate) => {
-    if (excludedIds.has(candidate.id)) return;
+    if (excludedIds.has(candidate.id) || !Array.from(excludedIds).some((id) => canConnectNodes(id, candidate.id))) return;
     const point = getPortPoint(candidate, "input");
     const screenX = rect.left + view.x + point.x * view.scale;
     const screenY = rect.top + view.y + point.y * view.scale;
@@ -566,7 +601,9 @@ function startConnectionDrag(node, event) {
   if (!sourceNodeIds.size) sourceNodeIds.add(node.id);
   const start = getPortPoint(node, "output");
   nodes.forEach((candidate) => {
-    if (!sourceNodeIds.has(candidate.id)) candidate.inputPort?.classList.add("compatible");
+    if (!sourceNodeIds.has(candidate.id) && Array.from(sourceNodeIds).some((id) => canConnectNodes(id, candidate.id))) {
+      candidate.inputPort?.classList.add("compatible");
+    }
   });
 
   const onMove = (moveEvent) => {
@@ -903,7 +940,7 @@ function createTextNode({ x, y, text = "" } = {}) {
   node.textInput = document.createElement("textarea");
   node.textInput.className = "text-node-input";
   node.textInput.value = text;
-  node.textInput.placeholder = "在这里输入文本。连接到生图节点后，文本会作为生成提示词的一部分。";
+  node.textInput.placeholder = "在这里输入本节点的文本。可串联多个 TEXT 节点，生图时按上游到下游顺序合并，段落间以空行分隔。";
   node.textInput.setAttribute("aria-label", `${node.name}文本内容`);
   node.textInput.spellcheck = true;
   node.textInput.addEventListener("pointerdown", () => {
@@ -1740,8 +1777,13 @@ promptGuideButton.addEventListener("click", () => {
 });
 document.getElementById("promptGuideClose").addEventListener("click", () => promptGuideDialog.close());
 window.addEventListener("message", (event) => {
-  if (event.origin === location.origin && event.source === promptGuideFrame.contentWindow
-      && event.data?.type === "prompt-guide:close") promptGuideDialog.close();
+  if (event.origin !== location.origin || event.source !== promptGuideFrame.contentWindow || !promptGuideDialog.open) return;
+  if (event.data?.type === "prompt-guide:close") promptGuideDialog.close();
+  if (event.data?.type === "prompt-guide:create-text"
+      && typeof event.data.content === "string" && event.data.content.trim()) {
+    promptGuideDialog.close();
+    createTextNode({ text: event.data.content });
+  }
 });
 settingsButton.addEventListener("click", openSettings);
 settingsCloseButton.addEventListener("click", closeSettings);

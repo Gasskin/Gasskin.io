@@ -32,6 +32,9 @@ async function copyPrompt(content, button, title) {
     }
     if (!copied) throw new Error("Clipboard unavailable");
     copyStatus.textContent = `已复制「${title}」的内容。`;
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "prompt-guide:close" }, location.origin);
+    }
   } catch {
     copyStatus.textContent = "复制失败，请选中提示词正文后手动复制。";
   } finally {
@@ -64,10 +67,23 @@ async function loadPrompts() {
       button.textContent = "复制内容";
       button.setAttribute("aria-label", `复制 ${item.title} 的内容`);
       button.addEventListener("click", () => copyPrompt(item.content, button, item.title));
+      const createButton = document.createElement("button");
+      createButton.type = "button";
+      createButton.textContent = "创建 TEXT 节点";
+      createButton.setAttribute("aria-label", `使用 ${item.title} 创建 TEXT 节点`);
+      createButton.disabled = window.parent === window;
+      if (createButton.disabled) createButton.title = "请从画布中的提示词指南打开此页面，以创建节点。";
+      createButton.addEventListener("click", () => {
+        createButton.disabled = true;
+        window.parent.postMessage({ type: "prompt-guide:create-text", content: item.content }, location.origin);
+      });
+      const actions = document.createElement("div");
+      actions.className = "prompt-actions";
+      actions.append(button, createButton);
       const content = document.createElement("p");
       content.className = "prompt-content";
       content.textContent = item.content;
-      header.append(title, button);
+      header.append(title, actions);
       card.append(header, content);
       promptList.appendChild(card);
     }
