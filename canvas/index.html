@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>画布</title>
-  <link rel="stylesheet" href="style.css?v=20260901-kie-1" />
+  <link rel="stylesheet" href="style.css?v=20260909-kie-model-groups-1" />
 </head>
 <body>
   <main class="workspace" aria-label="画布工作区">
@@ -121,6 +121,14 @@
           </span>
           <small>仅保存在当前浏览器的 localStorage 中。</small>
         </label>
+        <section class="model-groups-section" aria-labelledby="kieModelGroupsTitle">
+          <div class="model-groups-heading">
+            <h3 id="kieModelGroupsTitle">模型分组</h3>
+            <button id="kieAddModelGroup" class="settings-button secondary" type="button">添加分组</button>
+          </div>
+          <p class="model-groups-help">每组包含文生图和图生图模型，连接图片后自动切换。勾选默认分组，新建节点将优先使用该组。</p>
+          <div id="kieModelGroups" class="model-groups-list"></div>
+        </section>
         <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
       </div>
       <footer class="settings-actions">
@@ -151,6 +159,26 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=20260901-kie-1"></script>
+  <template id="kieModelGroupTemplate">
+    <div class="model-group-card">
+      <div class="model-group-actions">
+        <label class="model-group-default-label"><input class="model-group-default" type="checkbox" />默认分组</label>
+        <button class="model-group-remove" type="button">删除分组</button>
+      </div>
+      <label class="settings-field">
+        <span>分组名称</span>
+        <input class="model-group-name" type="text" placeholder="例如：GPT Image2" autocomplete="off" />
+      </label>
+      <label class="settings-field">
+        <span>文生图模型</span>
+        <input class="model-group-text" type="text" placeholder="gpt-image-2-text-to-image" autocomplete="off" spellcheck="false" />
+      </label>
+      <label class="settings-field">
+        <span>图生图模型</span>
+        <input class="model-group-image" type="text" placeholder="gpt-image-2-image-to-image" autocomplete="off" spellcheck="false" />
+      </label>
+    </div>
+  </template>
+  <script src="app.js?v=20260909-kie-model-groups-1"></script>
 </body>
 </html>

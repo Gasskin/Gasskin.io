@@ -16,6 +16,12 @@ const KIE_POLL_INTERVAL_MS = 2000;
 const KIE_POLL_TIMEOUT_MS = 15 * 60 * 1000;
 const KIE_TEXT_MODEL = "gpt-image-2-text-to-image";
 const KIE_IMAGE_MODEL = "gpt-image-2-image-to-image";
+const KIE_DEFAULT_MODEL_GROUP = Object.freeze({
+  id: "image2",
+  name: "GPT Image2",
+  textModel: KIE_TEXT_MODEL,
+  imageModel: KIE_IMAGE_MODEL,
+});
 const KIE_RATIOS = Object.freeze([
   "auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5",
   "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21",
@@ -53,6 +59,9 @@ const kieUploadBaseUrl = document.getElementById("kieUploadBaseUrl");
 const kieApiKey = document.getElementById("kieApiKey");
 const kieApiKeyClear = document.getElementById("kieApiKeyClear");
 const settingsMessage = document.getElementById("settingsMessage");
+const kieModelGroups = document.getElementById("kieModelGroups");
+const kieModelGroupTemplate = document.getElementById("kieModelGroupTemplate");
+const kieAddModelGroup = document.getElementById("kieAddModelGroup");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
 const generationDetailsClose = document.getElementById("generationDetailsClose");
@@ -78,6 +87,8 @@ let kieSettings = {
   baseUrl: KIE_DEFAULT_BASE_URL,
   uploadBaseUrl: KIE_DEFAULT_UPLOAD_BASE_URL,
   apiKey: "",
+  modelGroups: [{ ...KIE_DEFAULT_MODEL_GROUP }],
+  defaultModelGroupId: KIE_DEFAULT_MODEL_GROUP.id,
 };
 const supportsCssZoom = typeof CSS !== "undefined" && CSS.supports("zoom", "2");
 
@@ -107,12 +118,118 @@ function loadKieSettings() {
         baseUrl: cleanBaseUrl(parsed?.baseUrl || KIE_DEFAULT_BASE_URL),
         uploadBaseUrl: cleanBaseUrl(parsed?.uploadBaseUrl || KIE_DEFAULT_UPLOAD_BASE_URL),
         apiKey: String(parsed?.apiKey || "").trim(),
+        ...normalizeKieModelGroups(parsed),
       };
     }
   } catch {
     // Keep defaults when browser storage is unavailable or malformed.
   }
   updateSettingsButtonState();
+}
+
+function normalizeKieModelGroups(settings) {
+  const ids = new Set();
+  const modelGroups = (Array.isArray(settings?.modelGroups) ? settings.modelGroups : [])
+    .filter((group) => group && typeof group === "object")
+    .map((group) => ({
+      id: String(group.id || "").trim(),
+      name: String(group.name || "").trim(),
+      textModel: String(group.textModel || "").trim(),
+      imageModel: String(group.imageModel || "").trim(),
+    }))
+    .filter((group) => {
+      if (!group.id || !group.name || !group.textModel || !group.imageModel || ids.has(group.id)) return false;
+      ids.add(group.id);
+      return true;
+    });
+  if (!modelGroups.length) modelGroups.push({ ...KIE_DEFAULT_MODEL_GROUP });
+  return {
+    modelGroups,
+    defaultModelGroupId: modelGroups.some((group) => group.id === settings?.defaultModelGroupId)
+      ? settings.defaultModelGroupId : modelGroups[0].id,
+  };
+}
+
+function getKieModelGroup(node) {
+  return kieSettings.modelGroups.find((group) => group.id === node.model.value)
+    || kieSettings.modelGroups.find((group) => group.id === kieSettings.defaultModelGroupId)
+    || kieSettings.modelGroups[0];
+}
+
+function refreshKieModelOptions(node, isImageToImage = getConnectedImageNodes(node).length > 0) {
+  const selectedId = getKieModelGroup(node).id;
+  node.model.replaceChildren(...kieSettings.modelGroups.map((group) => {
+    const option = document.createElement("option");
+    option.value = group.id;
+    option.textContent = `${group.name} · ${isImageToImage ? group.imageModel : group.textModel}`;
+    return option;
+  }));
+  node.model.value = selectedId;
+  const group = getKieModelGroup(node);
+  node.model.title = `${isImageToImage ? "图生图" : "文生图"}模型：${isImageToImage ? group.imageModel : group.textModel}`;
+}
+
+function updateKieModelGroupControls() {
+  const rows = Array.from(kieModelGroups.children);
+  rows.forEach((row) => {
+    row.querySelector(".model-group-remove").disabled = rows.length === 1;
+    row.classList.toggle("is-default", row.querySelector(".model-group-default").checked);
+  });
+}
+
+function appendKieModelGroup(group, isDefault = false) {
+  const row = kieModelGroupTemplate.content.firstElementChild.cloneNode(true);
+  row.dataset.groupId = group.id;
+  row.querySelector(".model-group-name").value = group.name;
+  row.querySelector(".model-group-text").value = group.textModel;
+  row.querySelector(".model-group-image").value = group.imageModel;
+  const defaultControl = row.querySelector(".model-group-default");
+  defaultControl.checked = isDefault;
+  defaultControl.addEventListener("change", () => {
+    // Keep exactly one default, including when the selected checkbox is clicked again.
+    Array.from(kieModelGroups.children).forEach((candidate) => {
+      candidate.querySelector(".model-group-default").checked = candidate === row;
+    });
+    updateKieModelGroupControls();
+  });
+  row.querySelector(".model-group-remove").addEventListener("click", () => {
+    if (kieModelGroups.children.length <= 1) return;
+    const wasDefault = defaultControl.checked;
+    row.remove();
+    if (wasDefault) kieModelGroups.firstElementChild.querySelector(".model-group-default").checked = true;
+    updateKieModelGroupControls();
+  });
+  kieModelGroups.appendChild(row);
+  updateKieModelGroupControls();
+  return row;
+}
+
+function readKieModelGroupDraft() {
+  const modelGroups = [];
+  let defaultModelGroupId = "";
+  for (const row of kieModelGroups.children) {
+    const group = { id: row.dataset.groupId };
+    for (const [field, selector, label] of [
+      ["name", ".model-group-name", "分组名称"],
+      ["textModel", ".model-group-text", "文生图模型"],
+      ["imageModel", ".model-group-image", "图生图模型"],
+    ]) {
+      const input = row.querySelector(selector);
+      if (!input.value.trim()) {
+        settingsMessage.textContent = `请填写第 ${modelGroups.length + 1} 组的${label}。`;
+        input.focus();
+        return null;
+      }
+      group[field] = input.value.trim();
+    }
+    modelGroups.push(group);
+    if (row.querySelector(".model-group-default").checked) defaultModelGroupId = group.id;
+  }
+  if (!modelGroups.length) {
+    settingsMessage.textContent = "请至少添加一组模型。";
+    return null;
+  }
+  return { modelGroups, defaultModelGroupId: defaultModelGroupId || modelGroups[0].id };
 }
 
 function screenToCanvas(clientX, clientY) {
@@ -299,7 +416,7 @@ function refreshKieInput(node) {
   const imageSources = getConnectedImageNodes(node);
   const textSources = getConnectedTextNodes(node);
   syncKiePromptFromTextNodes(node, textSources);
-  node.model.value = imageSources.length ? KIE_IMAGE_MODEL : KIE_TEXT_MODEL;
+  refreshKieModelOptions(node, imageSources.length > 0);
   node.inputPreview.replaceChildren();
 
   if (imageSources.length) {
@@ -804,6 +921,7 @@ function getKiePrompt(node, textSources) {
 
 function buildKieRequest(node, imageSources, textSources, inputUrls = null) {
   const isImageToImage = imageSources.length > 0;
+  const group = getKieModelGroup(node);
   const input = {
     prompt: getKiePrompt(node, textSources),
     aspect_ratio: node.aspectRatio.value,
@@ -817,7 +935,7 @@ function buildKieRequest(node, imageSources, textSources, inputUrls = null) {
     ));
   }
   return {
-    model: isImageToImage ? KIE_IMAGE_MODEL : KIE_TEXT_MODEL,
+    model: isImageToImage ? group.imageModel : group.textModel,
     input,
   };
 }
@@ -1063,7 +1181,9 @@ async function generateWithKie(node) {
 
   try {
     const { urls: inputUrls, uploaded } = await prepareKieInputUrls(node, imageSources, requestConfig);
-    const requestBody = buildKieRequest(node, imageSources, textSources, inputUrls);
+    // Freeze the selected group and inputs at submission time, before asynchronous uploads.
+    const requestBody = { ...previewBody, input: { ...previewBody.input } };
+    if (imageSources.length) requestBody.input.input_urls = inputUrls;
     node.callDetails.body = requestBody;
     node.callDetails.uploads = uploaded;
     node.progressLabel = "正在提交任务";
@@ -1121,6 +1241,8 @@ function cloneKieNode(node) {
   const clone = createKieNode({ x: node.x + 52, y: node.y + 52 });
   clone.localPromptValue = node.localPromptValue ?? (node.prompt.readOnly ? "" : node.prompt.value);
   clone.prompt.value = clone.localPromptValue;
+  clone.model.value = node.model.value;
+  refreshKieModelOptions(clone);
   clone.resolution.value = node.resolution.value;
   clone.aspectRatio.value = node.aspectRatio.value;
   inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
@@ -1193,7 +1315,7 @@ function createKieNode({ x, y } = {}) {
     <div class="kie-input-preview" aria-label="输入图片预览"></div>
     <textarea class="kie-prompt" maxlength="20000" placeholder="输入图片生成提示词；连接图片后自动切换为图生图。" aria-label="KIE 提示词"></textarea>
     <div class="kie-config">
-      <label class="kie-field wide">模型<input class="kie-model" type="text" disabled /></label>
+      <label class="kie-field wide">模型分组<select class="kie-model"></select></label>
       <label class="kie-field">分辨率<select class="kie-resolution">${resolutionOptions}</select></label>
       <label class="kie-field">图片比例<select class="kie-aspect">${ratioOptions}</select></label>
     </div>
@@ -1222,6 +1344,7 @@ function createKieNode({ x, y } = {}) {
   node.prompt.addEventListener("input", () => {
     if (!node.prompt.readOnly) node.localPromptValue = node.prompt.value;
   });
+  node.model.addEventListener("change", () => refreshKieModelOptions(node));
   node.detailsButton.addEventListener("click", (event) => {
     event.stopPropagation();
     openGenerationDetails(node, false, !node.hasRun);
@@ -1286,6 +1409,10 @@ function openSettings() {
   kieBaseUrl.value = kieSettings.baseUrl;
   kieUploadBaseUrl.value = kieSettings.uploadBaseUrl;
   kieApiKey.value = kieSettings.apiKey;
+  kieModelGroups.replaceChildren();
+  kieSettings.modelGroups.forEach((group) => {
+    appendKieModelGroup(group, group.id === kieSettings.defaultModelGroupId);
+  });
   settingsMessage.textContent = "";
   settingsDialog.showModal();
 }
@@ -1308,21 +1435,22 @@ function saveSettings() {
     kieUploadBaseUrl.focus();
     return;
   }
-  if (!apiKey) {
-    settingsMessage.textContent = "请输入 KIE API Key。";
-    kieApiKey.focus();
-    return;
-  }
+  const modelSettings = readKieModelGroupDraft();
+  if (!modelSettings) return;
+  const nextSettings = { baseUrl, uploadBaseUrl, apiKey, ...modelSettings };
   try {
     window.localStorage.setItem(
       KIE_SETTINGS_STORAGE_KEY,
-      JSON.stringify({ version: 1, baseUrl, uploadBaseUrl, apiKey }),
+      JSON.stringify({ version: 2, ...nextSettings }),
     );
   } catch {
     settingsMessage.textContent = "浏览器本地存储不可用，设置未能保存。";
     return;
   }
-  kieSettings = { baseUrl, uploadBaseUrl, apiKey };
+  kieSettings = nextSettings;
+  nodes.forEach((node) => {
+    if (isKieNode(node)) refreshKieModelOptions(node);
+  });
   updateSettingsButtonState();
   closeSettings();
 }
@@ -1548,6 +1676,15 @@ settingsButton.addEventListener("click", openSettings);
 settingsCloseButton.addEventListener("click", closeSettings);
 settingsCancelButton.addEventListener("click", closeSettings);
 settingsSaveButton.addEventListener("click", saveSettings);
+kieAddModelGroup.addEventListener("click", () => {
+  const row = appendKieModelGroup({
+    id: globalThis.crypto?.randomUUID?.() || `group-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    name: "",
+    textModel: "",
+    imageModel: "",
+  });
+  row.querySelector(".model-group-name").focus();
+});
 kieApiKeyClear.addEventListener("click", () => {
   kieApiKey.value = "";
   kieApiKey.focus();

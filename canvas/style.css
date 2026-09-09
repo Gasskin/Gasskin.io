@@ -1093,6 +1093,27 @@ kbd {
 }
 
 .settings-message { min-height: 20px; margin: 0; color: var(--danger); font-size: 12px; }
+.model-groups-section,
+.model-groups-list { display: grid; gap: 14px; min-width: 0; }
+.model-groups-heading,
+.model-group-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.model-groups-heading h3 { margin: 0; font-size: 16px; }
+.model-groups-help { margin: 0; color: #969ba6; font-size: 12px; line-height: 1.6; }
+.model-group-card {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #111318;
+}
+.model-group-card.is-default { border-color: #9388d6; }
+.model-group-default-label { display: flex; align-items: center; gap: 8px; color: #c9c4ff; font-size: 12px; cursor: pointer; }
+.model-group-default { width: 16px; height: 16px; margin: 0; accent-color: #b8b3ff; }
+.model-group-remove { border: 0; padding: 6px 8px; border-radius: 6px; color: var(--danger); background: transparent; font-size: 12px; cursor: pointer; }
+.model-group-remove:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
+.model-group-remove:disabled { color: #727680; cursor: not-allowed; }
 .settings-actions {
   display: flex;
   justify-content: flex-end;
