@@ -43,7 +43,8 @@ async function copyPrompt(content, button, title) {
 }
 
 async function loadPrompts() {
-  retryButton.hidden = true;
+  if (retryButton.disabled) return;
+  retryButton.disabled = true;
   promptList.replaceChildren();
   copyStatus.textContent = "";
   loadStatus.textContent = "正在读取提示词…";
@@ -74,7 +75,6 @@ async function loadPrompts() {
       createButton.disabled = window.parent === window;
       if (createButton.disabled) createButton.title = "请从画布中的提示词指南打开此页面，以创建节点。";
       createButton.addEventListener("click", () => {
-        createButton.disabled = true;
         window.parent.postMessage({ type: "prompt-guide:create-text", content: item.content }, location.origin);
       });
       const actions = document.createElement("div");
@@ -90,10 +90,16 @@ async function loadPrompts() {
     loadStatus.textContent = config.prompts.length ? `共 ${config.prompts.length} 组提示词` : "暂无提示词，请在 canvas/prompt-guide.json 中添加。";
   } catch (error) {
     loadStatus.textContent = `提示词加载失败：${error.message} 请检查 canvas/prompt-guide.json。`;
-    retryButton.hidden = false;
+  } finally {
+    retryButton.disabled = false;
   }
 }
 
+window.addEventListener("message", (event) => {
+  if (event.origin === location.origin && event.source === window.parent && event.data?.type === "prompt-guide:open") {
+    copyStatus.textContent = "";
+  }
+});
 retryButton.addEventListener("click", loadPrompts);
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && window.parent !== window) {

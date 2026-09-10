@@ -1770,10 +1770,16 @@ zoomInButton.addEventListener("click", () => setScale(view.scale * ZOOM_STEP));
 zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
+function preloadPromptGuide() {
+  if (!promptGuideFrame.hasAttribute("src")) promptGuideFrame.src = "prompt-guide.html";
+}
+if ("requestIdleCallback" in window) window.requestIdleCallback(preloadPromptGuide, { timeout: 1500 });
+else window.setTimeout(preloadPromptGuide, 300);
 promptGuideButton.addEventListener("click", () => {
   hideContextMenu();
-  promptGuideFrame.src = "prompt-guide.html";
+  preloadPromptGuide();
   promptGuideDialog.showModal();
+  promptGuideFrame.contentWindow?.postMessage({ type: "prompt-guide:open" }, location.origin);
 });
 document.getElementById("promptGuideClose").addEventListener("click", () => promptGuideDialog.close());
 window.addEventListener("message", (event) => {
