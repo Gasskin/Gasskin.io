@@ -29,6 +29,8 @@ const connectionList = document.getElementById("connectionList");
 const connectionDraft = document.getElementById("connectionDraft");
 const selectionMarquee = document.getElementById("selectionMarquee");
 const contextMenu = document.getElementById("contextMenu");
+const connectionContextMenu = document.getElementById("connectionContextMenu");
+const deleteConnectionButton = document.getElementById("deleteConnectionButton");
 const createImageNodeButton = document.getElementById("createImageNodeButton");
 const createTextNodeButton = document.getElementById("createTextNodeButton");
 const createKieNodeButton = document.getElementById("createKieNodeButton");
@@ -79,6 +81,7 @@ let highestLayer = 1;
 let selectedNodeId = null;
 const selectedNodeIds = new Set();
 let selectedConnectionId = null;
+let contextConnectionId = null;
 let contextCanvasPoint = { x: 0, y: 0 };
 let dragDepth = 0;
 let kieSettings = null;
@@ -457,20 +460,37 @@ function refreshKieInput(node) {
 
   if (imageSources.length) {
     imageSources.forEach((source, index) => {
-      const thumbnail = document.createElement("button");
-      thumbnail.type = "button";
+      const thumbnail = document.createElement("div");
       thumbnail.className = "kie-input-thumb";
       thumbnail.title = `输入图片 ${index + 1}：${source.name}`;
+      const previewButton = document.createElement("button");
+      previewButton.type = "button";
+      previewButton.className = "kie-input-preview-button";
+      previewButton.setAttribute("aria-label", `预览输入图片 ${index + 1}：${source.name}`);
       const image = document.createElement("img");
       image.src = source.objectUrl;
       image.alt = source.name;
       image.draggable = false;
       const number = document.createElement("span");
       number.textContent = String(index + 1);
-      thumbnail.append(image, number);
-      thumbnail.addEventListener("click", (event) => {
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "kie-input-remove";
+      removeButton.textContent = "×";
+      removeButton.title = "断开这张图片与当前 KIE 节点的连线";
+      removeButton.setAttribute("aria-label", `断开输入图片 ${source.name}`);
+      previewButton.appendChild(image);
+      thumbnail.append(previewButton, number, removeButton);
+      previewButton.addEventListener("click", (event) => {
         event.stopPropagation();
         openPreview(source);
+      });
+      removeButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const connection = Array.from(connections.values()).find(
+          (candidate) => candidate.fromNodeId === source.id && candidate.toNodeId === node.id,
+        );
+        if (connection) removeConnection(connection.id);
       });
       node.inputPreview.appendChild(thumbnail);
     });
@@ -534,6 +554,7 @@ function canConnectNodes(fromNodeId, toNodeId) {
 function removeConnection(id) {
   const connection = connections.get(id);
   if (!connection) return;
+  if (contextConnectionId === id) hideContextMenu();
   connection.group.remove();
   connections.delete(id);
   if (selectedConnectionId === id) selectedConnectionId = null;
@@ -559,6 +580,12 @@ function connectNodes(fromNodeId, toNodeId) {
   hit.addEventListener("pointerdown", (event) => {
     event.stopPropagation();
     selectConnection(id);
+  });
+  hit.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    selectConnection(id);
+    showConnectionContextMenu(id, event.clientX, event.clientY);
   });
   group.append(line, hit);
   connectionList.appendChild(group);
@@ -1556,9 +1583,13 @@ async function saveSettings() {
 function hideContextMenu() {
   contextMenu.classList.remove("open");
   contextMenu.setAttribute("aria-hidden", "true");
+  connectionContextMenu.classList.remove("open");
+  connectionContextMenu.setAttribute("aria-hidden", "true");
+  contextConnectionId = null;
 }
 
 function showContextMenu(clientX, clientY) {
+  hideContextMenu();
   contextCanvasPoint = screenToCanvas(clientX, clientY);
   contextMenu.classList.add("open");
   contextMenu.setAttribute("aria-hidden", "false");
@@ -1569,6 +1600,20 @@ function showContextMenu(clientX, clientY) {
   contextMenu.style.left = `${clamp(clientX, margin, window.innerWidth - width - margin)}px`;
   contextMenu.style.top = `${clamp(clientY, margin, window.innerHeight - height - margin)}px`;
   createImageNodeButton.focus();
+}
+
+function showConnectionContextMenu(connectionId, clientX, clientY) {
+  hideContextMenu();
+  contextConnectionId = connectionId;
+  connectionContextMenu.classList.add("open");
+  connectionContextMenu.setAttribute("aria-hidden", "false");
+
+  const margin = 10;
+  const width = connectionContextMenu.offsetWidth;
+  const height = connectionContextMenu.offsetHeight;
+  connectionContextMenu.style.left = `${clamp(clientX, margin, window.innerWidth - width - margin)}px`;
+  connectionContextMenu.style.top = `${clamp(clientY, margin, window.innerHeight - height - margin)}px`;
+  deleteConnectionButton.focus();
 }
 
 viewport.addEventListener("wheel", (event) => {
@@ -1812,8 +1857,16 @@ settingsDialog.addEventListener("click", (event) => {
   if (event.target === settingsDialog) closeSettings();
 });
 
+deleteConnectionButton.addEventListener("click", () => {
+  const connectionId = contextConnectionId;
+  hideContextMenu();
+  if (connectionId) removeConnection(connectionId);
+});
+
 document.addEventListener("pointerdown", (event) => {
-  if (!contextMenu.contains(event.target)) hideContextMenu();
+  if (!contextMenu.contains(event.target) && !connectionContextMenu.contains(event.target)) {
+    hideContextMenu();
+  }
 });
 
 document.addEventListener("keydown", (event) => {
