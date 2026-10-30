@@ -654,6 +654,8 @@ kbd {
 }
 
 .kie-input-thumb:hover { border-color: rgba(155, 145, 255, 0.7); }
+.kie-input-thumb.sorting { opacity: 0.45; }
+.kie-input-thumb.sort-target { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .kie-input-preview-button {
   display: block;
   width: 100%;
@@ -661,7 +663,8 @@ kbd {
   padding: 0;
   border: 0;
   background: transparent;
-  cursor: zoom-in;
+  cursor: grab;
+  touch-action: none;
 }
 .kie-input-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .kie-input-thumb > span {

@@ -462,7 +462,8 @@ function refreshKieInput(node) {
     imageSources.forEach((source, index) => {
       const thumbnail = document.createElement("div");
       thumbnail.className = "kie-input-thumb";
-      thumbnail.title = `输入图片 ${index + 1}：${source.name}`;
+      thumbnail.dataset.sourceId = source.id;
+      thumbnail.title = `输入图片 ${index + 1}：${source.name}（拖动调整顺序，点击预览）`;
       const previewButton = document.createElement("button");
       previewButton.type = "button";
       previewButton.className = "kie-input-preview-button";
@@ -481,8 +482,55 @@ function refreshKieInput(node) {
       removeButton.setAttribute("aria-label", `断开输入图片 ${source.name}`);
       previewButton.appendChild(image);
       thumbnail.append(previewButton, number, removeButton);
+      let dragged = false;
+      previewButton.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0 || imageSources.length < 2) return;
+        event.stopPropagation();
+        dragged = false;
+        let target = null;
+        const pointerId = event.pointerId;
+        previewButton.setPointerCapture(pointerId);
+        const onMove = (moveEvent) => {
+          if (moveEvent.pointerId !== pointerId) return;
+          if (!dragged && Math.hypot(moveEvent.clientX - event.clientX, moveEvent.clientY - event.clientY) <= 4) return;
+          dragged = true;
+          moveEvent.preventDefault();
+          thumbnail.classList.add("sorting");
+          target?.classList.remove("sort-target");
+          const hovered = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest(".kie-input-thumb");
+          target = hovered !== thumbnail && node.inputPreview.contains(hovered) ? hovered : null;
+          target?.classList.add("sort-target");
+        };
+        const onEnd = (endEvent) => {
+          if (endEvent.pointerId !== pointerId) return;
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onEnd);
+          window.removeEventListener("pointercancel", onEnd);
+          if (previewButton.hasPointerCapture(pointerId)) previewButton.releasePointerCapture(pointerId);
+          thumbnail.classList.remove("sorting");
+          target?.classList.remove("sort-target");
+          window.setTimeout(() => { dragged = false; }, 0);
+          if (endEvent.type !== "pointerup" || !dragged || !target
+              || !node.inputPreview.contains(thumbnail) || !node.inputPreview.contains(target)) return;
+          const inputs = Array.from(connections.values()).filter(
+            (connection) => connection.toNodeId === node.id && nodes.get(connection.fromNodeId)?.type === "image",
+          );
+          const from = inputs.findIndex((connection) => connection.fromNodeId === source.id);
+          const to = inputs.findIndex((connection) => connection.fromNodeId === target.dataset.sourceId);
+          if (from < 0 || to < 0 || from === to) return;
+          inputs.splice(to, 0, ...inputs.splice(from, 1));
+          // Keep the existing connections; their Map order drives preview, generation and cloning.
+          inputs.forEach((connection) => connections.delete(connection.id));
+          inputs.forEach((connection) => connections.set(connection.id, connection));
+          refreshKieInput(node);
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onEnd);
+        window.addEventListener("pointercancel", onEnd);
+      });
       previewButton.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (dragged) return;
         openPreview(source);
       });
       removeButton.addEventListener("click", (event) => {
