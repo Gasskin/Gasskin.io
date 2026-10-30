@@ -1816,7 +1816,7 @@ zoomOutButton.addEventListener("click", () => setScale(view.scale / ZOOM_STEP));
 zoomResetButton.addEventListener("click", () => setScale(1));
 fitButton.addEventListener("click", fitToNodes);
 function preloadPromptGuide() {
-  if (!promptGuideFrame.hasAttribute("src")) promptGuideFrame.src = "prompt-guide.html";
+  if (!promptGuideFrame.hasAttribute("src")) promptGuideFrame.src = "prompt-guide.html?v=20261030-images-1";
 }
 if ("requestIdleCallback" in window) window.requestIdleCallback(preloadPromptGuide, { timeout: 1500 });
 else window.setTimeout(preloadPromptGuide, 300);
@@ -1830,10 +1830,24 @@ document.getElementById("promptGuideClose").addEventListener("click", () => prom
 window.addEventListener("message", (event) => {
   if (event.origin !== location.origin || event.source !== promptGuideFrame.contentWindow || !promptGuideDialog.open) return;
   if (event.data?.type === "prompt-guide:close") promptGuideDialog.close();
-  if (event.data?.type === "prompt-guide:create-text"
+  if (event.data?.type === "prompt-guide:create-nodes"
       && typeof event.data.content === "string" && event.data.content.trim()) {
+    const images = event.data.images || [];
+    if (!Array.isArray(images) || images.some((name) => typeof name !== "string"
+        || !name.trim() || /[/\\]/.test(name) || name === "." || name === "..")) return;
     promptGuideDialog.close();
-    createTextNode({ text: event.data.content });
+    const textNode = createTextNode({ text: event.data.content });
+    const createdIds = [textNode.id];
+    images.forEach((name, index) => {
+      const imageNode = createImageNode({
+        x: textNode.x + (index % 3) * (NODE_WIDTH + 48),
+        y: textNode.y + (Math.floor(index / 3) + 1) * (NODE_HEIGHT + 48),
+        source: { src: `img/${encodeURIComponent(name)}`, name },
+      });
+      createdIds.push(imageNode.id);
+    });
+    setSelectedNodes(createdIds, textNode.id);
+    if (images.length) fitToNodes();
   }
 });
 settingsButton.addEventListener("click", openSettings);

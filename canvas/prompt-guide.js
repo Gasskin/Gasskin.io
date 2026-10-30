@@ -57,6 +57,11 @@ async function loadPrompts() {
           || typeof item.content !== "string" || !item.content.trim())) {
       throw new Error("需要 version: 1 和 prompts 数组，每项必须含非空 title、content。");
     }
+    if (config.prompts.some((item) => item.images !== undefined
+        && (!Array.isArray(item.images) || item.images.some((name) => typeof name !== "string"
+          || !name.trim() || /[/\\]/.test(name) || name === "." || name === "..")))) {
+      throw new Error("images 必须是图片文件名数组（含扩展名），无需填写 img/ 路径。");
+    }
     for (const item of config.prompts) {
       const card = document.createElement("article");
       card.className = "prompt-card";
@@ -70,12 +75,14 @@ async function loadPrompts() {
       button.addEventListener("click", () => copyPrompt(item.content, button, item.title));
       const createButton = document.createElement("button");
       createButton.type = "button";
-      createButton.textContent = "创建 TEXT 节点";
-      createButton.setAttribute("aria-label", `使用 ${item.title} 创建 TEXT 节点`);
+      createButton.textContent = "创建节点";
+      createButton.setAttribute("aria-label", `使用 ${item.title} 创建节点`);
       createButton.disabled = window.parent === window;
       if (createButton.disabled) createButton.title = "请从画布中的提示词指南打开此页面，以创建节点。";
       createButton.addEventListener("click", () => {
-        window.parent.postMessage({ type: "prompt-guide:create-text", content: item.content }, location.origin);
+        window.parent.postMessage({
+          type: "prompt-guide:create-nodes", content: item.content, images: item.images || [],
+        }, location.origin);
       });
       const actions = document.createElement("div");
       actions.className = "prompt-actions";
@@ -85,6 +92,26 @@ async function loadPrompts() {
       content.textContent = item.content;
       header.append(title, actions);
       card.append(header, content);
+      if (item.images?.length) {
+        const gallery = document.createElement("div");
+        gallery.className = "prompt-images";
+        item.images.forEach((name, index) => {
+          const figure = document.createElement("figure");
+          const image = document.createElement("img");
+          image.alt = `图片${index + 1}：${name}`;
+          image.loading = "lazy";
+          const caption = document.createElement("figcaption");
+          caption.textContent = `图片${index + 1} · ${name}`;
+          image.addEventListener("error", () => {
+            image.hidden = true;
+            caption.textContent = `图片${index + 1} · ${name}（加载失败，请检查文件名）`;
+          });
+          image.src = `img/${encodeURIComponent(name)}`;
+          figure.append(image, caption);
+          gallery.appendChild(figure);
+        });
+        card.appendChild(gallery);
+      }
       promptList.appendChild(card);
     }
     loadStatus.textContent = config.prompts.length ? `共 ${config.prompts.length} 组提示词` : "暂无提示词，请在 canvas/prompt-guide.json 中添加。";
