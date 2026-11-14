@@ -156,7 +156,7 @@ function parseKieConfig(settings) {
   }
   const resolution = settings.defaults?.resolution;
   const aspectRatio = settings.defaults?.aspectRatio;
-  const quality = settings.defaults?.quality ?? "medium";
+  const quality = settings.defaults?.quality ?? "high";
   if (!KIE_RESOLUTIONS.includes(resolution) || !KIE_RATIOS.includes(aspectRatio)) {
     throw new Error("默认分辨率或比例无效。");
   }

@@ -20,6 +20,6 @@
   "defaults": {
     "resolution": "2K",
     "aspectRatio": "16:9",
-    "quality": "medium"
+    "quality": "high"
   }
 }

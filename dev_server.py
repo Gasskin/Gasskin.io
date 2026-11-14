@@ -56,7 +56,7 @@ def validate_kie_config(config):
     defaults = config["defaults"]
     if not isinstance(defaults, dict) or set(defaults) not in ({"resolution", "aspectRatio"}, {"resolution", "aspectRatio", "quality"}):
         raise ValueError("Invalid defaults")
-    if defaults.get("quality", "medium") not in ("low", "medium", "high", "xhigh", "max", "auto"):
+    if defaults.get("quality", "high") not in ("low", "medium", "high", "xhigh", "max", "auto"):
         raise ValueError("Invalid default quality")
     ratio, resolution = defaults["aspectRatio"], defaults["resolution"]
     if resolution not in ("1K", "2K", "4K") or ratio not in (
