@@ -19,6 +19,7 @@ const KIE_RATIOS = Object.freeze([
   "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21",
 ]);
 const KIE_RESOLUTIONS = Object.freeze(["1K", "2K", "4K"]);
+const KIE_QUALITIES = Object.freeze(["low", "medium", "high", "xhigh", "max", "auto"]);
 
 const viewport = document.getElementById("canvasViewport");
 const panLayer = document.getElementById("canvasPanLayer");
@@ -61,6 +62,7 @@ const kieModelGroupTemplate = document.getElementById("kieModelGroupTemplate");
 const kieAddModelGroup = document.getElementById("kieAddModelGroup");
 const kieDefaultResolution = document.getElementById("kieDefaultResolution");
 const kieDefaultRatio = document.getElementById("kieDefaultRatio");
+const kieDefaultQuality = document.getElementById("kieDefaultQuality");
 const kieConfigNotice = document.getElementById("kieConfigNotice");
 const generationDetailsDialog = document.getElementById("generationDetailsDialog");
 const generationDetailsTitle = document.getElementById("generationDetailsTitle");
@@ -154,20 +156,23 @@ function parseKieConfig(settings) {
   }
   const resolution = settings.defaults?.resolution;
   const aspectRatio = settings.defaults?.aspectRatio;
+  const quality = settings.defaults?.quality ?? "medium";
   if (!KIE_RESOLUTIONS.includes(resolution) || !KIE_RATIOS.includes(aspectRatio)) {
     throw new Error("默认分辨率或比例无效。");
   }
-  const defaultsError = validateKieRequest({ aspectRatio: { value: aspectRatio }, resolution: { value: resolution } }, [], "defaults")
-    || validateKieRequest({ aspectRatio: { value: aspectRatio }, resolution: { value: resolution } }, [{}], "defaults");
+  if (!KIE_QUALITIES.includes(quality)) throw new Error("默认质量无效。");
+  const defaultGroup = modelGroups.find((group) => group.id === settings.defaultModelGroupId) || modelGroups[0];
+  const defaultNode = { aspectRatio: { value: aspectRatio }, resolution: { value: resolution }, quality: { value: quality } };
+  const defaultsError = validateKieRequest(defaultNode, [], "defaults", defaultGroup)
+    || validateKieRequest(defaultNode, [{}], "defaults", defaultGroup);
   if (defaultsError) throw new Error(`默认参数：${defaultsError}`);
   return {
     version: 1,
     baseUrl: cleanBaseUrl(settings.baseUrl),
     uploadBaseUrl: cleanBaseUrl(settings.uploadBaseUrl),
     modelGroups,
-    defaultModelGroupId: modelGroups.some((group) => group.id === settings?.defaultModelGroupId)
-      ? settings.defaultModelGroupId : modelGroups[0].id,
-    defaults: { resolution, aspectRatio },
+    defaultModelGroupId: defaultGroup.id,
+    defaults: { resolution, aspectRatio, quality },
   };
 }
 
@@ -188,6 +193,10 @@ function getKieModelGroup(node) {
     || kieSettings.modelGroups[0];
 }
 
+function isKie26Model(model) {
+  return /^gpt-image-2-6\/(flare|sunburst)-(text-to-image|image-to-image)$/.test(model);
+}
+
 function refreshKieModelOptions(node, isImageToImage = getConnectedImageNodes(node).length > 0) {
   const selectedId = getKieModelGroup(node).id;
   node.model.replaceChildren(...kieSettings.modelGroups.map((group) => {
@@ -199,6 +208,10 @@ function refreshKieModelOptions(node, isImageToImage = getConnectedImageNodes(no
   node.model.value = selectedId;
   const group = getKieModelGroup(node);
   node.model.title = `${isImageToImage ? "图生图" : "文生图"}模型：${isImageToImage ? group.imageModel : group.textModel}`;
+  const supportsQuality = isKie26Model(isImageToImage ? group.imageModel : group.textModel);
+  node.quality.disabled = !supportsQuality;
+  node.quality.title = supportsQuality ? "生成质量" : "当前模型不支持质量参数";
+  node.prompt.maxLength = supportsQuality ? 32000 : 20000;
 }
 
 function updateKieModelGroupControls() {
@@ -1063,11 +1076,13 @@ function getKiePrompt(node, textSources) {
 function buildKieRequest(node, imageSources, textSources, inputUrls = null) {
   const isImageToImage = imageSources.length > 0;
   const group = getKieModelGroup(node);
+  const model = isImageToImage ? group.imageModel : group.textModel;
   const input = {
     prompt: getKiePrompt(node, textSources),
     aspect_ratio: node.aspectRatio.value,
     resolution: node.resolution.value,
   };
+  if (isKie26Model(model)) input.quality = node.quality.value;
   if (isImageToImage) {
     input.input_urls = inputUrls || imageSources.map((source) => (
       /^https?:\/\//i.test(source.objectUrl || "")
@@ -1076,7 +1091,7 @@ function buildKieRequest(node, imageSources, textSources, inputUrls = null) {
     ));
   }
   return {
-    model: isImageToImage ? group.imageModel : group.textModel,
+    model,
     input,
   };
 }
@@ -1266,13 +1281,17 @@ async function pollKieTask(node, taskId, requestConfig) {
   }
 }
 
-function validateKieRequest(node, imageSources, prompt) {
+function validateKieRequest(node, imageSources, prompt, group = getKieModelGroup(node)) {
+  const is26 = isKie26Model(imageSources.length ? group.imageModel : group.textModel);
+  const promptLimit = is26 ? 32000 : 20000;
   if (!prompt) return "请在本节点或已连接的文本节点中填写提示词。";
-  if (prompt.length > 20000) return "提示词不能超过 20,000 个字符。";
+  if (prompt.length > promptLimit) return `提示词不能超过 ${promptLimit.toLocaleString("en-US")} 个字符。`;
   if (imageSources.length > 16) return "KIE 图生图最多支持 16 张输入图片。";
 
   const ratio = node.aspectRatio.value;
   const resolution = node.resolution.value;
+  if (!KIE_RATIOS.includes(ratio) || !KIE_RESOLUTIONS.includes(resolution)) return "分辨率或比例无效。";
+  if (is26) return KIE_QUALITIES.includes(node.quality.value) ? "" : "质量参数无效。";
   if (ratio === "auto" && resolution !== "1K") return "自动比例仅支持 1K 分辨率。";
   if (ratio === "1:1" && resolution === "4K") return "1:1 比例不支持 4K 分辨率。";
   if (imageSources.length && ["5:4", "4:5"].includes(ratio) && resolution !== "1K") {
@@ -1386,6 +1405,7 @@ function cloneKieNode(node) {
   refreshKieModelOptions(clone);
   clone.resolution.value = node.resolution.value;
   clone.aspectRatio.value = node.aspectRatio.value;
+  clone.quality.value = node.quality.value;
   inputSourceIds.forEach((sourceNodeId) => connectNodes(sourceNodeId, clone.id));
   selectNode(clone.id);
   return clone;
@@ -1452,6 +1472,7 @@ function createKieNode({ x, y } = {}) {
 
   const ratioOptions = KIE_RATIOS.map((ratio) => `<option value="${ratio}">${ratio}</option>`).join("");
   const resolutionOptions = KIE_RESOLUTIONS.map((resolution) => `<option value="${resolution}">${resolution}</option>`).join("");
+  const qualityOptions = KIE_QUALITIES.map((quality) => `<option value="${quality}">${quality}</option>`).join("");
   node.body.className = "node-body kie-body";
   node.body.innerHTML = `
     <div class="kie-input-preview" aria-label="输入图片预览"></div>
@@ -1460,6 +1481,7 @@ function createKieNode({ x, y } = {}) {
       <label class="kie-field wide">模型分组<select class="kie-model"></select></label>
       <label class="kie-field">分辨率<select class="kie-resolution">${resolutionOptions}</select></label>
       <label class="kie-field">图片比例<select class="kie-aspect">${ratioOptions}</select></label>
+      <label class="kie-field">质量<select class="kie-quality">${qualityOptions}</select></label>
     </div>
     <div class="kie-generate-row">
       <div class="kie-run-summary">
@@ -1479,8 +1501,10 @@ function createKieNode({ x, y } = {}) {
   node.model = node.body.querySelector(".kie-model");
   node.resolution = node.body.querySelector(".kie-resolution");
   node.aspectRatio = node.body.querySelector(".kie-aspect");
+  node.quality = node.body.querySelector(".kie-quality");
   node.resolution.value = kieSettings.defaults.resolution;
   node.aspectRatio.value = kieSettings.defaults.aspectRatio;
+  node.quality.value = kieSettings.defaults.quality;
   node.status = node.body.querySelector(".kie-status");
   node.detailsButton = node.body.querySelector(".kie-details");
   node.errorButton = node.body.querySelector(".kie-error-info");
@@ -1556,6 +1580,7 @@ function openSettings() {
   kieApiKey.value = kieSettings.apiKey;
   kieDefaultResolution.value = kieSettings.defaults.resolution;
   kieDefaultRatio.value = kieSettings.defaults.aspectRatio;
+  kieDefaultQuality.value = kieSettings.defaults.quality;
   kieConfigNotice.textContent = kieConfigNoticeText || (globalThis.__CANVAS_CONFIG_SAVE_URL__
     ? "保存将写入 canvas/kie-image2.json，API Key 仅保存在浏览器。"
     : "保存将下载 kie-image2.json。请将文件放入项目 canvas 目录并发布；当前页面立即生效，重新加载时读取项目文件。API Key 不包含在文件中。");
@@ -1592,7 +1617,7 @@ async function saveSettings() {
   try {
     config = parseKieConfig({
       version: 1, baseUrl, uploadBaseUrl, ...modelSettings,
-      defaults: { resolution: kieDefaultResolution.value, aspectRatio: kieDefaultRatio.value },
+      defaults: { resolution: kieDefaultResolution.value, aspectRatio: kieDefaultRatio.value, quality: kieDefaultQuality.value },
     });
   } catch (error) {
     settingsMessage.textContent = error.message;
@@ -1981,6 +2006,7 @@ resetView();
 updateEmptyState();
 kieDefaultResolution.replaceChildren(...KIE_RESOLUTIONS.map((value) => new Option(value, value)));
 kieDefaultRatio.replaceChildren(...KIE_RATIOS.map((value) => new Option(value, value)));
+kieDefaultQuality.replaceChildren(...KIE_QUALITIES.map((value) => new Option(value, value)));
 settingsButton.disabled = true;
 createKieNodeButton.disabled = true;
 loadKieSettings().then(() => {

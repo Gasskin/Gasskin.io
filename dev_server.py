@@ -54,15 +54,21 @@ def validate_kie_config(config):
     if config["defaultModelGroupId"] not in ids:
         raise ValueError("Invalid default group")
     defaults = config["defaults"]
-    if not isinstance(defaults, dict) or set(defaults) != {"resolution", "aspectRatio"}:
+    if not isinstance(defaults, dict) or set(defaults) not in ({"resolution", "aspectRatio"}, {"resolution", "aspectRatio", "quality"}):
         raise ValueError("Invalid defaults")
+    if defaults.get("quality", "medium") not in ("low", "medium", "high", "xhigh", "max", "auto"):
+        raise ValueError("Invalid default quality")
     ratio, resolution = defaults["aspectRatio"], defaults["resolution"]
     if resolution not in ("1K", "2K", "4K") or ratio not in (
         "auto", "1:1", "3:2", "2:3", "4:3", "3:4", "5:4", "4:5",
         "16:9", "9:16", "2:1", "1:2", "3:1", "1:3", "21:9", "9:21",
     ):
         raise ValueError("Invalid defaults")
-    if (ratio == "1:1" and resolution == "4K") or (resolution != "1K" and ratio in ("auto", "5:4", "4:5", "3:1", "1:3", "9:21")):
+    default_group = next(group for group in groups if group["id"] == config["defaultModelGroupId"])
+    is_26 = all(default_group[field] in (
+        f"gpt-image-2-6/flare-{mode}", f"gpt-image-2-6/sunburst-{mode}",
+    ) for field, mode in (("textModel", "text-to-image"), ("imageModel", "image-to-image")))
+    if not is_26 and ((ratio == "1:1" and resolution == "4K") or (resolution != "1K" and ratio in ("auto", "5:4", "4:5", "3:1", "1:3", "9:21"))):
         raise ValueError("Unsupported default resolution and ratio")
     return config
 

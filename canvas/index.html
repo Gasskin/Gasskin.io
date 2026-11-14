@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>画布</title>
-  <link rel="stylesheet" href="style.css?v=20261030-input-sort-1" />
+  <link rel="stylesheet" href="style.css?v=20261114-kie26-1" />
 </head>
 <body>
   <main class="workspace" aria-label="画布工作区">
@@ -154,6 +154,10 @@
           <span>新建节点默认比例</span>
           <select id="kieDefaultRatio"></select>
         </label>
+        <label class="settings-field">
+          <span>新建节点默认质量（GPT2.6）</span>
+          <select id="kieDefaultQuality"></select>
+        </label>
         <p id="kieConfigNotice" class="model-groups-help"></p>
         <p id="settingsMessage" class="settings-message" role="status" aria-live="polite"></p>
       </div>
@@ -193,18 +197,18 @@
       </div>
       <label class="settings-field">
         <span>分组名称</span>
-        <input class="model-group-name" type="text" placeholder="例如：GPT Image2" autocomplete="off" />
+        <input class="model-group-name" type="text" placeholder="例如：GPT2.6F" autocomplete="off" />
       </label>
       <label class="settings-field">
         <span>文生图模型</span>
-        <input class="model-group-text" type="text" placeholder="gpt-image-2-text-to-image" autocomplete="off" spellcheck="false" />
+        <input class="model-group-text" type="text" placeholder="gpt-image-2-6/flare-text-to-image" autocomplete="off" spellcheck="false" />
       </label>
       <label class="settings-field">
         <span>图生图模型</span>
-        <input class="model-group-image" type="text" placeholder="gpt-image-2-image-to-image" autocomplete="off" spellcheck="false" />
+        <input class="model-group-image" type="text" placeholder="gpt-image-2-6/flare-image-to-image" autocomplete="off" spellcheck="false" />
       </label>
     </div>
   </template>
-  <script src="app.js?v=20261030-input-sort-1"></script>
+  <script src="app.js?v=20261114-kie26-1"></script>
 </body>
 </html>

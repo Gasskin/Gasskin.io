@@ -748,7 +748,7 @@ kbd {
   padding: 9px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 8px;
   background: rgba(255, 255, 255, 0.018);
 }
@@ -777,6 +777,7 @@ kbd {
 }
 
 .kie-field input:disabled { color: #aeb1bb; opacity: 1; }
+.kie-field select:disabled { color: #747984; cursor: not-allowed; }
 .kie-field select:focus { border-color: rgba(155, 145, 255, 0.62); }
 
 .kie-generate-row {

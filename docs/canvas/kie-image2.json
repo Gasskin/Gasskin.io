@@ -4,27 +4,22 @@
   "uploadBaseUrl": "https://kieai.redpandaai.co",
   "modelGroups": [
     {
-      "id": "image2",
-      "name": "GPT2",
-      "textModel": "gpt-image-2-text-to-image",
-      "imageModel": "gpt-image-2-image-to-image"
+      "id": "image2.6F",
+      "name": "GPT2.6F",
+      "textModel": "gpt-image-2-6/flare-text-to-image",
+      "imageModel": "gpt-image-2-6/flare-image-to-image"
     },
     {
-      "id": "image2.5F",
-      "name": "GPT2.5F",
-      "textModel": "gpt-image-2-5-flare-text-to-image",
-      "imageModel": "gpt-image-2-5-flare-image-to-image"
-    },
-    {
-      "id": "image2.5S",
-      "name": "GPT2.5S",
-      "textModel": "gpt-image-2-5-sunburst-text-to-image",
-      "imageModel": "gpt-image-2-5-sunburst-image-to-image"
+      "id": "image2.6S",
+      "name": "GPT2.6S",
+      "textModel": "gpt-image-2-6/sunburst-text-to-image",
+      "imageModel": "gpt-image-2-6/sunburst-image-to-image"
     }
   ],
-  "defaultModelGroupId": "image2.5S",
+  "defaultModelGroupId": "image2.6S",
   "defaults": {
     "resolution": "2K",
-    "aspectRatio": "16:9"
+    "aspectRatio": "16:9",
+    "quality": "medium"
   }
 }
