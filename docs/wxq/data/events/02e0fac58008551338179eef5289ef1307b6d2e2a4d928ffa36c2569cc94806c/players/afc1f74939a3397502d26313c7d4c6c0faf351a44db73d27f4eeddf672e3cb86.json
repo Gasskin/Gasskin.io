@@ -1,0 +1,100 @@
+{
+  "id": "墨千诚",
+  "matches": [
+    {
+      "matchId": 1,
+      "sheet": "散排",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 4,
+      "rank": 6.0,
+      "economy": 87.0,
+      "attack": 8.0,
+      "survival": 9.0,
+      "growth": 84.0,
+      "operation": 34.0
+    },
+    {
+      "matchId": 2,
+      "sheet": "散排",
+      "matchInSheet": 2,
+      "headerRow": 5,
+      "row": 8,
+      "rank": 6.0,
+      "economy": 124.0,
+      "attack": 28.0,
+      "survival": 12.0,
+      "growth": 42.0,
+      "operation": 22.0
+    },
+    {
+      "matchId": 3,
+      "sheet": "散排",
+      "matchInSheet": 3,
+      "headerRow": 9,
+      "row": 12,
+      "rank": 6.0,
+      "economy": 122.0,
+      "attack": 16.0,
+      "survival": 11.0,
+      "growth": 79.0,
+      "operation": 19.0
+    },
+    {
+      "matchId": 4,
+      "sheet": "散排",
+      "matchInSheet": 4,
+      "headerRow": 13,
+      "row": 16,
+      "rank": 1.0,
+      "economy": 205.0,
+      "attack": 94.0,
+      "survival": 16.0,
+      "growth": 163.0,
+      "operation": 20.0
+    },
+    {
+      "matchId": 5,
+      "sheet": "散排",
+      "matchInSheet": 5,
+      "headerRow": 17,
+      "row": 20,
+      "rank": 6.0,
+      "economy": 86.0,
+      "attack": 5.0,
+      "survival": 9.0,
+      "growth": 70.0,
+      "operation": 9.0
+    },
+    {
+      "matchId": 6,
+      "sheet": "散排",
+      "matchInSheet": 6,
+      "headerRow": 21,
+      "row": 24,
+      "rank": 1.0,
+      "economy": 188.0,
+      "attack": 108.0,
+      "survival": 16.0,
+      "growth": 97.0,
+      "operation": 16.0
+    }
+  ],
+  "matchCount": 6,
+  "totals": {
+    "rank": 26.0,
+    "economy": 812.0,
+    "attack": 259.0,
+    "survival": 73.0,
+    "growth": 535.0,
+    "operation": 120.0
+  },
+  "averages": {
+    "rank": 4.333333333333333,
+    "economy": 135.33333333333334,
+    "attack": 43.166666666666664,
+    "survival": 12.166666666666666,
+    "growth": 89.16666666666667,
+    "operation": 20.0
+  }
+}
