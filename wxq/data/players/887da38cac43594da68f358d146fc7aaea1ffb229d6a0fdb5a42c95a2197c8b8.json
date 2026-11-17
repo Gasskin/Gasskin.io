@@ -1,0 +1,40 @@
+{
+  "id": "鬼众",
+  "matches": [
+    {
+      "matchId": 1,
+      "sheet": "Sheet1",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 5,
+      "rank": 4.0,
+      "economy": 194.0,
+      "attack": 68.0,
+      "survival": 14.0,
+      "growth": 142.0,
+      "operation": 26.0
+    },
+    {
+      "matchId": 2,
+      "sheet": "Sheet1",
+      "matchInSheet": 2,
+      "headerRow": 8,
+      "row": 12,
+      "rank": 1.0,
+      "economy": 186.0,
+      "attack": 135.0,
+      "survival": 16.0,
+      "growth": 443.0,
+      "operation": 19.0
+    }
+  ],
+  "matchCount": 2,
+  "averages": {
+    "rank": 2.5,
+    "economy": 190.0,
+    "attack": 101.5,
+    "survival": 15.0,
+    "growth": 292.5,
+    "operation": 22.5
+  }
+}

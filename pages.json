@@ -1,8 +1,8 @@
 ﻿[
   {
     "id": "canvas",
-    "title": "画布",
-    "icon": "◫",
+    "title": "无限画布",
+    "icon": "🎨",
     "description": "在无限画布中组织图片、文本与 KIE 生成节点",
     "path": "canvas/index.html"
   },

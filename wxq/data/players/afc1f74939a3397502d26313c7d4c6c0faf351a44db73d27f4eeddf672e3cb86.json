@@ -1,0 +1,40 @@
+{
+  "id": "墨千诚",
+  "matches": [
+    {
+      "matchId": 1,
+      "sheet": "Sheet1",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 6,
+      "rank": 5.0,
+      "economy": 144.0,
+      "attack": 37.0,
+      "survival": 12.0,
+      "growth": 57.0,
+      "operation": 15.0
+    },
+    {
+      "matchId": 2,
+      "sheet": "Sheet1",
+      "matchInSheet": 2,
+      "headerRow": 8,
+      "row": 13,
+      "rank": 2.0,
+      "economy": 199.0,
+      "attack": 52.0,
+      "survival": 16.0,
+      "growth": 81.0,
+      "operation": 16.0
+    }
+  ],
+  "matchCount": 2,
+  "averages": {
+    "rank": 3.5,
+    "economy": 171.5,
+    "attack": 44.5,
+    "survival": 14.0,
+    "growth": 69.0,
+    "operation": 15.5
+  }
+}

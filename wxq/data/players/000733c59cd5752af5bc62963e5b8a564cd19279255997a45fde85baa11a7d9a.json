@@ -1,0 +1,40 @@
+{
+  "id": "百川",
+  "matches": [
+    {
+      "matchId": 1,
+      "sheet": "Sheet1",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 4,
+      "rank": 3.0,
+      "economy": 204.0,
+      "attack": 68.0,
+      "survival": 14.0,
+      "growth": 142.0,
+      "operation": 26.0
+    },
+    {
+      "matchId": 2,
+      "sheet": "Sheet1",
+      "matchInSheet": 2,
+      "headerRow": 8,
+      "row": 11,
+      "rank": 3.0,
+      "economy": 175.0,
+      "attack": 71.0,
+      "survival": 15.0,
+      "growth": 129.0,
+      "operation": 22.0
+    }
+  ],
+  "matchCount": 2,
+  "averages": {
+    "rank": 3.0,
+    "economy": 189.5,
+    "attack": 69.5,
+    "survival": 14.5,
+    "growth": 135.5,
+    "operation": 24.0
+  }
+}
