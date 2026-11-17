@@ -1,0 +1,48 @@
+{
+  "id": "夏夏",
+  "matches": [
+    {
+      "matchId": 1,
+      "sheet": "Sheet1",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 2,
+      "rank": 1.0,
+      "economy": 245.0,
+      "attack": 118.0,
+      "survival": 15.0,
+      "growth": 122.0,
+      "operation": 30.0
+    },
+    {
+      "matchId": 2,
+      "sheet": "Sheet1",
+      "matchInSheet": 2,
+      "headerRow": 8,
+      "row": 9,
+      "rank": 4.0,
+      "economy": 195.0,
+      "attack": 68.0,
+      "survival": 15.0,
+      "growth": 145.0,
+      "operation": 26.0
+    }
+  ],
+  "matchCount": 2,
+  "averages": {
+    "rank": 2.5,
+    "economy": 220.0,
+    "attack": 93.0,
+    "survival": 15.0,
+    "growth": 133.5,
+    "operation": 28.0
+  },
+  "totals": {
+    "rank": 5.0,
+    "economy": 440.0,
+    "attack": 186.0,
+    "survival": 30.0,
+    "growth": 267.0,
+    "operation": 56.0
+  }
+}

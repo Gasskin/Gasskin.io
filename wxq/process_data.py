@@ -87,12 +87,15 @@ def aggregate(sheets):
             raise ValueError(f"Sheet「{sheet_name}」第 {header_row} 行：该场对局没有玩家数据。")
     if not players:
         raise ValueError("所有 Sheet 中均未找到有效对局数据。")
+    return summarize(players, sheet_count, match_count)
+
+
+def summarize(players, sheet_count, match_count):
+    """Use the same ranking and averaging rules for all matches or one event."""
     for player in players.values():
         player["matchCount"] = len(player["matches"])
-        player["averages"] = {
-            key: math.fsum(match[key] for match in player["matches"]) / player["matchCount"]
-            for key in FIELDS
-        }
+        player["totals"] = {key: math.fsum(match[key] for match in player["matches"]) for key in FIELDS}
+        player["averages"] = {key: player["totals"][key] / player["matchCount"] for key in FIELDS}
     ordered = sorted(players.values(), key=lambda p: (p["averages"]["rank"], -p["matchCount"], p["id"]))
     index = {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
@@ -113,6 +116,7 @@ def aggregate(sheets):
         index["players"].append({
             "id": player["id"], "averageRank": player["averages"]["rank"],
             "matchCount": player["matchCount"], "file": f"players/{filename}",
+            "totals": player["totals"],
         })
     return index, ordered
 
@@ -136,15 +140,31 @@ def generate(source, output):
         index, players = aggregate((sheet.title, sheet.iter_rows(values_only=True)) for sheet in workbook.worksheets)
     finally:
         workbook.close()
+    event_players = {}
+    for player in players:
+        for match in player["matches"]:
+            group = event_players.setdefault(match["sheet"], {})
+            group.setdefault(player["id"], {"id": player["id"], "matches": []})["matches"].append(match)
+    index["events"] = []
+    datasets = []
+    for name, group in event_players.items():
+        event_id = hashlib.sha256(name.encode("utf-8")).hexdigest()
+        event_index, event_ordered = summarize(group, 1, len({m["matchId"] for p in group.values() for m in p["matches"]}))
+        event_index["eventName"] = name
+        index["events"].append({"name": name, "file": f"events/{event_id}/index.json"})
+        datasets.append((output / "events" / event_id, event_index, event_ordered))
+    index["events"].sort(key=lambda event: event["name"])
+    datasets.append((output, index, players))
     # Data errors above leave the previous JSON files completely untouched.
-    (output / "players").mkdir(parents=True, exist_ok=True)
-    for entry, player in zip(index["players"], players):
-        write_json(output / entry["file"], player)
-    write_json(output / "index.json", index)
-    current = {entry["file"] for entry in index["players"]}
-    for old in (output / "players").glob("*.json"):
-        if len(old.stem) == 64 and all(c in "0123456789abcdef" for c in old.stem) and f"players/{old.name}" not in current:
-            old.unlink()
+    for directory, summary, ordered in datasets:
+        (directory / "players").mkdir(parents=True, exist_ok=True)
+        for entry, player in zip(summary["players"], ordered):
+            write_json(directory / entry["file"], player)
+        write_json(directory / "index.json", summary)
+        current = {entry["file"] for entry in summary["players"]}
+        for old in (directory / "players").glob("*.json"):
+            if len(old.stem) == 64 and all(c in "0123456789abcdef" for c in old.stem) and f"players/{old.name}" not in current:
+                old.unlink()
     return index
 
 
@@ -158,7 +178,7 @@ def main():
     except Exception as error:
         print(f"生成失败：{error}", file=sys.stderr)
         return 1
-    print(f"生成成功：{result['sheetCount']} 个 Sheet，{result['matchCount']} 场对局，{result['playerCount']} 位玩家。")
+    print(f"生成成功：{len(result['events'])} 项赛事，{result['matchCount']} 场对局，{result['playerCount']} 位玩家。")
     print(f"JSON：{args.output.resolve()}")
     return 0
 

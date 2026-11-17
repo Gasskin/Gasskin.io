@@ -36,5 +36,13 @@
     "survival": 14.5,
     "growth": 135.5,
     "operation": 24.0
+  },
+  "totals": {
+    "rank": 6.0,
+    "economy": 379.0,
+    "attack": 139.0,
+    "survival": 29.0,
+    "growth": 271.0,
+    "operation": 48.0
   }
 }

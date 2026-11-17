@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -85,6 +87,7 @@ class StatisticsTests(unittest.TestCase):
                 player = json.loads((output / entry["file"]).read_text(encoding="utf-8"))
                 self.assertEqual(player["id"], entry["id"])
                 self.assertEqual(len(player["matches"]), 1)
+                self.assertEqual(entry["totals"], player["totals"])
 
     def test_json_failure_keeps_original_file(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -94,6 +97,108 @@ class StatisticsTests(unittest.TestCase):
                 write_json(target, {"invalid": float("nan")})
             self.assertEqual(target.read_text(), "previous")
             self.assertEqual(list(Path(directory).iterdir()), [target])
+
+    def test_events_keep_their_players_rankings_and_averages_separate(self):
+        rows_by_sheet = {
+            "风云杯": [HEADER, row("甲", 1, 10), row("乙", 2, 100), HEADER, row("甲", 1, 30)],
+            "新人杯": [HEADER, row("甲", 3, 200), row("丙", 1, 80)],
+            "空白赛事": [],
+        }
+        sheets = [SimpleNamespace(title=name, iter_rows=lambda rows=rows, **kwargs: iter(rows)) for name, rows in rows_by_sheet.items()]
+        workbook = SimpleNamespace(worksheets=sheets, close=lambda: None)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch("process_data.openpyxl.load_workbook", return_value=workbook):
+                all_events = generate(Path("unused.xlsx"), output)
+            self.assertEqual(all_events["matchCount"], 3)
+            self.assertEqual(all_events["recordCount"], 5)
+            events = {event["name"]: event for event in all_events["events"]}
+            self.assertEqual(set(events), {"风云杯", "新人杯"})
+            stats = {}
+            for name, entry in events.items():
+                self.assertRegex(entry["file"], r"^events/[0-9a-f]{64}/index\.json$")
+                path = output / entry["file"]
+                summary = json.loads(path.read_text(encoding="utf-8"))
+                stats[name] = summary
+                for player_entry in summary["players"]:
+                    player = json.loads((path.parent / player_entry["file"]).read_text(encoding="utf-8"))
+                    self.assertTrue(all(match["sheet"] == name for match in player["matches"]))
+                    if player["id"] == "甲":
+                        self.assertEqual(player["matchCount"], 2 if name == "风云杯" else 1)
+                        self.assertEqual(player["averages"]["economy"], 20 if name == "风云杯" else 200)
+            self.assertEqual([p["id"] for p in stats["风云杯"]["players"]], ["甲", "乙"])
+            self.assertEqual([p["id"] for p in stats["新人杯"]["players"]], ["丙", "甲"])
+            self.assertEqual(stats["风云杯"]["overall"]["economy"], 60)
+            self.assertEqual(stats["新人杯"]["overall"]["economy"], 140)
+            self.assertAlmostEqual(all_events["overall"]["economy"], (80 + 100 + 80) / 3)
+            self.assertEqual(stats["风云杯"]["metrics"][0]["max"], 100)
+            self.assertEqual(stats["新人杯"]["metrics"][0]["max"], 200)
+            combined_entry = next(p for p in all_events["players"] if p["id"] == "甲")
+            combined = json.loads((output / combined_entry["file"]).read_text(encoding="utf-8"))
+            self.assertEqual(combined["averages"]["economy"], 80)  # Weight all 3 matches, not the 2 event means.
+
+    def test_later_event_error_preserves_all_existing_datasets(self):
+        valid = SimpleNamespace(title="风云杯", iter_rows=lambda **kwargs: iter([HEADER, row("甲", 1, 10)]))
+        invalid = SimpleNamespace(title="新人杯", iter_rows=lambda **kwargs: iter([HEADER, row("乙", 1, 20), row("乙", 2, 30)]))
+        workbook = SimpleNamespace(worksheets=[valid], close=lambda: None)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch("process_data.openpyxl.load_workbook", return_value=workbook):
+                generate(Path("unused.xlsx"), output)
+                before = {p.relative_to(output): p.read_bytes() for p in output.rglob("*.json")}
+                workbook.worksheets.append(invalid)
+                with self.assertRaisesRegex(ValueError, "新人杯.*重复 ID"):
+                    generate(Path("unused.xlsx"), output)
+            self.assertEqual(before, {p.relative_to(output): p.read_bytes() for p in output.rglob("*.json")})
+
+    @unittest.skipUnless(shutil.which("node"), "Node.js is needed to verify browser aggregation")
+    def test_browser_merges_selected_events_by_match_count(self):
+        rows_by_sheet = {
+            "风云杯": [HEADER, row("甲", 1, 10), row("乙", 2, 100), HEADER, row("甲", 1, 30)],
+            "新人杯": [HEADER, row("甲", 3, 200), row("丙", 1, 80)],
+            "高手杯": [HEADER, row("丁", 1, 900)],
+        }
+        sheets = [SimpleNamespace(title=name, iter_rows=lambda rows=rows, **kwargs: iter(rows)) for name, rows in rows_by_sheet.items()]
+        workbook = SimpleNamespace(worksheets=sheets, close=lambda: None)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch("process_data.openpyxl.load_workbook", return_value=workbook):
+                generate(Path("unused.xlsx"), output)
+            # Load the real browser code; leave its startup fetch pending so no DOM is required.
+            script = r'''
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const context = vm.createContext({fetch: () => new Promise(() => {})});
+vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), context);
+const root = JSON.parse(fs.readFileSync(path.join(process.argv[2], 'index.json'), 'utf8'));
+const events = root.events.map(event => JSON.parse(fs.readFileSync(path.join(process.argv[2], event.file), 'utf8')));
+const first = events.find(event => event.eventName === '风云杯');
+const second = events.find(event => event.eventName === '新人杯');
+const merged = context.mergeEvents([first, second]);
+assert.equal(merged.players.map(player => player.id).join(','), '丙,甲,乙');
+const player = merged.players.find(player => player.id === '甲');
+assert.equal(player.matchCount, 3);
+assert.equal(player.averages.economy, 80);
+assert.equal(player.averageRank, 5 / 3);
+assert.equal(merged.players.some(player => player.id === '丁'), false);
+assert.equal(merged.overall.economy, 260 / 3);
+assert.equal(merged.metrics[0].max, 100);
+assert.equal(context.mergeEvents([first]).overall.economy, 60);
+const all = context.mergeEvents(events);
+assert.equal(all.players.length, root.playerCount);
+for (const key of Object.keys(root.overall)) assert.equal(all.overall[key], root.overall[key]);
+for (const entry of root.players) {
+  const actual = all.players.find(player => player.id === entry.id);
+  assert.equal(actual.matchCount, entry.matchCount);
+  assert.equal(actual.averageRank, entry.averageRank);
+}
+assert.throws(() => context.mergeEvents([{metrics: first.metrics, players: [{id:'old', matchCount:1}]}]));
+console.log('Multi-event weighting, exclusion, ordering, scales and all-event equivalence verified');
+'''
+            result = subprocess.run(["node", "-e", script, str(Path(__file__).with_name("app.js")), str(output)], capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

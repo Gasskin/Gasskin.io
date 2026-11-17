@@ -22,8 +22,16 @@ button, input { font: inherit; }
 .players-panel { padding: 24px 16px 16px; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .panel-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 8px; gap: 10px; }
 .panel-heading h2 { font-size: 20px; }
-.search { display: block; margin: 20px 8px 16px; }
-input { width: 100%; min-width: 0; background: #0c1017; color: #e4e7ec; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 16px; }
+.event-filter { flex-shrink: 0; min-width: 0; margin: 20px 8px 12px; padding: 8px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; }
+.event-filter legend { padding: 0 6px; color: var(--muted); font-size: 14px; }
+.event-option { display: flex; align-items: center; gap: 10px; padding: 9px 6px; cursor: pointer; border-radius: 6px; }
+.event-option:hover { background: #ffffff06; }
+.event-option > span { min-width: 0; overflow-wrap: anywhere; }
+.event-option input { flex-shrink: 0; width: 17px; height: 17px; margin: 0; accent-color: var(--player); cursor: pointer; }
+.event-all { border-bottom: 1px solid var(--border); border-radius: 0; margin-bottom: 4px; font-weight: 600; }
+.event-options { max-height: 140px; overflow-y: auto; scrollbar-width: thin; }
+.search { display: block; margin: 0 8px 16px; }
+input[type="search"] { width: 100%; min-width: 0; background: #0c1017; color: #e4e7ec; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 16px; }
 input::placeholder { color: var(--muted); }
 input:focus-visible, button:focus-visible { outline: 2px solid var(--player); outline-offset: 3px; }
 .list-heading { display: flex; justify-content: space-between; margin: 0 10px 10px; color: var(--muted); font-size: 13px; }

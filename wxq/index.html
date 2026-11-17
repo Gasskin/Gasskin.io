@@ -12,6 +12,11 @@
   <main id="dashboard" class="dashboard" hidden>
     <aside class="players-panel" aria-label="玩家排名">
       <div class="panel-heading"><h2>玩家排行</h2><span class="muted">平均排名 ↑</span></div>
+      <fieldset class="event-filter">
+        <legend>赛事</legend>
+        <label class="event-option event-all"><input id="event-all" type="checkbox" checked /><span>所有赛事</span></label>
+        <div id="event-options" class="event-options"></div>
+      </fieldset>
       <label class="search"><span class="sr-only">搜索玩家 ID</span><input id="search" type="search" placeholder="搜索玩家 ID" autocomplete="off" /></label>
       <div class="list-heading"><span>玩家 / 参赛场数</span><span>平均排名</span></div>
       <div id="player-list" class="player-list"></div>
