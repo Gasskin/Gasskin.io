@@ -18,6 +18,31 @@ def row(name, rank, value):
 
 
 class StatisticsTests(unittest.TestCase):
+    def test_hash_prefixed_sheets_are_excluded_before_validation(self):
+        def unread_rows():
+            raise AssertionError("Ignored sheet rows must not be consumed")
+            yield
+
+        sheets = [
+            SimpleNamespace(title="##备注", iter_rows=lambda **kwargs: unread_rows()),
+            SimpleNamespace(title="风云杯", iter_rows=lambda **kwargs: iter([HEADER, row("甲", 1, 10)])),
+            SimpleNamespace(title="##散排", iter_rows=lambda **kwargs: iter([HEADER, row("甲", None, 900)])),
+            SimpleNamespace(title="杯##决赛", iter_rows=lambda **kwargs: iter([HEADER, row("乙", 1, 30)])),
+        ]
+        workbook = SimpleNamespace(worksheets=sheets, close=lambda: None)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch("process_data.openpyxl.load_workbook", return_value=workbook):
+                index = generate(Path("unused.xlsx"), output)
+            self.assertEqual((index["sheetCount"], index["matchCount"], index["recordCount"]), (2, 2, 2))
+            self.assertEqual(index["overall"]["economy"], 20)
+            self.assertEqual({event["name"] for event in index["events"]}, {"风云杯", "杯##决赛"})
+            self.assertEqual(len(list((output / "events").iterdir())), 2)
+            for entry in index["players"]:
+                player = json.loads((output / entry["file"]).read_text(encoding="utf-8"))
+                self.assertEqual(player["matchCount"], 1)
+                self.assertTrue(all(not match["sheet"].startswith("##") for match in player["matches"]))
+
     def test_all_sheets_matches_and_equal_player_weight(self):
         index, players = aggregate([
             ("第一天", [HEADER, row(" 甲 ", 1, 10), row("乙", 2, 100), [], HEADER, row("甲", 2, 20)]),
