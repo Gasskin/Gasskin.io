@@ -34,6 +34,8 @@ def aggregate(sheets):
     match_count = 0
     sheet_count = 0
     for sheet_name, rows in sheets:
+        if sheet_name.startswith("##"):
+            continue
         sheet_count += 1
         header_row = None
         match_in_sheet = 0
