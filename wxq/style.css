@@ -48,12 +48,12 @@ input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px s
 .detail-panel { padding: clamp(16px, 1.5vw, 28px); min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; }
 #player-content { display: flex; flex-direction: column; flex: 1; }
 .player-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-.player-identity { min-width: 0; max-width: 100%; }
-.performance-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 8px; }
-.performance-heading .eyebrow { margin-bottom: 0; }
-.comparison-control { display: flex; align-items: center; gap: 8px; max-width: 100%; color: var(--muted); font-size: 14px; }
-.comparison-control select { min-width: 0; width: 150px; max-width: 100%; padding: 6px 10px; background: #0c1017; color: #e4e7ec; border: 1px solid var(--border); border-radius: 8px; }
-#player-name { font-size: 34px; overflow-wrap: anywhere; }
+.player-identity { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); justify-content: start; align-items: start; gap: 8px 24px; flex: 1 1 320px; min-width: 0; max-width: 100%; }
+.player-identity .eyebrow { margin-bottom: 0; }
+#player-name, #comparison-target { margin: 0; padding: 0; font-family: inherit; font-size: 34px; font-weight: 700; line-height: 1.25; color: inherit; }
+#player-name { overflow-wrap: anywhere; }
+#comparison-target { width: 100%; min-width: 0; height: 1.25em; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
+#comparison-target option { background: #11161e; color: #e4e7ec; font-size: 16px; font-weight: 400; }
 .player-stats { display: flex; gap: 12px; flex-shrink: 0; }
 .player-stats > div { min-width: 88px; padding: 10px 14px; background: #0d131b; border: 1px solid var(--border); border-radius: 10px; }
 .player-stats dt { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
@@ -88,6 +88,7 @@ td:nth-child(3) { color: var(--overall); }
   .player-list { flex: auto; max-height: 280px; }
   .detail-panel { padding: 16px; overflow: visible; }
   .player-heading { align-items: start; flex-direction: column; gap: 18px; }
+  .player-identity { flex: auto; width: 100%; gap: 8px 16px; }
   .player-stats { gap: 12px; }
   .values { padding: 16px 14px 6px; }
   figure { min-height: 0; aspect-ratio: 540 / 470; }
