@@ -14,7 +14,7 @@ body { margin: 0; height: 100dvh; padding: 12px; overflow: hidden; background: r
 h2, h3, p, figure, dl, dd { margin: 0; }
 h2 { font-size: 22px; }
 h3 { font-size: 18px; margin-bottom: 12px; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 .muted { color: var(--muted); font-size: 14px; }
 .eyebrow { font-size: 14px; color: var(--muted); margin-bottom: 8px; letter-spacing: .12em; }
 .dashboard { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 7fr); gap: 12px; width: 100%; height: 100%; }
@@ -33,7 +33,7 @@ button, input { font: inherit; }
 .search { display: block; margin: 0 8px 16px; }
 input[type="search"] { width: 100%; min-width: 0; background: #0c1017; color: #e4e7ec; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 16px; }
 input::placeholder { color: var(--muted); }
-input:focus-visible, button:focus-visible { outline: 2px solid var(--player); outline-offset: 3px; }
+input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--player); outline-offset: 3px; }
 .list-heading { display: flex; justify-content: space-between; margin: 0 10px 10px; color: var(--muted); font-size: 13px; }
 .player-list { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; overflow-y: auto; scrollbar-width: thin; }
 .player-button { width: 100%; flex-shrink: 0; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid transparent; border-radius: 10px; background: #ffffff02; color: inherit; padding: 20px 12px; cursor: pointer; text-align: left; transition: background .18s ease, border-color .18s ease; }
@@ -48,6 +48,11 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--player); ou
 .detail-panel { padding: clamp(16px, 1.5vw, 28px); min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; }
 #player-content { display: flex; flex-direction: column; flex: 1; }
 .player-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.player-identity { min-width: 0; max-width: 100%; }
+.performance-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 8px; }
+.performance-heading .eyebrow { margin-bottom: 0; }
+.comparison-control { display: flex; align-items: center; gap: 8px; max-width: 100%; color: var(--muted); font-size: 14px; }
+.comparison-control select { min-width: 0; width: 150px; max-width: 100%; padding: 6px 10px; background: #0c1017; color: #e4e7ec; border: 1px solid var(--border); border-radius: 8px; }
 #player-name { font-size: 34px; overflow-wrap: anywhere; }
 .player-stats { display: flex; gap: 12px; flex-shrink: 0; }
 .player-stats > div { min-width: 88px; padding: 10px 14px; background: #0d131b; border: 1px solid var(--border); border-radius: 10px; }
@@ -56,6 +61,9 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--player); ou
 .legend { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; font-size: 15px; color: var(--muted); margin: 20px 0 0; }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
 .legend i { width: 8px; height: 8px; border-radius: 50%; }
+.legend i { flex-shrink: 0; }
+#comparison-legend, #comparison-heading { overflow-wrap: anywhere; }
+table { table-layout: fixed; }
 .player-dot { background: var(--player); }
 .overall-dot { background: var(--overall); }
 .comparison { display: flex; flex-direction: column; flex: 1; gap: 12px; }

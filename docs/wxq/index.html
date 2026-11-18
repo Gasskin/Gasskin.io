@@ -25,10 +25,10 @@
     <section class="detail-panel" aria-labelledby="player-name" aria-busy="false">
       <div id="player-content" hidden>
         <div class="player-heading">
-          <div><p class="eyebrow">玩家表现</p><h2 id="player-name"></h2></div>
+          <div class="player-identity"><div class="performance-heading"><p class="eyebrow">玩家表现</p><label class="comparison-control" for="comparison-target">对比目标<select id="comparison-target"><option value="">平均值</option></select></label></div><h2 id="player-name"></h2></div>
           <dl class="player-stats"><div><dt>平均排名</dt><dd id="average-rank"></dd></div><div><dt>参赛场数</dt><dd id="match-count"></dd></div></dl>
         </div>
-        <div class="legend"><span><i class="player-dot"></i>该玩家均值</span><span><i class="overall-dot"></i>所有玩家均值</span></div>
+        <div class="legend"><span><i class="player-dot"></i>当前玩家</span><span><i class="overall-dot"></i><span id="comparison-legend">玩家均值</span></span></div>
         <div class="comparison">
           <figure>
             <svg id="radar" viewBox="0 0 540 470" role="img" aria-labelledby="radar-title radar-description"></svg>
@@ -36,7 +36,7 @@
           <div class="values">
             <h3>平均数据</h3>
             <table>
-              <thead><tr><th scope="col">维度</th><th scope="col">该玩家</th><th scope="col">所有玩家</th></tr></thead>
+              <thead><tr><th scope="col">维度</th><th scope="col">该玩家</th><th id="comparison-heading" scope="col">所有玩家</th></tr></thead>
               <tbody id="averages"></tbody>
             </table>
           </div>

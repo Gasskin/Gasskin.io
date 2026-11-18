@@ -4,6 +4,7 @@ let index;
 let allEvents;
 let eventRequestNumber = 0;
 let selectedId;
+let comparisonId = '';
 
 async function readJson(path) {
   const response = await fetch(path, { cache: 'no-store' });
@@ -46,11 +47,11 @@ function svgNode(tag, attributes = {}, text) {
   return node;
 }
 
-function drawRadar(player) {
+function drawRadar(player, comparison) {
   const chart = byId('radar');
   chart.replaceChildren(
-    svgNode('title', { id: 'radar-title' }, `${player.id}与所有玩家的平均数据对比`),
-    svgNode('desc', { id: 'radar-description' }, '绿色实线代表该玩家，黄色实线代表所有玩家。真实均值见平均数据表。')
+    svgNode('title', { id: 'radar-title' }, `${player.id}与${comparison.name}的平均数据对比`),
+    svgNode('desc', { id: 'radar-description' }, `绿色实线代表该玩家，黄色实线代表${comparison.name}。真实均值见平均数据表。`)
   );
   const point = (i, ratio) => {
     const angle = -Math.PI / 2 + i * 2 * Math.PI / index.metrics.length;
@@ -71,7 +72,7 @@ function drawRadar(player) {
     chart.append(svgNode('text', { x: labelX, y: labelY + 24, fill: '#b2bed0', 'font-size': 14, 'text-anchor': 'middle' }, `上限 ${format(metric.max)}`));
   });
   for (const [values, color, name] of [
-    [index.overall, '#f5d45c', '所有玩家'],
+    [comparison.averages, '#f5d45c', comparison.name],
     [player.averages, '#6ed7bd', player.id],
   ]) {
     chart.append(svgNode('polygon', {
@@ -87,19 +88,43 @@ function drawRadar(player) {
   }
 }
 
+function renderComparisonOptions() {
+  const candidates = index.players.filter(player => player.id !== selectedId);
+  if (!candidates.some(player => player.id === comparisonId)) comparisonId = '';
+  const averageOption = element('option', '', '平均值');
+  averageOption.value = '';
+  byId('comparison-target').replaceChildren(averageOption, ...candidates.map(player => {
+    const option = element('option', '', player.id);
+    option.value = player.id;
+    return option;
+  }));
+  byId('comparison-target').value = comparisonId;
+}
+
+function renderComparison(player) {
+  const target = index.players.find(entry => entry.id === comparisonId);
+  const comparison = target
+    ? { name: target.id, averages: target.averages }
+    : { name: '所有玩家', averages: index.overall };
+  byId('comparison-legend').textContent = target ? target.id : '玩家均值';
+  byId('comparison-heading').textContent = comparison.name;
+  const rows = index.metrics.map(metric => {
+    const row = element('tr');
+    row.append(element('td', '', metric.label), element('td', '', format(player.averages[metric.key])), element('td', '', format(comparison.averages[metric.key])));
+    return row;
+  });
+  byId('averages').replaceChildren(...rows);
+  drawRadar(player, comparison);
+}
+
 function selectPlayer(player) {
   selectedId = player.id;
   document.querySelectorAll('.player-button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.id === selectedId)));
   byId('player-name').textContent = player.id;
   byId('average-rank').textContent = format(player.averages.rank);
   byId('match-count').textContent = player.matchCount;
-  const rows = index.metrics.map(metric => {
-    const row = element('tr');
-    row.append(element('td', '', metric.label), element('td', '', format(player.averages[metric.key])), element('td', '', format(index.overall[metric.key])));
-    return row;
-  });
-  byId('averages').replaceChildren(...rows);
-  drawRadar(player);
+  renderComparisonOptions();
+  renderComparison(player);
   byId('player-content').hidden = false;
   byId('player-status').textContent = '';
 }
@@ -193,6 +218,11 @@ async function init() {
       selectEvents();
     });
     byId('search').addEventListener('input', renderPlayers);
+    byId('comparison-target').addEventListener('change', () => {
+      if (!index) return;
+      comparisonId = byId('comparison-target').value;
+      renderComparison(index.players.find(player => player.id === selectedId));
+    });
     await selectEvents();
   } catch (error) {
     byId('status').hidden = false;
