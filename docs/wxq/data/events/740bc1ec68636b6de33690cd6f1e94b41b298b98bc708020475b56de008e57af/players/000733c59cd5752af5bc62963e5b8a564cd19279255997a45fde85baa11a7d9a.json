@@ -1,0 +1,87 @@
+{
+  "id": "百川",
+  "matches": [
+    {
+      "matchId": 1,
+      "sheet": "将军杯",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 3,
+      "rank": 2.0,
+      "economy": 224.0,
+      "attack": 140.0,
+      "survival": 17.0,
+      "growth": 170.0,
+      "operation": 22.0
+    },
+    {
+      "matchId": 2,
+      "sheet": "将军杯",
+      "matchInSheet": 2,
+      "headerRow": 8,
+      "row": 11,
+      "rank": 3.0,
+      "economy": 173.0,
+      "attack": 49.0,
+      "survival": 15.0,
+      "growth": 221.0,
+      "operation": 15.0
+    },
+    {
+      "matchId": 3,
+      "sheet": "将军杯",
+      "matchInSheet": 3,
+      "headerRow": 15,
+      "row": 17,
+      "rank": 2.0,
+      "economy": 196.0,
+      "attack": 130.0,
+      "survival": 15.0,
+      "growth": 236.0,
+      "operation": 16.0
+    },
+    {
+      "matchId": 4,
+      "sheet": "将军杯",
+      "matchInSheet": 4,
+      "headerRow": 22,
+      "row": 24,
+      "rank": 2.0,
+      "economy": 274.0,
+      "attack": 86.0,
+      "survival": 15.0,
+      "growth": 217.0,
+      "operation": 35.0
+    },
+    {
+      "matchId": 5,
+      "sheet": "将军杯",
+      "matchInSheet": 5,
+      "headerRow": 29,
+      "row": 31,
+      "rank": 2.0,
+      "economy": 206.0,
+      "attack": 115.0,
+      "survival": 16.0,
+      "growth": 77.0,
+      "operation": 11.0
+    }
+  ],
+  "matchCount": 5,
+  "totals": {
+    "rank": 11.0,
+    "economy": 1073.0,
+    "attack": 520.0,
+    "survival": 78.0,
+    "growth": 921.0,
+    "operation": 99.0
+  },
+  "averages": {
+    "rank": 2.2,
+    "economy": 214.6,
+    "attack": 104.0,
+    "survival": 15.6,
+    "growth": 184.2,
+    "operation": 19.8
+  }
+}

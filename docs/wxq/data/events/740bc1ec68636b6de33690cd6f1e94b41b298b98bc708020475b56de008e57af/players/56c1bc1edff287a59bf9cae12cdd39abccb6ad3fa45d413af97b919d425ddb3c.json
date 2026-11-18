@@ -1,0 +1,87 @@
+{
+  "id": "墨千城",
+  "matches": [
+    {
+      "matchId": 1,
+      "sheet": "将军杯",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 7,
+      "rank": 6.0,
+      "economy": 127.0,
+      "attack": 6.0,
+      "survival": 12.0,
+      "growth": 127.0,
+      "operation": 14.0
+    },
+    {
+      "matchId": 2,
+      "sheet": "将军杯",
+      "matchInSheet": 2,
+      "headerRow": 8,
+      "row": 14,
+      "rank": 6.0,
+      "economy": 106.0,
+      "attack": 25.0,
+      "survival": 10.0,
+      "growth": 120.0,
+      "operation": 26.0
+    },
+    {
+      "matchId": 3,
+      "sheet": "将军杯",
+      "matchInSheet": 3,
+      "headerRow": 15,
+      "row": 21,
+      "rank": 6.0,
+      "economy": 106.0,
+      "attack": 8.0,
+      "survival": 10.0,
+      "growth": 247.0,
+      "operation": 27.0
+    },
+    {
+      "matchId": 4,
+      "sheet": "将军杯",
+      "matchInSheet": 4,
+      "headerRow": 22,
+      "row": 25,
+      "rank": 3.0,
+      "economy": 149.0,
+      "attack": 60.0,
+      "survival": 13.0,
+      "growth": 73.0,
+      "operation": 19.0
+    },
+    {
+      "matchId": 5,
+      "sheet": "将军杯",
+      "matchInSheet": 5,
+      "headerRow": 29,
+      "row": 33,
+      "rank": 4.0,
+      "economy": 320.0,
+      "attack": 57.0,
+      "survival": 14.0,
+      "growth": 163.0,
+      "operation": 47.0
+    }
+  ],
+  "matchCount": 5,
+  "totals": {
+    "rank": 25.0,
+    "economy": 808.0,
+    "attack": 156.0,
+    "survival": 59.0,
+    "growth": 730.0,
+    "operation": 133.0
+  },
+  "averages": {
+    "rank": 5.0,
+    "economy": 161.6,
+    "attack": 31.2,
+    "survival": 11.8,
+    "growth": 146.0,
+    "operation": 26.6
+  }
+}

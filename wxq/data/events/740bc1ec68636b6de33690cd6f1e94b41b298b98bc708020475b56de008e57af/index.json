@@ -1,0 +1,130 @@
+{
+  "generatedAt": "2026-11-18T16:49:07.983871+00:00",
+  "sheetCount": 1,
+  "matchCount": 5,
+  "playerCount": 6,
+  "recordCount": 30,
+  "averageMethod": "player_equal_weight",
+  "overall": {
+    "rank": 3.5,
+    "economy": 200.4333333333333,
+    "attack": 60.9,
+    "survival": 13.533333333333333,
+    "growth": 195.6,
+    "operation": 25.233333333333334
+  },
+  "metrics": [
+    {
+      "key": "economy",
+      "label": "经济",
+      "max": 276.6
+    },
+    {
+      "key": "attack",
+      "label": "攻击",
+      "max": 104.0
+    },
+    {
+      "key": "survival",
+      "label": "生存",
+      "max": 15.6
+    },
+    {
+      "key": "growth",
+      "label": "成长",
+      "max": 396.4
+    },
+    {
+      "key": "operation",
+      "label": "操作",
+      "max": 30.4
+    }
+  ],
+  "players": [
+    {
+      "id": "鬼众",
+      "averageRank": 1.8,
+      "matchCount": 5,
+      "file": "players/887da38cac43594da68f358d146fc7aaea1ffb229d6a0fdb5a42c95a2197c8b8.json",
+      "totals": {
+        "rank": 9.0,
+        "economy": 1186.0,
+        "attack": 471.0,
+        "survival": 78.0,
+        "growth": 1982.0,
+        "operation": 152.0
+      }
+    },
+    {
+      "id": "百川",
+      "averageRank": 2.2,
+      "matchCount": 5,
+      "file": "players/000733c59cd5752af5bc62963e5b8a564cd19279255997a45fde85baa11a7d9a.json",
+      "totals": {
+        "rank": 11.0,
+        "economy": 1073.0,
+        "attack": 520.0,
+        "survival": 78.0,
+        "growth": 921.0,
+        "operation": 99.0
+      }
+    },
+    {
+      "id": "夏夏",
+      "averageRank": 2.4,
+      "matchCount": 5,
+      "file": "players/5b41b930606a21a9fdff6b9add7a861dc30efa627702288904cdc2a1b15dbda0.json",
+      "totals": {
+        "rank": 12.0,
+        "economy": 1383.0,
+        "attack": 411.0,
+        "survival": 75.0,
+        "growth": 908.0,
+        "operation": 147.0
+      }
+    },
+    {
+      "id": "L",
+      "averageRank": 4.6,
+      "matchCount": 5,
+      "file": "players/72dfcfb0c470ac255cde83fb8fe38de8a128188e03ea5ba5b2a93adbea1062fa.json",
+      "totals": {
+        "rank": 23.0,
+        "economy": 886.0,
+        "attack": 115.0,
+        "survival": 57.0,
+        "growth": 706.0,
+        "operation": 139.0
+      }
+    },
+    {
+      "id": "墨千城",
+      "averageRank": 5.0,
+      "matchCount": 5,
+      "file": "players/56c1bc1edff287a59bf9cae12cdd39abccb6ad3fa45d413af97b919d425ddb3c.json",
+      "totals": {
+        "rank": 25.0,
+        "economy": 808.0,
+        "attack": 156.0,
+        "survival": 59.0,
+        "growth": 730.0,
+        "operation": 133.0
+      }
+    },
+    {
+      "id": "小满",
+      "averageRank": 5.0,
+      "matchCount": 5,
+      "file": "players/a18e1d5053a25b6681786b6d32310423a20c1eb0854a855013ec0241dd6790be.json",
+      "totals": {
+        "rank": 25.0,
+        "economy": 677.0,
+        "attack": 154.0,
+        "survival": 59.0,
+        "growth": 621.0,
+        "operation": 87.0
+      }
+    }
+  ],
+  "eventName": "将军杯"
+}
