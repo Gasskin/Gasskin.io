@@ -26,10 +26,13 @@
       <div id="player-content" hidden>
         <div class="player-heading">
           <div class="player-identity">
-            <p class="eyebrow">玩家表现</p>
+            <p class="eyebrow">当前玩家</p>
             <label class="eyebrow" for="comparison-target">对比目标</label>
             <h2 id="player-name"></h2>
-            <select id="comparison-target"><option value="">平均值</option></select>
+            <div class="comparison-picker">
+              <span id="comparison-value" aria-hidden="true">平均值</span>
+              <select id="comparison-target"><option value="">平均值</option></select>
+            </div>
           </div>
           <dl class="player-stats"><div><dt>平均排名</dt><dd id="average-rank"></dd></div><div><dt>参赛场数</dt><dd id="match-count"></dd></div></dl>
         </div>

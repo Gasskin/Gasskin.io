@@ -106,6 +106,7 @@ function renderComparison(player) {
   const comparison = target
     ? { name: target.id, averages: target.averages }
     : { name: '所有玩家', averages: index.overall };
+  byId('comparison-value').textContent = byId('comparison-target').selectedOptions[0].textContent;
   byId('comparison-legend').textContent = target ? target.id : '玩家均值';
   byId('comparison-heading').textContent = comparison.name;
   const rows = index.metrics.map(metric => {

@@ -48,12 +48,15 @@ input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px s
 .detail-panel { padding: clamp(16px, 1.5vw, 28px); min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; }
 #player-content { display: flex; flex-direction: column; flex: 1; }
 .player-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-.player-identity { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); justify-content: start; align-items: start; gap: 8px 24px; flex: 1 1 320px; min-width: 0; max-width: 100%; }
+.player-identity { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); justify-content: start; align-items: baseline; gap: 8px 24px; flex: 1 1 320px; min-width: 0; max-width: 100%; }
 .player-identity .eyebrow { margin-bottom: 0; }
-#player-name, #comparison-target { margin: 0; padding: 0; font-family: inherit; font-size: 34px; font-weight: 700; line-height: 1.25; color: inherit; }
+#player-name, .comparison-picker { font-size: 34px; font-weight: 700; line-height: 1.25; }
 #player-name { overflow-wrap: anywhere; }
-#comparison-target { width: 100%; min-width: 0; height: 1.25em; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
-#comparison-target option { background: #11161e; color: #e4e7ec; font-size: 16px; font-weight: 400; }
+.comparison-picker { position: relative; min-width: 0; padding-inline-end: 20px; }
+.comparison-picker::after { content: ''; position: absolute; inset-inline-end: 3px; top: 50%; width: 7px; height: 7px; border: solid var(--muted); border-width: 0 2px 2px 0; transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+.comparison-picker:focus-within { outline: 2px solid var(--player); outline-offset: 3px; }
+#comparison-value { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#comparison-target { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .player-stats { display: flex; gap: 12px; flex-shrink: 0; }
 .player-stats > div { min-width: 88px; padding: 10px 14px; background: #0d131b; border: 1px solid var(--border); border-radius: 10px; }
 .player-stats dt { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
