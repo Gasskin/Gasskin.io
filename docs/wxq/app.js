@@ -51,7 +51,7 @@ function drawRadar(player, comparison) {
   const chart = byId('radar');
   chart.replaceChildren(
     svgNode('title', { id: 'radar-title' }, `${player.id}与${comparison.name}的平均数据对比`),
-    svgNode('desc', { id: 'radar-description' }, `绿色实线代表该玩家，黄色实线代表${comparison.name}。真实均值见平均数据表。`)
+    svgNode('desc', { id: 'radar-description' }, `绿色实线代表${player.id}，黄色实线代表${comparison.name}。真实均值见平均数据表。`)
   );
   const point = (i, ratio) => {
     const angle = -Math.PI / 2 + i * 2 * Math.PI / index.metrics.length;
@@ -122,6 +122,7 @@ function selectPlayer(player) {
   selectedId = player.id;
   document.querySelectorAll('.player-button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.id === selectedId)));
   byId('player-name').textContent = player.id;
+  byId('player-legend').textContent = player.id;
   byId('average-rank').textContent = format(player.averages.rank);
   byId('match-count').textContent = player.matchCount;
   renderComparisonOptions();
