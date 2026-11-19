@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T16:49:07.983871+00:00",
+  "generatedAt": "2026-11-19T07:43:10.459157+00:00",
   "sheetCount": 1,
   "matchCount": 5,
   "playerCount": 6,
@@ -10,7 +10,7 @@
     "economy": 200.4333333333333,
     "attack": 60.9,
     "survival": 13.533333333333333,
-    "growth": 195.6,
+    "growth": 178.53333333333333,
     "operation": 25.233333333333334
   },
   "metrics": [
@@ -32,7 +32,7 @@
     {
       "key": "growth",
       "label": "成长",
-      "max": 396.4
+      "max": 294.0
     },
     {
       "key": "operation",
@@ -51,7 +51,7 @@
         "economy": 1186.0,
         "attack": 471.0,
         "survival": 78.0,
-        "growth": 1982.0,
+        "growth": 1470.0,
         "operation": 152.0
       }
     },

@@ -63,7 +63,7 @@
       "economy": 222.0,
       "attack": 109.0,
       "survival": 16.0,
-      "growth": 999.0,
+      "growth": 487.0,
       "operation": 40.0
     }
   ],
@@ -73,7 +73,7 @@
     "economy": 1186.0,
     "attack": 471.0,
     "survival": 78.0,
-    "growth": 1982.0,
+    "growth": 1470.0,
     "operation": 152.0
   },
   "averages": {
@@ -81,7 +81,7 @@
     "economy": 237.2,
     "attack": 94.2,
     "survival": 15.6,
-    "growth": 396.4,
+    "growth": 294.0,
     "operation": 30.4
   }
 }
