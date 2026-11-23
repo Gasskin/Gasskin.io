@@ -98,6 +98,8 @@ GitHub 仓库设置：**Settings → Pages → Source** 选择 **"GitHub Actions
 | Set up Python | 准备 Python 3.11 环境 |
 | Update stock data | 安装 tushare/pandas 并运行 `stock/gen_data.py` 刷新行情（失败不阻断部署） |
 | Build docs | 运行 `build.py`，打包到 `docs/` |
+| Upload Pages artifact | 上传 `docs/`，产物名为 `github-pages` |
+| Wait for Pages artifact | 轮询当前 run 的产物列表，确认本次上传的产物可见后再部署（最多 12 次，间隔 5 秒） |
 | Deploy to GitHub Pages | 部署 `docs/` 到 GitHub Pages |
 
 **触发条件：**
