@@ -3,7 +3,7 @@
   "matches": [
     {
       "matchId": 1,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 1,
       "headerRow": 1,
       "row": 3,
@@ -16,7 +16,7 @@
     },
     {
       "matchId": 2,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 2,
       "headerRow": 8,
       "row": 11,
@@ -29,7 +29,7 @@
     },
     {
       "matchId": 3,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 3,
       "headerRow": 15,
       "row": 17,
@@ -42,7 +42,7 @@
     },
     {
       "matchId": 4,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 4,
       "headerRow": 22,
       "row": 24,
@@ -55,7 +55,7 @@
     },
     {
       "matchId": 5,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 5,
       "headerRow": 29,
       "row": 31,
@@ -68,7 +68,7 @@
     },
     {
       "matchId": 6,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 6,
       "headerRow": 36,
       "row": 42,
@@ -81,7 +81,7 @@
     },
     {
       "matchId": 7,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 7,
       "headerRow": 43,
       "row": 45,
@@ -94,7 +94,7 @@
     },
     {
       "matchId": 8,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 8,
       "headerRow": 50,
       "row": 51,
@@ -107,7 +107,7 @@
     },
     {
       "matchId": 9,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 9,
       "headerRow": 57,
       "row": 61,
@@ -120,7 +120,7 @@
     },
     {
       "matchId": 10,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 10,
       "headerRow": 64,
       "row": 69,
@@ -133,7 +133,7 @@
     },
     {
       "matchId": 11,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 11,
       "headerRow": 71,
       "row": 74,
@@ -146,7 +146,7 @@
     },
     {
       "matchId": 12,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 12,
       "headerRow": 78,
       "row": 81,
@@ -159,7 +159,7 @@
     },
     {
       "matchId": 13,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 13,
       "headerRow": 85,
       "row": 88,
@@ -172,7 +172,7 @@
     },
     {
       "matchId": 14,
-      "sheet": "将军杯",
+      "sheet": "将军杯1",
       "matchInSheet": 14,
       "headerRow": 92,
       "row": 98,
@@ -182,23 +182,75 @@
       "survival": 9.0,
       "growth": 86.0,
       "operation": 18.0
+    },
+    {
+      "matchId": 15,
+      "sheet": "将军杯1",
+      "matchInSheet": 15,
+      "headerRow": 99,
+      "row": 104,
+      "rank": 5.0,
+      "economy": 162.0,
+      "attack": 63.0,
+      "survival": 13.0,
+      "growth": 137.0,
+      "operation": 24.0
+    },
+    {
+      "matchId": 16,
+      "sheet": "将军杯1",
+      "matchInSheet": 16,
+      "headerRow": 106,
+      "row": 112,
+      "rank": 6.0,
+      "economy": 84.0,
+      "attack": 15.0,
+      "survival": 9.0,
+      "growth": 105.0,
+      "operation": 15.0
+    },
+    {
+      "matchId": 17,
+      "sheet": "将军杯2",
+      "matchInSheet": 1,
+      "headerRow": 1,
+      "row": 4,
+      "rank": 3.0,
+      "economy": 212.0,
+      "attack": 54.0,
+      "survival": 15.0,
+      "growth": 127.0,
+      "operation": 25.0
+    },
+    {
+      "matchId": 18,
+      "sheet": "将军杯2",
+      "matchInSheet": 2,
+      "headerRow": 8,
+      "row": 9,
+      "rank": 1.0,
+      "economy": 201.0,
+      "attack": 100.0,
+      "survival": 16.0,
+      "growth": 213.0,
+      "operation": 19.0
     }
   ],
-  "matchCount": 14,
+  "matchCount": 18,
   "totals": {
-    "rank": 44.0,
-    "economy": 2704.0,
-    "attack": 1067.0,
-    "survival": 199.0,
-    "growth": 2412.0,
-    "operation": 299.0
+    "rank": 59.0,
+    "economy": 3363.0,
+    "attack": 1299.0,
+    "survival": 252.0,
+    "growth": 2994.0,
+    "operation": 382.0
   },
   "averages": {
-    "rank": 3.142857142857143,
-    "economy": 193.14285714285714,
-    "attack": 76.21428571428571,
-    "survival": 14.214285714285714,
-    "growth": 172.28571428571428,
-    "operation": 21.357142857142858
+    "rank": 3.2777777777777777,
+    "economy": 186.83333333333334,
+    "attack": 72.16666666666667,
+    "survival": 14.0,
+    "growth": 166.33333333333334,
+    "operation": 21.22222222222222
   }
 }
