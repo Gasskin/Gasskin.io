@@ -1,8 +1,6 @@
 const byId = id => document.getElementById(id);
 const format = value => Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 let index;
-let allEvents;
-let eventRequestNumber = 0;
 let selectedId;
 let comparisonId = '';
 
@@ -131,101 +129,29 @@ function selectPlayer(player) {
   byId('player-status').textContent = '';
 }
 
-function mergeEvents(summaries) {
-  const metrics = summaries[0].metrics;
-  const fields = ['rank', ...metrics.map(metric => metric.key)];
-  const combined = new Map();
-  for (const summary of summaries) {
-    for (const entry of summary.players) {
-      if (!entry.totals) throw new Error('请重新运行“生成数据.bat”更新赛事数据');
-      if (!combined.has(entry.id)) combined.set(entry.id, {
-        id: entry.id, matchCount: 0, totals: Object.fromEntries(fields.map(key => [key, 0])),
-      });
-      const player = combined.get(entry.id);
-      player.matchCount += entry.matchCount;
-      for (const key of fields) player.totals[key] += entry.totals[key];
-    }
-  }
-  const players = [...combined.values()];
-  for (const player of players) {
+function normalizePlayers(summary) {
+  const fields = ['rank', ...summary.metrics.map(metric => metric.key)];
+  for (const player of summary.players) {
+    if (player.averages) continue;
+    if (!player.totals || !player.matchCount) throw new Error('请重新运行“生成数据.bat”更新数据');
     player.averages = Object.fromEntries(fields.map(key => [key, player.totals[key] / player.matchCount]));
-    player.averageRank = player.averages.rank;
-  }
-  players.sort((a, b) => a.averageRank - b.averageRank || b.matchCount - a.matchCount || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return {
-    players,
-    overall: Object.fromEntries(fields.map(key => [key, players.reduce((sum, player) => sum + player.averages[key], 0) / players.length])),
-    metrics: metrics.map(metric => ({...metric, max: players.reduce((max, player) => Math.max(max, player.averages[metric.key]), 1)})),
-  };
-}
-
-async function selectEvents() {
-  const currentRequest = ++eventRequestNumber;
-  const options = [...byId('event-options').querySelectorAll('input')];
-  const files = options.filter(option => option.checked).map(option => option.value);
-  byId('event-all').checked = files.length > 0 && files.length === options.length;
-  byId('event-all').indeterminate = files.length > 0 && files.length < options.length;
-  index = null;
-  byId('player-list').replaceChildren();
-  byId('no-results').hidden = true;
-  byId('search').disabled = true;
-  byId('player-content').hidden = true;
-  byId('player-status').textContent = '正在读取赛事数据…';
-  document.querySelector('.detail-panel').setAttribute('aria-busy', 'true');
-  try {
-    if (!files.length) {
-      byId('player-status').textContent = '请勾选至少一个赛事。';
-      return;
-    }
-    const summaries = files.length === options.length
-      ? [allEvents]
-      : await Promise.all(files.map(file => readJson(`data/${file}`)));
-    if (currentRequest !== eventRequestNumber) return;
-    index = mergeEvents(summaries);
-    if (!index.players.length) throw new Error('所选赛事没有玩家记录');
-    const player = index.players.find(entry => entry.id === selectedId) || index.players[0];
-    selectedId = player.id;
-    byId('search').value = '';
-    renderPlayers();
-    selectPlayer(player);
-  } catch (error) {
-    if (currentRequest !== eventRequestNumber) return;
-    byId('player-status').textContent = `无法读取赛事数据（${error.message}）。请重新选择赛事或刷新页面。`;
-  } finally {
-    if (currentRequest === eventRequestNumber) {
-      byId('search').disabled = !index;
-      document.querySelector('.detail-panel').setAttribute('aria-busy', 'false');
-    }
   }
 }
 
 async function init() {
   try {
-    allEvents = await readJson('data/index.json');
-    if (!allEvents.players?.length) throw new Error('没有玩家记录');
-    if (!allEvents.events?.length) throw new Error('请重新运行“生成数据.bat”更新赛事数据');
-    for (const event of allEvents.events || []) {
-      const label = element('label', 'event-option');
-      const option = element('input');
-      option.type = 'checkbox';
-      option.value = event.file;
-      option.checked = true;
-      label.append(option, element('span', '', event.name));
-      byId('event-options').append(label);
-    }
+    index = await readJson('data/index.json');
+    if (!index.players?.length) throw new Error('没有玩家记录');
+    normalizePlayers(index);
     byId('dashboard').hidden = false;
-    byId('event-options').addEventListener('change', selectEvents);
-    byId('event-all').addEventListener('change', () => {
-      byId('event-options').querySelectorAll('input').forEach(option => { option.checked = byId('event-all').checked; });
-      selectEvents();
-    });
     byId('search').addEventListener('input', renderPlayers);
     byId('comparison-target').addEventListener('change', () => {
       if (!index) return;
       comparisonId = byId('comparison-target').value;
       renderComparison(index.players.find(player => player.id === selectedId));
     });
-    await selectEvents();
+    renderPlayers();
+    selectPlayer(index.players[0]);
   } catch (error) {
     byId('status').hidden = false;
     byId('status').textContent = location.protocol === 'file:'

@@ -117,23 +117,88 @@
       "survival": 13.0,
       "growth": 254.0,
       "operation": 12.0
+    },
+    {
+      "matchId": 10,
+      "sheet": "将军杯",
+      "matchInSheet": 10,
+      "headerRow": 64,
+      "row": 68,
+      "rank": 4.0,
+      "economy": 167.0,
+      "attack": 69.0,
+      "survival": 14.0,
+      "growth": 89.0,
+      "operation": 19.0
+    },
+    {
+      "matchId": 11,
+      "sheet": "将军杯",
+      "matchInSheet": 11,
+      "headerRow": 71,
+      "row": 77,
+      "rank": 6.0,
+      "economy": 129.0,
+      "attack": 24.0,
+      "survival": 12.0,
+      "growth": 48.0,
+      "operation": 18.0
+    },
+    {
+      "matchId": 12,
+      "sheet": "将军杯",
+      "matchInSheet": 12,
+      "headerRow": 78,
+      "row": 84,
+      "rank": 6.0,
+      "economy": 137.0,
+      "attack": 33.0,
+      "survival": 12.0,
+      "growth": 262.0,
+      "operation": 21.0
+    },
+    {
+      "matchId": 13,
+      "sheet": "将军杯",
+      "matchInSheet": 13,
+      "headerRow": 85,
+      "row": 89,
+      "rank": 4.0,
+      "economy": 161.0,
+      "attack": 53.0,
+      "survival": 14.0,
+      "growth": 68.0,
+      "operation": 17.0
+    },
+    {
+      "matchId": 14,
+      "sheet": "将军杯",
+      "matchInSheet": 14,
+      "headerRow": 92,
+      "row": 94,
+      "rank": 2.0,
+      "economy": 230.0,
+      "attack": 101.0,
+      "survival": 17.0,
+      "growth": 237.0,
+      "operation": 17.0
     }
   ],
-  "matchCount": 9,
+  "matchCount": 14,
   "totals": {
-    "rank": 41.0,
-    "economy": 1512.0,
-    "attack": 330.0,
-    "survival": 113.0,
-    "growth": 1303.0,
-    "operation": 219.0
+    "rank": 63.0,
+    "economy": 2336.0,
+    "attack": 610.0,
+    "survival": 182.0,
+    "growth": 2007.0,
+    "operation": 311.0
   },
   "averages": {
-    "rank": 4.555555555555555,
-    "economy": 168.0,
-    "attack": 36.666666666666664,
-    "survival": 12.555555555555555,
-    "growth": 144.77777777777777,
-    "operation": 24.333333333333332
+    "rank": 4.5,
+    "economy": 166.85714285714286,
+    "attack": 43.57142857142857,
+    "survival": 13.0,
+    "growth": 143.35714285714286,
+    "operation": 22.214285714285715
   }
 }

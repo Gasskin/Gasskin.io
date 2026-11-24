@@ -1,10 +1,11 @@
-"""Read every sheet in data.xlsx and export per-player match statistics."""
+"""Read every non-ignored sheet in data.xlsx and export unified player match statistics."""
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
 import math
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -93,7 +94,7 @@ def aggregate(sheets):
 
 
 def summarize(players, sheet_count, match_count):
-    """Use the same ranking and averaging rules for all matches or one event."""
+    """Compute rankings and equal-weight player averages across all matches."""
     for player in players.values():
         player["matchCount"] = len(player["matches"])
         player["totals"] = {key: math.fsum(match[key] for match in player["matches"]) for key in FIELDS}
@@ -118,7 +119,7 @@ def summarize(players, sheet_count, match_count):
         index["players"].append({
             "id": player["id"], "averageRank": player["averages"]["rank"],
             "matchCount": player["matchCount"], "file": f"players/{filename}",
-            "totals": player["totals"],
+            "totals": player["totals"], "averages": player["averages"],
         })
     return index, ordered
 
@@ -142,31 +143,18 @@ def generate(source, output):
         index, players = aggregate((sheet.title, sheet.iter_rows(values_only=True)) for sheet in workbook.worksheets)
     finally:
         workbook.close()
-    event_players = {}
-    for player in players:
-        for match in player["matches"]:
-            group = event_players.setdefault(match["sheet"], {})
-            group.setdefault(player["id"], {"id": player["id"], "matches": []})["matches"].append(match)
-    index["events"] = []
-    datasets = []
-    for name, group in event_players.items():
-        event_id = hashlib.sha256(name.encode("utf-8")).hexdigest()
-        event_index, event_ordered = summarize(group, 1, len({m["matchId"] for p in group.values() for m in p["matches"]}))
-        event_index["eventName"] = name
-        index["events"].append({"name": name, "file": f"events/{event_id}/index.json"})
-        datasets.append((output / "events" / event_id, event_index, event_ordered))
-    index["events"].sort(key=lambda event: event["name"])
-    datasets.append((output, index, players))
     # Data errors above leave the previous JSON files completely untouched.
-    for directory, summary, ordered in datasets:
-        (directory / "players").mkdir(parents=True, exist_ok=True)
-        for entry, player in zip(summary["players"], ordered):
-            write_json(directory / entry["file"], player)
-        write_json(directory / "index.json", summary)
-        current = {entry["file"] for entry in summary["players"]}
-        for old in (directory / "players").glob("*.json"):
-            if len(old.stem) == 64 and all(c in "0123456789abcdef" for c in old.stem) and f"players/{old.name}" not in current:
-                old.unlink()
+    (output / "players").mkdir(parents=True, exist_ok=True)
+    for entry, player in zip(index["players"], players):
+        write_json(output / entry["file"], player)
+    write_json(output / "index.json", index)
+    current = {entry["file"] for entry in index["players"]}
+    for old in (output / "players").glob("*.json"):
+        if len(old.stem) == 64 and all(c in "0123456789abcdef" for c in old.stem) and f"players/{old.name}" not in current:
+            old.unlink()
+    events_dir = output / "events"
+    if events_dir.exists():
+        shutil.rmtree(events_dir)
     return index
 
 
@@ -180,7 +168,7 @@ def main():
     except Exception as error:
         print(f"生成失败：{error}", file=sys.stderr)
         return 1
-    print(f"生成成功：{len(result['events'])} 项赛事，{result['matchCount']} 场对局，{result['playerCount']} 位玩家。")
+    print(f"生成成功：{result['sheetCount']} 个分页，{result['matchCount']} 场对局，{result['playerCount']} 位玩家。")
     print(f"JSON：{args.output.resolve()}")
     return 0
 

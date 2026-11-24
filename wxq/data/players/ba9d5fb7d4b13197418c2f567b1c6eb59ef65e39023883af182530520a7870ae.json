@@ -1,0 +1,48 @@
+{
+  "id": "李华",
+  "matches": [
+    {
+      "matchId": 13,
+      "sheet": "将军杯",
+      "matchInSheet": 13,
+      "headerRow": 85,
+      "row": 87,
+      "rank": 2.0,
+      "economy": 187.0,
+      "attack": 106.0,
+      "survival": 14.0,
+      "growth": 245.0,
+      "operation": 17.0
+    },
+    {
+      "matchId": 14,
+      "sheet": "将军杯",
+      "matchInSheet": 14,
+      "headerRow": 92,
+      "row": 96,
+      "rank": 4.0,
+      "economy": 153.0,
+      "attack": 61.0,
+      "survival": 14.0,
+      "growth": 85.0,
+      "operation": 21.0
+    }
+  ],
+  "matchCount": 2,
+  "totals": {
+    "rank": 6.0,
+    "economy": 340.0,
+    "attack": 167.0,
+    "survival": 28.0,
+    "growth": 330.0,
+    "operation": 38.0
+  },
+  "averages": {
+    "rank": 3.0,
+    "economy": 170.0,
+    "attack": 83.5,
+    "survival": 14.0,
+    "growth": 165.0,
+    "operation": 19.0
+  }
+}

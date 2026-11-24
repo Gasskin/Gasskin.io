@@ -1,0 +1,48 @@
+{
+  "id": "楚阳",
+  "matches": [
+    {
+      "matchId": 10,
+      "sheet": "将军杯",
+      "matchInSheet": 10,
+      "headerRow": 64,
+      "row": 67,
+      "rank": 3.0,
+      "economy": 175.0,
+      "attack": 60.0,
+      "survival": 14.0,
+      "growth": 189.0,
+      "operation": 54.0
+    },
+    {
+      "matchId": 11,
+      "sheet": "将军杯",
+      "matchInSheet": 11,
+      "headerRow": 71,
+      "row": 76,
+      "rank": 5.0,
+      "economy": 151.0,
+      "attack": 38.0,
+      "survival": 12.0,
+      "growth": 104.0,
+      "operation": 15.0
+    }
+  ],
+  "matchCount": 2,
+  "totals": {
+    "rank": 8.0,
+    "economy": 326.0,
+    "attack": 98.0,
+    "survival": 26.0,
+    "growth": 293.0,
+    "operation": 69.0
+  },
+  "averages": {
+    "rank": 4.0,
+    "economy": 163.0,
+    "attack": 49.0,
+    "survival": 13.0,
+    "growth": 146.5,
+    "operation": 34.5
+  }
+}

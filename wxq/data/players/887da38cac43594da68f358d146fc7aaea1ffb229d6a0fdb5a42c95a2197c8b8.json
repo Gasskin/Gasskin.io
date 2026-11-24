@@ -65,23 +65,88 @@
       "survival": 16.0,
       "growth": 487.0,
       "operation": 40.0
+    },
+    {
+      "matchId": 10,
+      "sheet": "将军杯",
+      "matchInSheet": 10,
+      "headerRow": 64,
+      "row": 65,
+      "rank": 1.0,
+      "economy": 374.0,
+      "attack": 100.0,
+      "survival": 15.0,
+      "growth": 152.0,
+      "operation": 52.0
+    },
+    {
+      "matchId": 11,
+      "sheet": "将军杯",
+      "matchInSheet": 11,
+      "headerRow": 71,
+      "row": 75,
+      "rank": 4.0,
+      "economy": 151.0,
+      "attack": 30.0,
+      "survival": 13.0,
+      "growth": 156.0,
+      "operation": 9.0
+    },
+    {
+      "matchId": 12,
+      "sheet": "将军杯",
+      "matchInSheet": 12,
+      "headerRow": 78,
+      "row": 79,
+      "rank": 1.0,
+      "economy": 254.0,
+      "attack": 104.0,
+      "survival": 17.0,
+      "growth": 247.0,
+      "operation": 20.0
+    },
+    {
+      "matchId": 13,
+      "sheet": "将军杯",
+      "matchInSheet": 13,
+      "headerRow": 85,
+      "row": 86,
+      "rank": 1.0,
+      "economy": 236.0,
+      "attack": 81.0,
+      "survival": 14.0,
+      "growth": 383.0,
+      "operation": 43.0
+    },
+    {
+      "matchId": 14,
+      "sheet": "将军杯",
+      "matchInSheet": 14,
+      "headerRow": 92,
+      "row": 95,
+      "rank": 3.0,
+      "economy": 194.0,
+      "attack": 94.0,
+      "survival": 16.0,
+      "growth": 190.0,
+      "operation": 22.0
     }
   ],
-  "matchCount": 5,
+  "matchCount": 10,
   "totals": {
-    "rank": 9.0,
-    "economy": 1186.0,
-    "attack": 471.0,
-    "survival": 78.0,
-    "growth": 1470.0,
-    "operation": 152.0
+    "rank": 19.0,
+    "economy": 2395.0,
+    "attack": 880.0,
+    "survival": 153.0,
+    "growth": 2598.0,
+    "operation": 298.0
   },
   "averages": {
-    "rank": 1.8,
-    "economy": 237.2,
-    "attack": 94.2,
-    "survival": 15.6,
-    "growth": 294.0,
-    "operation": 30.4
+    "rank": 1.9,
+    "economy": 239.5,
+    "attack": 88.0,
+    "survival": 15.3,
+    "growth": 259.8,
+    "operation": 29.8
   }
 }
