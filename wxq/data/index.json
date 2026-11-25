@@ -1,23 +1,23 @@
 {
-  "generatedAt": "2026-11-24T16:52:29.332147+00:00",
+  "generatedAt": "2026-11-25T17:02:36.619235+00:00",
   "sheetCount": 2,
-  "matchCount": 18,
+  "matchCount": 22,
   "playerCount": 9,
-  "recordCount": 108,
+  "recordCount": 132,
   "averageMethod": "player_equal_weight",
   "overall": {
-    "rank": 3.563932980599647,
-    "economy": 189.38888888888889,
-    "attack": 59.898478835978835,
-    "survival": 13.565696649029983,
-    "growth": 174.40806878306879,
-    "operation": 24.88403880070547
+    "rank": 3.570763187429854,
+    "economy": 191.31195286195285,
+    "attack": 60.19758698092031,
+    "survival": 13.571156004489337,
+    "growth": 174.51111111111112,
+    "operation": 25.10218855218855
   },
   "metrics": [
     {
       "key": "economy",
       "label": "经济",
-      "max": 258.55555555555554
+      "max": 256.6666666666667
     },
     {
       "key": "attack",
@@ -27,12 +27,12 @@
     {
       "key": "survival",
       "label": "生存",
-      "max": 14.785714285714286
+      "max": 14.722222222222221
     },
     {
       "key": "growth",
       "label": "成长",
-      "max": 246.71428571428572
+      "max": 254.0
     },
     {
       "key": "operation",
@@ -43,46 +43,24 @@
   "players": [
     {
       "id": "鬼众",
-      "averageRank": 2.2142857142857144,
-      "matchCount": 14,
+      "averageRank": 2.2777777777777777,
+      "matchCount": 18,
       "file": "players/887da38cac43594da68f358d146fc7aaea1ffb229d6a0fdb5a42c95a2197c8b8.json",
       "totals": {
-        "rank": 31.0,
-        "economy": 3283.0,
-        "attack": 1160.0,
-        "survival": 207.0,
-        "growth": 3454.0,
-        "operation": 440.0
+        "rank": 41.0,
+        "economy": 4620.0,
+        "attack": 1468.0,
+        "survival": 265.0,
+        "growth": 4572.0,
+        "operation": 618.0
       },
       "averages": {
-        "rank": 2.2142857142857144,
-        "economy": 234.5,
-        "attack": 82.85714285714286,
-        "survival": 14.785714285714286,
-        "growth": 246.71428571428572,
-        "operation": 31.428571428571427
-      }
-    },
-    {
-      "id": "夏夏",
-      "averageRank": 2.9444444444444446,
-      "matchCount": 18,
-      "file": "players/5b41b930606a21a9fdff6b9add7a861dc30efa627702288904cdc2a1b15dbda0.json",
-      "totals": {
-        "rank": 53.0,
-        "economy": 4654.0,
-        "attack": 1160.0,
-        "survival": 258.0,
-        "growth": 3833.0,
-        "operation": 545.0
-      },
-      "averages": {
-        "rank": 2.9444444444444446,
-        "economy": 258.55555555555554,
-        "attack": 64.44444444444444,
-        "survival": 14.333333333333334,
-        "growth": 212.94444444444446,
-        "operation": 30.27777777777778
+        "rank": 2.2777777777777777,
+        "economy": 256.6666666666667,
+        "attack": 81.55555555555556,
+        "survival": 14.722222222222221,
+        "growth": 254.0,
+        "operation": 34.333333333333336
       }
     },
     {
@@ -109,46 +87,68 @@
     },
     {
       "id": "L",
-      "averageRank": 3.0625,
-      "matchCount": 16,
+      "averageRank": 3.2,
+      "matchCount": 20,
       "file": "players/72dfcfb0c470ac255cde83fb8fe38de8a128188e03ea5ba5b2a93adbea1062fa.json",
       "totals": {
-        "rank": 49.0,
-        "economy": 3259.0,
-        "attack": 1041.0,
-        "survival": 224.0,
-        "growth": 2976.0,
-        "operation": 384.0
+        "rank": 64.0,
+        "economy": 4079.0,
+        "attack": 1272.0,
+        "survival": 278.0,
+        "growth": 3716.0,
+        "operation": 493.0
       },
       "averages": {
-        "rank": 3.0625,
-        "economy": 203.6875,
-        "attack": 65.0625,
-        "survival": 14.0,
-        "growth": 186.0,
-        "operation": 24.0
+        "rank": 3.2,
+        "economy": 203.95,
+        "attack": 63.6,
+        "survival": 13.9,
+        "growth": 185.8,
+        "operation": 24.65
+      }
+    },
+    {
+      "id": "夏夏",
+      "averageRank": 3.272727272727273,
+      "matchCount": 22,
+      "file": "players/5b41b930606a21a9fdff6b9add7a861dc30efa627702288904cdc2a1b15dbda0.json",
+      "totals": {
+        "rank": 72.0,
+        "economy": 5422.0,
+        "attack": 1313.0,
+        "survival": 309.0,
+        "growth": 4509.0,
+        "operation": 634.0
+      },
+      "averages": {
+        "rank": 3.272727272727273,
+        "economy": 246.45454545454547,
+        "attack": 59.68181818181818,
+        "survival": 14.045454545454545,
+        "growth": 204.95454545454547,
+        "operation": 28.818181818181817
       }
     },
     {
       "id": "百川",
-      "averageRank": 3.2777777777777777,
-      "matchCount": 18,
+      "averageRank": 3.3181818181818183,
+      "matchCount": 22,
       "file": "players/000733c59cd5752af5bc62963e5b8a564cd19279255997a45fde85baa11a7d9a.json",
       "totals": {
-        "rank": 59.0,
-        "economy": 3363.0,
-        "attack": 1299.0,
-        "survival": 252.0,
-        "growth": 2994.0,
-        "operation": 382.0
+        "rank": 73.0,
+        "economy": 4101.0,
+        "attack": 1580.0,
+        "survival": 308.0,
+        "growth": 3634.0,
+        "operation": 484.0
       },
       "averages": {
-        "rank": 3.2777777777777777,
-        "economy": 186.83333333333334,
-        "attack": 72.16666666666667,
+        "rank": 3.3181818181818183,
+        "economy": 186.4090909090909,
+        "attack": 71.81818181818181,
         "survival": 14.0,
-        "growth": 166.33333333333334,
-        "operation": 21.22222222222222
+        "growth": 165.1818181818182,
+        "operation": 22.0
       }
     },
     {
@@ -174,25 +174,47 @@
       }
     },
     {
-      "id": "墨千城",
-      "averageRank": 4.388888888888889,
-      "matchCount": 18,
-      "file": "players/56c1bc1edff287a59bf9cae12cdd39abccb6ad3fa45d413af97b919d425ddb3c.json",
+      "id": "小满",
+      "averageRank": 4.25,
+      "matchCount": 20,
+      "file": "players/a18e1d5053a25b6681786b6d32310423a20c1eb0854a855013ec0241dd6790be.json",
       "totals": {
-        "rank": 79.0,
-        "economy": 3026.0,
-        "attack": 829.0,
-        "survival": 238.0,
-        "growth": 2611.0,
-        "operation": 401.0
+        "rank": 85.0,
+        "economy": 3227.0,
+        "attack": 877.0,
+        "survival": 254.0,
+        "growth": 3171.0,
+        "operation": 411.0
       },
       "averages": {
-        "rank": 4.388888888888889,
-        "economy": 168.11111111111111,
-        "attack": 46.05555555555556,
-        "survival": 13.222222222222221,
-        "growth": 145.05555555555554,
-        "operation": 22.27777777777778
+        "rank": 4.25,
+        "economy": 161.35,
+        "attack": 43.85,
+        "survival": 12.7,
+        "growth": 158.55,
+        "operation": 20.55
+      }
+    },
+    {
+      "id": "墨千城",
+      "averageRank": 4.318181818181818,
+      "matchCount": 22,
+      "file": "players/56c1bc1edff287a59bf9cae12cdd39abccb6ad3fa45d413af97b919d425ddb3c.json",
+      "totals": {
+        "rank": 95.0,
+        "economy": 3679.0,
+        "attack": 1018.0,
+        "survival": 292.0,
+        "growth": 2923.0,
+        "operation": 469.0
+      },
+      "averages": {
+        "rank": 4.318181818181818,
+        "economy": 167.22727272727272,
+        "attack": 46.27272727272727,
+        "survival": 13.272727272727273,
+        "growth": 132.86363636363637,
+        "operation": 21.318181818181817
       }
     },
     {
@@ -215,28 +237,6 @@
         "survival": 12.5,
         "growth": 157.75,
         "operation": 20.75
-      }
-    },
-    {
-      "id": "小满",
-      "averageRank": 4.6875,
-      "matchCount": 16,
-      "file": "players/a18e1d5053a25b6681786b6d32310423a20c1eb0854a855013ec0241dd6790be.json",
-      "totals": {
-        "rank": 75.0,
-        "economy": 2449.0,
-        "attack": 536.0,
-        "survival": 196.0,
-        "growth": 2294.0,
-        "operation": 328.0
-      },
-      "averages": {
-        "rank": 4.6875,
-        "economy": 153.0625,
-        "attack": 33.5,
-        "survival": 12.25,
-        "growth": 143.375,
-        "operation": 20.5
       }
     }
   ]
