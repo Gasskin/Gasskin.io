@@ -260,23 +260,75 @@
       "survival": 12.0,
       "growth": 122.0,
       "operation": 24.0
+    },
+    {
+      "matchId": 23,
+      "sheet": "将军杯2",
+      "matchInSheet": 7,
+      "headerRow": 43,
+      "row": 45,
+      "rank": 2.0,
+      "economy": 251.0,
+      "attack": 85.0,
+      "survival": 18.0,
+      "growth": 341.0,
+      "operation": 19.0
+    },
+    {
+      "matchId": 24,
+      "sheet": "将军杯2",
+      "matchInSheet": 8,
+      "headerRow": 50,
+      "row": 55,
+      "rank": 5.0,
+      "economy": 245.0,
+      "attack": 57.0,
+      "survival": 14.0,
+      "growth": 106.0,
+      "operation": 24.0
+    },
+    {
+      "matchId": 25,
+      "sheet": "将军杯2",
+      "matchInSheet": 9,
+      "headerRow": 57,
+      "row": 60,
+      "rank": 3.0,
+      "economy": 207.0,
+      "attack": 79.0,
+      "survival": 16.0,
+      "growth": 265.0,
+      "operation": 23.0
+    },
+    {
+      "matchId": 26,
+      "sheet": "将军杯2",
+      "matchInSheet": 10,
+      "headerRow": 64,
+      "row": 67,
+      "rank": 3.0,
+      "economy": 240.0,
+      "attack": 67.0,
+      "survival": 15.0,
+      "growth": 516.0,
+      "operation": 29.0
     }
   ],
-  "matchCount": 20,
+  "matchCount": 24,
   "totals": {
-    "rank": 64.0,
-    "economy": 4079.0,
-    "attack": 1272.0,
-    "survival": 278.0,
-    "growth": 3716.0,
-    "operation": 493.0
+    "rank": 77.0,
+    "economy": 5022.0,
+    "attack": 1560.0,
+    "survival": 341.0,
+    "growth": 4944.0,
+    "operation": 588.0
   },
   "averages": {
-    "rank": 3.2,
-    "economy": 203.95,
-    "attack": 63.6,
-    "survival": 13.9,
-    "growth": 185.8,
-    "operation": 24.65
+    "rank": 3.2083333333333335,
+    "economy": 209.25,
+    "attack": 65.0,
+    "survival": 14.208333333333334,
+    "growth": 206.0,
+    "operation": 24.5
   }
 }

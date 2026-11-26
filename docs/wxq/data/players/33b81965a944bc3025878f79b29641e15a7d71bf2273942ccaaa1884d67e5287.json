@@ -1,0 +1,48 @@
+{
+  "id": "老渣男",
+  "matches": [
+    {
+      "matchId": 23,
+      "sheet": "将军杯2",
+      "matchInSheet": 7,
+      "headerRow": 43,
+      "row": 48,
+      "rank": 5.0,
+      "economy": 210.0,
+      "attack": 38.0,
+      "survival": 15.0,
+      "growth": 155.0,
+      "operation": 18.0
+    },
+    {
+      "matchId": 24,
+      "sheet": "将军杯2",
+      "matchInSheet": 8,
+      "headerRow": 50,
+      "row": 54,
+      "rank": 4.0,
+      "economy": 189.0,
+      "attack": 36.0,
+      "survival": 15.0,
+      "growth": 306.0,
+      "operation": 23.0
+    }
+  ],
+  "matchCount": 2,
+  "totals": {
+    "rank": 9.0,
+    "economy": 399.0,
+    "attack": 74.0,
+    "survival": 30.0,
+    "growth": 461.0,
+    "operation": 41.0
+  },
+  "averages": {
+    "rank": 4.5,
+    "economy": 199.5,
+    "attack": 37.0,
+    "survival": 15.0,
+    "growth": 230.5,
+    "operation": 20.5
+  }
+}
