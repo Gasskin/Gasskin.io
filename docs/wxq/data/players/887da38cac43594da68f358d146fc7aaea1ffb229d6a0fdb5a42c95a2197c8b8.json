@@ -330,30 +330,90 @@
       "operation": 41.0,
       "hero": "白哥",
       "lineup": "三分"
+    },
+    {
+      "matchId": 27,
+      "sheet": "将军杯2",
+      "matchInSheet": 11,
+      "headerRow": 71,
+      "row": 72,
+      "rank": 1.0,
+      "economy": 255.0,
+      "attack": 96.0,
+      "survival": 16.0,
+      "growth": 530.0,
+      "operation": 51.0,
+      "hero": "白哥",
+      "lineup": "三分"
+    },
+    {
+      "matchId": 28,
+      "sheet": "将军杯2",
+      "matchInSheet": 12,
+      "headerRow": 78,
+      "row": 82,
+      "rank": 5.0,
+      "economy": 187.0,
+      "attack": 71.0,
+      "survival": 15.0,
+      "growth": 134.0,
+      "operation": 26.0,
+      "hero": "小明",
+      "lineup": "嬴政"
+    },
+    {
+      "matchId": 29,
+      "sheet": "将军杯2",
+      "matchInSheet": 13,
+      "headerRow": 85,
+      "row": 86,
+      "rank": 1.0,
+      "economy": 276.0,
+      "attack": 145.0,
+      "survival": 18.0,
+      "growth": 669.0,
+      "operation": 46.0,
+      "hero": "白哥",
+      "lineup": "三分"
+    },
+    {
+      "matchId": 30,
+      "sheet": "将军杯2",
+      "matchInSheet": 14,
+      "headerRow": 92,
+      "row": 93,
+      "rank": 1.0,
+      "economy": 254.0,
+      "attack": 95.0,
+      "survival": 18.0,
+      "growth": 125.0,
+      "operation": 23.0,
+      "hero": "姜导",
+      "lineup": "其他"
     }
   ],
-  "matchCount": 22,
+  "matchCount": 26,
   "totals": {
-    "rank": 55.0,
-    "economy": 5546.0,
-    "attack": 1728.0,
-    "survival": 323.0,
-    "growth": 5466.0,
-    "operation": 734.0
+    "rank": 63.0,
+    "economy": 6518.0,
+    "attack": 2135.0,
+    "survival": 390.0,
+    "growth": 6924.0,
+    "operation": 880.0
   },
   "averages": {
-    "rank": 2.5,
-    "economy": 252.0909090909091,
-    "attack": 78.54545454545455,
-    "survival": 14.681818181818182,
-    "growth": 248.45454545454547,
-    "operation": 33.36363636363637
+    "rank": 2.423076923076923,
+    "economy": 250.69230769230768,
+    "attack": 82.11538461538461,
+    "survival": 15.0,
+    "growth": 266.3076923076923,
+    "operation": 33.84615384615385
   },
-  "winCount": 11,
-  "winRate": 0.5,
-  "top3Count": 15,
-  "top3Rate": 0.6818181818181818,
-  "heroMatchCount": 22,
+  "winCount": 14,
+  "winRate": 0.5384615384615384,
+  "top3Count": 18,
+  "top3Rate": 0.6923076923076923,
+  "heroMatchCount": 26,
   "heroes": [
     {
       "name": "玉环",
@@ -376,30 +436,30 @@
           "top3Rate": 0.625
         }
       ],
-      "usageRate": 0.36363636363636365
+      "usageRate": 0.3076923076923077
     },
     {
       "name": "白哥",
-      "matchCount": 5,
-      "averageRank": 1.2,
-      "winCount": 4,
-      "winRate": 0.8,
-      "top3Count": 5,
+      "matchCount": 7,
+      "averageRank": 1.1428571428571428,
+      "winCount": 6,
+      "winRate": 0.8571428571428571,
+      "top3Count": 7,
       "top3Rate": 1.0,
-      "lineupMatchCount": 5,
+      "lineupMatchCount": 7,
       "lineups": [
         {
           "name": "三分",
           "usageRate": 1.0,
-          "matchCount": 5,
-          "averageRank": 1.2,
-          "winCount": 4,
-          "winRate": 0.8,
-          "top3Count": 5,
+          "matchCount": 7,
+          "averageRank": 1.1428571428571428,
+          "winCount": 6,
+          "winRate": 0.8571428571428571,
+          "top3Count": 7,
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.22727272727272727
+      "usageRate": 0.2692307692307692
     },
     {
       "name": "嫦娥",
@@ -422,21 +482,21 @@
           "top3Rate": 0.2
         }
       ],
-      "usageRate": 0.22727272727272727
+      "usageRate": 0.19230769230769232
     },
     {
       "name": "小明",
-      "matchCount": 3,
-      "averageRank": 1.3333333333333333,
+      "matchCount": 4,
+      "averageRank": 2.25,
       "winCount": 2,
-      "winRate": 0.6666666666666666,
+      "winRate": 0.5,
       "top3Count": 3,
-      "top3Rate": 1.0,
-      "lineupMatchCount": 3,
+      "top3Rate": 0.75,
+      "lineupMatchCount": 4,
       "lineups": [
         {
           "name": "射",
-          "usageRate": 0.6666666666666666,
+          "usageRate": 0.5,
           "matchCount": 2,
           "averageRank": 1.5,
           "winCount": 1,
@@ -446,7 +506,40 @@
         },
         {
           "name": "山鬼",
-          "usageRate": 0.3333333333333333,
+          "usageRate": 0.25,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嬴政",
+          "usageRate": 0.25,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.15384615384615385
+    },
+    {
+      "name": "姜导",
+      "matchCount": 1,
+      "averageRank": 1.0,
+      "winCount": 1,
+      "winRate": 1.0,
+      "top3Count": 1,
+      "top3Rate": 1.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
           "matchCount": 1,
           "averageRank": 1.0,
           "winCount": 1,
@@ -455,7 +548,7 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.13636363636363635
+      "usageRate": 0.038461538461538464
     },
     {
       "name": "香香",
@@ -478,7 +571,7 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.045454545454545456
+      "usageRate": 0.038461538461538464
     }
   ]
 }

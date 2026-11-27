@@ -330,31 +330,114 @@
       "operation": 20.0,
       "hero": "乔汐",
       "lineup": "其他"
+    },
+    {
+      "matchId": 27,
+      "sheet": "将军杯2",
+      "matchInSheet": 11,
+      "headerRow": 71,
+      "row": 77,
+      "rank": 6.0,
+      "economy": 106.0,
+      "attack": 7.0,
+      "survival": 11.0,
+      "growth": 152.0,
+      "operation": 11.0,
+      "hero": "嫦娥",
+      "lineup": "其他"
+    },
+    {
+      "matchId": 28,
+      "sheet": "将军杯2",
+      "matchInSheet": 12,
+      "headerRow": 78,
+      "row": 84,
+      "rank": 6.0,
+      "economy": 106.0,
+      "attack": 16.0,
+      "survival": 11.0,
+      "growth": 144.0,
+      "operation": 13.0,
+      "hero": "嫦娥",
+      "lineup": "其他"
+    },
+    {
+      "matchId": 29,
+      "sheet": "将军杯2",
+      "matchInSheet": 13,
+      "headerRow": 85,
+      "row": 88,
+      "rank": 3.0,
+      "economy": 158.0,
+      "attack": 22.0,
+      "survival": 14.0,
+      "growth": 226.0,
+      "operation": 16.0,
+      "hero": "嫦娥",
+      "lineup": "其他"
+    },
+    {
+      "matchId": 30,
+      "sheet": "将军杯2",
+      "matchInSheet": 14,
+      "headerRow": 92,
+      "row": 96,
+      "rank": 4.0,
+      "economy": 136.0,
+      "attack": 42.0,
+      "survival": 13.0,
+      "growth": 43.0,
+      "operation": 14.0,
+      "hero": "安琪拉",
+      "lineup": "刘邦"
     }
   ],
-  "matchCount": 22,
+  "matchCount": 26,
   "totals": {
-    "rank": 96.0,
-    "economy": 3479.0,
-    "attack": 924.0,
-    "survival": 277.0,
-    "growth": 3318.0,
-    "operation": 438.0
+    "rank": 115.0,
+    "economy": 3985.0,
+    "attack": 1011.0,
+    "survival": 326.0,
+    "growth": 3883.0,
+    "operation": 492.0
   },
   "averages": {
-    "rank": 4.363636363636363,
-    "economy": 158.13636363636363,
-    "attack": 42.0,
-    "survival": 12.590909090909092,
-    "growth": 150.8181818181818,
-    "operation": 19.90909090909091
+    "rank": 4.423076923076923,
+    "economy": 153.26923076923077,
+    "attack": 38.88461538461539,
+    "survival": 12.538461538461538,
+    "growth": 149.34615384615384,
+    "operation": 18.923076923076923
   },
   "winCount": 2,
-  "winRate": 0.09090909090909091,
-  "top3Count": 7,
-  "top3Rate": 0.3181818181818182,
-  "heroMatchCount": 22,
+  "winRate": 0.07692307692307693,
+  "top3Count": 8,
+  "top3Rate": 0.3076923076923077,
+  "heroMatchCount": 26,
   "heroes": [
+    {
+      "name": "嫦娥",
+      "matchCount": 7,
+      "averageRank": 4.571428571428571,
+      "winCount": 1,
+      "winRate": 0.14285714285714285,
+      "top3Count": 2,
+      "top3Rate": 0.2857142857142857,
+      "lineupMatchCount": 7,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 7,
+          "averageRank": 4.571428571428571,
+          "winCount": 1,
+          "winRate": 0.14285714285714285,
+          "top3Count": 2,
+          "top3Rate": 0.2857142857142857
+        }
+      ],
+      "usageRate": 0.2692307692307692
+    },
     {
       "name": "阿离",
       "matchCount": 5,
@@ -406,30 +489,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.22727272727272727
-    },
-    {
-      "name": "嫦娥",
-      "matchCount": 4,
-      "averageRank": 4.25,
-      "winCount": 1,
-      "winRate": 0.25,
-      "top3Count": 1,
-      "top3Rate": 0.25,
-      "lineupMatchCount": 4,
-      "lineups": [
-        {
-          "name": "其他",
-          "usageRate": 1.0,
-          "matchCount": 4,
-          "averageRank": 4.25,
-          "winCount": 1,
-          "winRate": 0.25,
-          "top3Count": 1,
-          "top3Rate": 0.25
-        }
-      ],
-      "usageRate": 0.18181818181818182
+      "usageRate": 0.19230769230769232
     },
     {
       "name": "嬴政",
@@ -462,7 +522,7 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.13636363636363635
+      "usageRate": 0.11538461538461539
     },
     {
       "name": "乔汐",
@@ -485,7 +545,7 @@
           "top3Rate": 0.5
         }
       ],
-      "usageRate": 0.09090909090909091
+      "usageRate": 0.07692307692307693
     },
     {
       "name": "白哥",
@@ -508,7 +568,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.09090909090909091
+      "usageRate": 0.07692307692307693
     },
     {
       "name": "马可",
@@ -531,7 +591,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.09090909090909091
+      "usageRate": 0.07692307692307693
     },
     {
       "name": "姜导",
@@ -554,7 +614,30 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.045454545454545456
+      "usageRate": 0.038461538461538464
+    },
+    {
+      "name": "安琪拉",
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "刘邦",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.038461538461538464
     },
     {
       "name": "小偷",
@@ -577,7 +660,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.045454545454545456
+      "usageRate": 0.038461538461538464
     },
     {
       "name": "小明",
@@ -600,7 +683,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.045454545454545456
+      "usageRate": 0.038461538461538464
     },
     {
       "name": "孙膑",
@@ -623,7 +706,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.045454545454545456
+      "usageRate": 0.038461538461538464
     }
   ]
 }

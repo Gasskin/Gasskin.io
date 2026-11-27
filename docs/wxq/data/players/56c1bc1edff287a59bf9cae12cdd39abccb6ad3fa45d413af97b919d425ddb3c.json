@@ -390,30 +390,90 @@
       "operation": 19.0,
       "hero": "阿离",
       "lineup": "玄策"
+    },
+    {
+      "matchId": 27,
+      "sheet": "将军杯2",
+      "matchInSheet": 11,
+      "headerRow": 71,
+      "row": 76,
+      "rank": 5.0,
+      "economy": 162.0,
+      "attack": 51.0,
+      "survival": 14.0,
+      "growth": 48.0,
+      "operation": 14.0,
+      "hero": "班叔",
+      "lineup": "其他"
+    },
+    {
+      "matchId": 28,
+      "sheet": "将军杯2",
+      "matchInSheet": 12,
+      "headerRow": 78,
+      "row": 83,
+      "rank": 5.0,
+      "economy": 168.0,
+      "attack": 47.0,
+      "survival": 13.0,
+      "growth": 274.0,
+      "operation": 28.0,
+      "hero": "孙膑",
+      "lineup": "三分"
+    },
+    {
+      "matchId": 29,
+      "sheet": "将军杯2",
+      "matchInSheet": 13,
+      "headerRow": 85,
+      "row": 90,
+      "rank": 5.0,
+      "economy": 168.0,
+      "attack": 31.0,
+      "survival": 11.0,
+      "growth": 70.0,
+      "operation": 36.0,
+      "hero": "马可",
+      "lineup": "猪"
+    },
+    {
+      "matchId": 30,
+      "sheet": "将军杯2",
+      "matchInSheet": 14,
+      "headerRow": 92,
+      "row": 98,
+      "rank": 6.0,
+      "economy": 155.0,
+      "attack": 32.0,
+      "survival": 12.0,
+      "growth": 74.0,
+      "operation": 21.0,
+      "hero": "闹闹",
+      "lineup": "花木兰"
     }
   ],
-  "matchCount": 26,
+  "matchCount": 30,
   "totals": {
-    "rank": 110.0,
-    "economy": 4363.0,
-    "attack": 1198.0,
-    "survival": 348.0,
-    "growth": 3386.0,
-    "operation": 550.0
+    "rank": 131.0,
+    "economy": 5016.0,
+    "attack": 1359.0,
+    "survival": 398.0,
+    "growth": 3852.0,
+    "operation": 649.0
   },
   "averages": {
-    "rank": 4.230769230769231,
-    "economy": 167.80769230769232,
-    "attack": 46.07692307692308,
-    "survival": 13.384615384615385,
-    "growth": 130.23076923076923,
-    "operation": 21.153846153846153
+    "rank": 4.366666666666666,
+    "economy": 167.2,
+    "attack": 45.3,
+    "survival": 13.266666666666667,
+    "growth": 128.4,
+    "operation": 21.633333333333333
   },
   "winCount": 0,
   "winRate": 0.0,
   "top3Count": 8,
-  "top3Rate": 0.3076923076923077,
-  "heroMatchCount": 26,
+  "top3Rate": 0.26666666666666666,
+  "heroMatchCount": 30,
   "heroes": [
     {
       "name": "庄周",
@@ -446,7 +506,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.15384615384615385
+      "usageRate": 0.13333333333333333
     },
     {
       "name": "姜导",
@@ -499,7 +559,83 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.15384615384615385
+      "usageRate": 0.13333333333333333
+    },
+    {
+      "name": "闹闹",
+      "matchCount": 3,
+      "averageRank": 4.333333333333333,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.3333333333333333,
+      "lineupMatchCount": 3,
+      "lineups": [
+        {
+          "name": "大河",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "逐鹿",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "花木兰",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.1
+    },
+    {
+      "name": "马可",
+      "matchCount": 3,
+      "averageRank": 4.333333333333333,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0,
+      "lineupMatchCount": 3,
+      "lineups": [
+        {
+          "name": "猪",
+          "usageRate": 0.6666666666666666,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "低阶",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.1
     },
     {
       "name": "阿离",
@@ -542,7 +678,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.11538461538461539
+      "usageRate": 0.1
     },
     {
       "name": "嫦娥",
@@ -565,7 +701,7 @@
           "top3Rate": 0.5
         }
       ],
-      "usageRate": 0.07692307692307693
+      "usageRate": 0.06666666666666667
     },
     {
       "name": "安琪拉",
@@ -588,73 +724,7 @@
           "top3Rate": 0.5
         }
       ],
-      "usageRate": 0.07692307692307693
-    },
-    {
-      "name": "闹闹",
-      "matchCount": 2,
-      "averageRank": 3.5,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 1,
-      "top3Rate": 0.5,
-      "lineupMatchCount": 2,
-      "lineups": [
-        {
-          "name": "大河",
-          "usageRate": 0.5,
-          "matchCount": 1,
-          "averageRank": 3.0,
-          "winCount": 0,
-          "winRate": 0.0,
-          "top3Count": 1,
-          "top3Rate": 1.0
-        },
-        {
-          "name": "逐鹿",
-          "usageRate": 0.5,
-          "matchCount": 1,
-          "averageRank": 4.0,
-          "winCount": 0,
-          "winRate": 0.0,
-          "top3Count": 0,
-          "top3Rate": 0.0
-        }
-      ],
-      "usageRate": 0.07692307692307693
-    },
-    {
-      "name": "马可",
-      "matchCount": 2,
-      "averageRank": 4.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 0,
-      "top3Rate": 0.0,
-      "lineupMatchCount": 2,
-      "lineups": [
-        {
-          "name": "低阶",
-          "usageRate": 0.5,
-          "matchCount": 1,
-          "averageRank": 4.0,
-          "winCount": 0,
-          "winRate": 0.0,
-          "top3Count": 0,
-          "top3Rate": 0.0
-        },
-        {
-          "name": "猪",
-          "usageRate": 0.5,
-          "matchCount": 1,
-          "averageRank": 4.0,
-          "winCount": 0,
-          "winRate": 0.0,
-          "top3Count": 0,
-          "top3Rate": 0.0
-        }
-      ],
-      "usageRate": 0.07692307692307693
+      "usageRate": 0.06666666666666667
     },
     {
       "name": "白哥",
@@ -677,7 +747,7 @@
           "top3Rate": 0.5
         }
       ],
-      "usageRate": 0.07692307692307693
+      "usageRate": 0.06666666666666667
     },
     {
       "name": "香香",
@@ -700,7 +770,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.07692307692307693
+      "usageRate": 0.06666666666666667
     },
     {
       "name": "瑶妹",
@@ -723,7 +793,7 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.038461538461538464
+      "usageRate": 0.03333333333333333
     },
     {
       "name": "乔汐",
@@ -746,7 +816,53 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.038461538461538464
+      "usageRate": 0.03333333333333333
+    },
+    {
+      "name": "孙膑",
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "三分",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.03333333333333333
+    },
+    {
+      "name": "班叔",
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.03333333333333333
     },
     {
       "name": "小明",
@@ -769,7 +885,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.038461538461538464
+      "usageRate": 0.03333333333333333
     }
   ]
 }

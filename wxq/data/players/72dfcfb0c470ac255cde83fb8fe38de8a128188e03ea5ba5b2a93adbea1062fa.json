@@ -360,30 +360,90 @@
       "operation": 29.0,
       "hero": "镜",
       "lineup": "三分"
+    },
+    {
+      "matchId": 27,
+      "sheet": "将军杯2",
+      "matchInSheet": 11,
+      "headerRow": 71,
+      "row": 74,
+      "rank": 3.0,
+      "economy": 217.0,
+      "attack": 65.0,
+      "survival": 16.0,
+      "growth": 217.0,
+      "operation": 16.0,
+      "hero": "阿离",
+      "lineup": "其他"
+    },
+    {
+      "matchId": 28,
+      "sheet": "将军杯2",
+      "matchInSheet": 12,
+      "headerRow": 78,
+      "row": 80,
+      "rank": 2.0,
+      "economy": 230.0,
+      "attack": 87.0,
+      "survival": 16.0,
+      "growth": 451.0,
+      "operation": 19.0,
+      "hero": "姜导",
+      "lineup": "镜"
+    },
+    {
+      "matchId": 29,
+      "sheet": "将军杯2",
+      "matchInSheet": 13,
+      "headerRow": 85,
+      "row": 89,
+      "rank": 4.0,
+      "economy": 194.0,
+      "attack": 33.0,
+      "survival": 12.0,
+      "growth": 95.0,
+      "operation": 23.0,
+      "hero": "妲己",
+      "lineup": "倒转"
+    },
+    {
+      "matchId": 30,
+      "sheet": "将军杯2",
+      "matchInSheet": 14,
+      "headerRow": 92,
+      "row": 97,
+      "rank": 5.0,
+      "economy": 168.0,
+      "attack": 28.0,
+      "survival": 13.0,
+      "growth": 271.0,
+      "operation": 17.0,
+      "hero": "姜导",
+      "lineup": "其他"
     }
   ],
-  "matchCount": 24,
+  "matchCount": 28,
   "totals": {
-    "rank": 77.0,
-    "economy": 5022.0,
-    "attack": 1560.0,
-    "survival": 341.0,
-    "growth": 4944.0,
-    "operation": 588.0
+    "rank": 91.0,
+    "economy": 5831.0,
+    "attack": 1773.0,
+    "survival": 398.0,
+    "growth": 5978.0,
+    "operation": 663.0
   },
   "averages": {
-    "rank": 3.2083333333333335,
-    "economy": 209.25,
-    "attack": 65.0,
-    "survival": 14.208333333333334,
-    "growth": 206.0,
-    "operation": 24.5
+    "rank": 3.25,
+    "economy": 208.25,
+    "attack": 63.32142857142857,
+    "survival": 14.214285714285714,
+    "growth": 213.5,
+    "operation": 23.678571428571427
   },
   "winCount": 2,
-  "winRate": 0.08333333333333333,
-  "top3Count": 15,
-  "top3Rate": 0.625,
-  "heroMatchCount": 24,
+  "winRate": 0.07142857142857142,
+  "top3Count": 17,
+  "top3Rate": 0.6071428571428571,
+  "heroMatchCount": 28,
   "heroes": [
     {
       "name": "嬴政",
@@ -436,7 +496,70 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.25
+      "usageRate": 0.21428571428571427
+    },
+    {
+      "name": "姜导",
+      "matchCount": 5,
+      "averageRank": 2.4,
+      "winCount": 2,
+      "winRate": 0.4,
+      "top3Count": 4,
+      "top3Rate": 0.8,
+      "lineupMatchCount": 5,
+      "lineups": [
+        {
+          "name": "廉颇",
+          "usageRate": 0.2,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "韩信",
+          "usageRate": 0.2,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "镜",
+          "usageRate": 0.2,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "刘邦",
+          "usageRate": 0.2,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "其他",
+          "usageRate": 0.2,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.17857142857142858
     },
     {
       "name": "马可",
@@ -479,50 +602,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.20833333333333334
-    },
-    {
-      "name": "姜导",
-      "matchCount": 3,
-      "averageRank": 1.6666666666666667,
-      "winCount": 2,
-      "winRate": 0.6666666666666666,
-      "top3Count": 3,
-      "top3Rate": 1.0,
-      "lineupMatchCount": 3,
-      "lineups": [
-        {
-          "name": "廉颇",
-          "usageRate": 0.3333333333333333,
-          "matchCount": 1,
-          "averageRank": 1.0,
-          "winCount": 1,
-          "winRate": 1.0,
-          "top3Count": 1,
-          "top3Rate": 1.0
-        },
-        {
-          "name": "韩信",
-          "usageRate": 0.3333333333333333,
-          "matchCount": 1,
-          "averageRank": 1.0,
-          "winCount": 1,
-          "winRate": 1.0,
-          "top3Count": 1,
-          "top3Rate": 1.0
-        },
-        {
-          "name": "刘邦",
-          "usageRate": 0.3333333333333333,
-          "matchCount": 1,
-          "averageRank": 3.0,
-          "winCount": 0,
-          "winRate": 0.0,
-          "top3Count": 1,
-          "top3Rate": 1.0
-        }
-      ],
-      "usageRate": 0.125
+      "usageRate": 0.17857142857142858
     },
     {
       "name": "昭君",
@@ -545,7 +625,7 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.125
+      "usageRate": 0.10714285714285714
     },
     {
       "name": "镜",
@@ -588,7 +668,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.125
+      "usageRate": 0.10714285714285714
     },
     {
       "name": "嫦娥",
@@ -611,7 +691,7 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.08333333333333333
+      "usageRate": 0.07142857142857142
     },
     {
       "name": "小明",
@@ -634,7 +714,53 @@
           "top3Rate": 1.0
         }
       ],
-      "usageRate": 0.041666666666666664
+      "usageRate": 0.03571428571428571
+    },
+    {
+      "name": "阿离",
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.03571428571428571
+    },
+    {
+      "name": "妲己",
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "倒转",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.03571428571428571
     },
     {
       "name": "白哥",
@@ -657,7 +783,7 @@
           "top3Rate": 0.0
         }
       ],
-      "usageRate": 0.041666666666666664
+      "usageRate": 0.03571428571428571
     }
   ]
 }
