@@ -12,7 +12,8 @@
       "attack": 60.0,
       "survival": 14.0,
       "growth": 189.0,
-      "operation": 54.0
+      "operation": 54.0,
+      "lineup": "白哥嬴政"
     },
     {
       "matchId": 11,
@@ -25,7 +26,8 @@
       "attack": 38.0,
       "survival": 12.0,
       "growth": 104.0,
-      "operation": 15.0
+      "operation": 15.0,
+      "lineup": "马可猪"
     }
   ],
   "matchCount": 2,
@@ -44,5 +46,32 @@
     "survival": 13.0,
     "growth": 146.5,
     "operation": 34.5
-  }
+  },
+  "winCount": 0,
+  "winRate": 0.0,
+  "top3Count": 1,
+  "top3Rate": 0.5,
+  "lineupMatchCount": 2,
+  "lineups": [
+    {
+      "name": "白哥嬴政",
+      "usageRate": 0.5,
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "马可猪",
+      "usageRate": 0.5,
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    }
+  ]
 }

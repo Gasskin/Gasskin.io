@@ -12,7 +12,8 @@
       "attack": 38.0,
       "survival": 15.0,
       "growth": 155.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 24,
@@ -25,7 +26,8 @@
       "attack": 36.0,
       "survival": 15.0,
       "growth": 306.0,
-      "operation": 23.0
+      "operation": 23.0,
+      "lineup": "嫦娥"
     }
   ],
   "matchCount": 2,
@@ -44,5 +46,22 @@
     "survival": 15.0,
     "growth": 230.5,
     "operation": 20.5
-  }
+  },
+  "winCount": 0,
+  "winRate": 0.0,
+  "top3Count": 0,
+  "top3Rate": 0.0,
+  "lineupMatchCount": 2,
+  "lineups": [
+    {
+      "name": "嫦娥",
+      "usageRate": 1.0,
+      "matchCount": 2,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    }
+  ]
 }

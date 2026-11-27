@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-11-26T16:59:50.033967+00:00",
+  "generatedAt": "2026-11-27T04:41:25.126488+00:00",
   "sheetCount": 2,
   "matchCount": 26,
   "playerCount": 10,
   "recordCount": 156,
+  "lineupCount": 46,
+  "lineupRecordCount": 152,
   "averageMethod": "player_equal_weight",
   "overall": {
     "rank": 3.672581585081585,
@@ -45,6 +47,11 @@
       "id": "鬼众",
       "averageRank": 2.5,
       "matchCount": 22,
+      "winCount": 11,
+      "winRate": 0.5,
+      "top3Count": 15,
+      "top3Rate": 0.6818181818181818,
+      "lineupMatchCount": 22,
       "file": "players/887da38cac43594da68f358d146fc7aaea1ffb229d6a0fdb5a42c95a2197c8b8.json",
       "totals": {
         "rank": 55.0,
@@ -61,12 +68,79 @@
         "survival": 14.681818181818182,
         "growth": 248.45454545454547,
         "operation": 33.36363636363637
-      }
+      },
+      "lineups": [
+        {
+          "name": "玉环倒转",
+          "usageRate": 0.36363636363636365,
+          "matchCount": 8,
+          "averageRank": 2.625,
+          "winCount": 4,
+          "winRate": 0.5,
+          "top3Count": 5,
+          "top3Rate": 0.625
+        },
+        {
+          "name": "白哥三分",
+          "usageRate": 0.22727272727272727,
+          "matchCount": 5,
+          "averageRank": 1.2,
+          "winCount": 4,
+          "winRate": 0.8,
+          "top3Count": 5,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嫦娥",
+          "usageRate": 0.22727272727272727,
+          "matchCount": 5,
+          "averageRank": 4.2,
+          "winCount": 1,
+          "winRate": 0.2,
+          "top3Count": 1,
+          "top3Rate": 0.2
+        },
+        {
+          "name": "小明射",
+          "usageRate": 0.09090909090909091,
+          "matchCount": 2,
+          "averageRank": 1.5,
+          "winCount": 1,
+          "winRate": 0.5,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "小明山鬼",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "香香",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ]
     },
     {
       "id": "李华",
       "averageRank": 3.0,
       "matchCount": 2,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5,
+      "lineupMatchCount": 2,
       "file": "players/ba9d5fb7d4b13197418c2f567b1c6eb59ef65e39023883af182530520a7870ae.json",
       "totals": {
         "rank": 6.0,
@@ -83,12 +157,39 @@
         "survival": 14.0,
         "growth": 165.0,
         "operation": 19.0
-      }
+      },
+      "lineups": [
+        {
+          "name": "昭君75",
+          "usageRate": 0.5,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "小明山鬼",
+          "usageRate": 0.5,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "夏夏",
       "averageRank": 3.1153846153846154,
       "matchCount": 26,
+      "winCount": 9,
+      "winRate": 0.34615384615384615,
+      "top3Count": 15,
+      "top3Rate": 0.5769230769230769,
+      "lineupMatchCount": 26,
       "file": "players/5b41b930606a21a9fdff6b9add7a861dc30efa627702288904cdc2a1b15dbda0.json",
       "totals": {
         "rank": 81.0,
@@ -105,12 +206,139 @@
         "survival": 14.26923076923077,
         "growth": 217.15384615384616,
         "operation": 29.23076923076923
-      }
+      },
+      "lineups": [
+        {
+          "name": "白哥三分",
+          "usageRate": 0.15384615384615385,
+          "matchCount": 4,
+          "averageRank": 1.75,
+          "winCount": 3,
+          "winRate": 0.75,
+          "top3Count": 3,
+          "top3Rate": 0.75
+        },
+        {
+          "name": "嬴政嬴政",
+          "usageRate": 0.15384615384615385,
+          "matchCount": 4,
+          "averageRank": 3.0,
+          "winCount": 1,
+          "winRate": 0.25,
+          "top3Count": 3,
+          "top3Rate": 0.75
+        },
+        {
+          "name": "妲己倒转",
+          "usageRate": 0.11538461538461539,
+          "matchCount": 3,
+          "averageRank": 2.6666666666666665,
+          "winCount": 1,
+          "winRate": 0.3333333333333333,
+          "top3Count": 2,
+          "top3Rate": 0.6666666666666666
+        },
+        {
+          "name": "妲己蒙恬",
+          "usageRate": 0.11538461538461539,
+          "matchCount": 3,
+          "averageRank": 4.333333333333333,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.3333333333333333
+        },
+        {
+          "name": "武凤三分",
+          "usageRate": 0.07692307692307693,
+          "matchCount": 2,
+          "averageRank": 1.0,
+          "winCount": 2,
+          "winRate": 1.0,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "阿离李信",
+          "usageRate": 0.07692307692307693,
+          "matchCount": 2,
+          "averageRank": 3.0,
+          "winCount": 1,
+          "winRate": 0.5,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "武凤花木兰",
+          "usageRate": 0.07692307692307693,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "昭君75",
+          "usageRate": 0.07692307692307693,
+          "matchCount": 2,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "嬴政花木兰",
+          "usageRate": 0.038461538461538464,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嫦娥",
+          "usageRate": 0.038461538461538464,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "武凤嬴政",
+          "usageRate": 0.038461538461538464,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "瑶妹",
+          "usageRate": 0.038461538461538464,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "L",
       "averageRank": 3.2083333333333335,
       "matchCount": 24,
+      "winCount": 2,
+      "winRate": 0.08333333333333333,
+      "top3Count": 15,
+      "top3Rate": 0.625,
+      "lineupMatchCount": 23,
       "file": "players/72dfcfb0c470ac255cde83fb8fe38de8a128188e03ea5ba5b2a93adbea1062fa.json",
       "totals": {
         "rank": 77.0,
@@ -127,12 +355,179 @@
         "survival": 14.208333333333334,
         "growth": 206.0,
         "operation": 24.5
-      }
+      },
+      "lineups": [
+        {
+          "name": "昭君75",
+          "usageRate": 0.13043478260869565,
+          "matchCount": 3,
+          "averageRank": 2.3333333333333335,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 3,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "马可猪",
+          "usageRate": 0.13043478260869565,
+          "matchCount": 3,
+          "averageRank": 4.333333333333333,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "嬴政射",
+          "usageRate": 0.08695652173913043,
+          "matchCount": 2,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嫦娥",
+          "usageRate": 0.08695652173913043,
+          "matchCount": 2,
+          "averageRank": 2.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嬴政嬴政",
+          "usageRate": 0.08695652173913043,
+          "matchCount": 2,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "姜导廉颇",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "姜导韩信",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嬴政花木兰",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "镜日落海",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "姜导刘邦",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "小明泳池",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "镜三分",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "马可三分",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "白哥三分",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "镜无阵营",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "马可镜",
+          "usageRate": 0.043478260869565216,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "百川",
       "averageRank": 3.3076923076923075,
       "matchCount": 26,
+      "winCount": 2,
+      "winRate": 0.07692307692307693,
+      "top3Count": 16,
+      "top3Rate": 0.6153846153846154,
+      "lineupMatchCount": 25,
       "file": "players/000733c59cd5752af5bc62963e5b8a564cd19279255997a45fde85baa11a7d9a.json",
       "totals": {
         "rank": 86.0,
@@ -149,12 +544,149 @@
         "survival": 14.307692307692308,
         "growth": 182.6153846153846,
         "operation": 22.076923076923077
-      }
+      },
+      "lineups": [
+        {
+          "name": "香香",
+          "usageRate": 0.12,
+          "matchCount": 3,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 2,
+          "top3Rate": 0.6666666666666666
+        },
+        {
+          "name": "庄周花木兰",
+          "usageRate": 0.12,
+          "matchCount": 3,
+          "averageRank": 4.666666666666667,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.3333333333333333
+        },
+        {
+          "name": "昭君75",
+          "usageRate": 0.12,
+          "matchCount": 3,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.3333333333333333
+        },
+        {
+          "name": "姜导镜",
+          "usageRate": 0.08,
+          "matchCount": 2,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嫦娥",
+          "usageRate": 0.08,
+          "matchCount": 2,
+          "averageRank": 2.0,
+          "winCount": 1,
+          "winRate": 0.5,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嬴政射",
+          "usageRate": 0.08,
+          "matchCount": 2,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "镜三分",
+          "usageRate": 0.08,
+          "matchCount": 2,
+          "averageRank": 2.5,
+          "winCount": 1,
+          "winRate": 0.5,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "镜日落海",
+          "usageRate": 0.08,
+          "matchCount": 2,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "闹闹大河",
+          "usageRate": 0.08,
+          "matchCount": 2,
+          "averageRank": 3.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "嬴政嬴政",
+          "usageRate": 0.04,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "庄周无阵营",
+          "usageRate": 0.04,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嬴政花木兰",
+          "usageRate": 0.04,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "姜导嬴政",
+          "usageRate": 0.04,
+          "matchCount": 1,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "楚阳",
       "averageRank": 4.0,
       "matchCount": 2,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5,
+      "lineupMatchCount": 2,
       "file": "players/8dcbe85b14ac2c4ef59cb90154529faf20610b9a6df432e950780f9844287a5f.json",
       "totals": {
         "rank": 8.0,
@@ -171,12 +703,39 @@
         "survival": 13.0,
         "growth": 146.5,
         "operation": 34.5
-      }
+      },
+      "lineups": [
+        {
+          "name": "白哥嬴政",
+          "usageRate": 0.5,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "马可猪",
+          "usageRate": 0.5,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "墨千城",
       "averageRank": 4.230769230769231,
       "matchCount": 26,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 8,
+      "top3Rate": 0.3076923076923077,
+      "lineupMatchCount": 24,
       "file": "players/56c1bc1edff287a59bf9cae12cdd39abccb6ad3fa45d413af97b919d425ddb3c.json",
       "totals": {
         "rank": 110.0,
@@ -193,12 +752,199 @@
         "survival": 13.384615384615385,
         "growth": 130.23076923076923,
         "operation": 21.153846153846153
-      }
+      },
+      "lineups": [
+        {
+          "name": "庄周无阵营",
+          "usageRate": 0.125,
+          "matchCount": 3,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.3333333333333333
+        },
+        {
+          "name": "嫦娥",
+          "usageRate": 0.08333333333333333,
+          "matchCount": 2,
+          "averageRank": 3.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "安琪拉刘邦",
+          "usageRate": 0.08333333333333333,
+          "matchCount": 2,
+          "averageRank": 3.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "白哥三分",
+          "usageRate": 0.08333333333333333,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "香香",
+          "usageRate": 0.08333333333333333,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "瑶妹",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "阿离猫",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "姜导狄仁杰",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "闹闹大河",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "庄周花木兰",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "闹闹逐鹿",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "马可低阶",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "马可猪",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "乔汐",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "姜导镜",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "姜导韩信",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "阿离狄仁杰",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "阿离玄策",
+          "usageRate": 0.041666666666666664,
+          "matchCount": 1,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "小满",
       "averageRank": 4.363636363636363,
       "matchCount": 22,
+      "winCount": 2,
+      "winRate": 0.09090909090909091,
+      "top3Count": 7,
+      "top3Rate": 0.3181818181818182,
+      "lineupMatchCount": 22,
       "file": "players/a18e1d5053a25b6681786b6d32310423a20c1eb0854a855013ec0241dd6790be.json",
       "totals": {
         "rank": 96.0,
@@ -215,12 +961,159 @@
         "survival": 12.590909090909092,
         "growth": 150.8181818181818,
         "operation": 19.90909090909091
-      }
+      },
+      "lineups": [
+        {
+          "name": "嫦娥",
+          "usageRate": 0.18181818181818182,
+          "matchCount": 4,
+          "averageRank": 4.25,
+          "winCount": 1,
+          "winRate": 0.25,
+          "top3Count": 1,
+          "top3Rate": 0.25
+        },
+        {
+          "name": "乔汐",
+          "usageRate": 0.09090909090909091,
+          "matchCount": 2,
+          "averageRank": 3.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "阿离猫",
+          "usageRate": 0.09090909090909091,
+          "matchCount": 2,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "嬴政花木兰",
+          "usageRate": 0.09090909090909091,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 0.5
+        },
+        {
+          "name": "白哥三分",
+          "usageRate": 0.09090909090909091,
+          "matchCount": 2,
+          "averageRank": 5.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "马可猪",
+          "usageRate": 0.09090909090909091,
+          "matchCount": 2,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "姜导李白",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嬴政嬴政",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "阿离狄仁杰",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "阿离海月",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "小偷",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "小明射",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "孙膑三分",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "阿离刘邦",
+          "usageRate": 0.045454545454545456,
+          "matchCount": 1,
+          "averageRank": 6.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "李赣",
       "averageRank": 4.5,
       "matchCount": 4,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0,
+      "lineupMatchCount": 4,
       "file": "players/50c9735aad0284807c5af603757980f2ce881b01a53ae4aa8b00fe64e16f3ab3.json",
       "totals": {
         "rank": 18.0,
@@ -237,12 +1130,49 @@
         "survival": 12.5,
         "growth": 157.75,
         "operation": 20.75
-      }
+      },
+      "lineups": [
+        {
+          "name": "嫦娥",
+          "usageRate": 0.5,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "武凤嬴政",
+          "usageRate": 0.25,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "阿离李信",
+          "usageRate": 0.25,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
     },
     {
       "id": "老渣男",
       "averageRank": 4.5,
       "matchCount": 2,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0,
+      "lineupMatchCount": 2,
       "file": "players/33b81965a944bc3025878f79b29641e15a7d71bf2273942ccaaa1884d67e5287.json",
       "totals": {
         "rank": 9.0,
@@ -259,7 +1189,435 @@
         "survival": 15.0,
         "growth": 230.5,
         "operation": 20.5
-      }
+      },
+      "lineups": [
+        {
+          "name": "嫦娥",
+          "usageRate": 1.0,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ]
+    }
+  ],
+  "lineups": [
+    {
+      "name": "武凤三分",
+      "matchCount": 2,
+      "averageRank": 1.0,
+      "winCount": 2,
+      "winRate": 1.0,
+      "top3Count": 2,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "姜导廉颇",
+      "matchCount": 1,
+      "averageRank": 1.0,
+      "winCount": 1,
+      "winRate": 1.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "姜导李白",
+      "matchCount": 1,
+      "averageRank": 1.0,
+      "winCount": 1,
+      "winRate": 1.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "嬴政射",
+      "matchCount": 4,
+      "averageRank": 2.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 4,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "小明山鬼",
+      "matchCount": 2,
+      "averageRank": 2.5,
+      "winCount": 1,
+      "winRate": 0.5,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "玉环倒转",
+      "matchCount": 8,
+      "averageRank": 2.625,
+      "winCount": 4,
+      "winRate": 0.5,
+      "top3Count": 5,
+      "top3Rate": 0.625
+    },
+    {
+      "name": "妲己倒转",
+      "matchCount": 3,
+      "averageRank": 2.6666666666666665,
+      "winCount": 1,
+      "winRate": 0.3333333333333333,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "小明射",
+      "matchCount": 3,
+      "averageRank": 2.6666666666666665,
+      "winCount": 1,
+      "winRate": 0.3333333333333333,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "镜三分",
+      "matchCount": 3,
+      "averageRank": 2.6666666666666665,
+      "winCount": 1,
+      "winRate": 0.3333333333333333,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "镜日落海",
+      "matchCount": 3,
+      "averageRank": 2.6666666666666665,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "白哥三分",
+      "matchCount": 14,
+      "averageRank": 2.7142857142857144,
+      "winCount": 7,
+      "winRate": 0.5,
+      "top3Count": 9,
+      "top3Rate": 0.6428571428571429
+    },
+    {
+      "name": "姜导镜",
+      "matchCount": 3,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "瑶妹",
+      "matchCount": 2,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "姜导刘邦",
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "姜导狄仁杰",
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "小明泳池",
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "白哥嬴政",
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "马可三分",
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "嬴政花木兰",
+      "matchCount": 5,
+      "averageRank": 3.2,
+      "winCount": 1,
+      "winRate": 0.2,
+      "top3Count": 3,
+      "top3Rate": 0.6
+    },
+    {
+      "name": "嬴政嬴政",
+      "matchCount": 8,
+      "averageRank": 3.25,
+      "winCount": 1,
+      "winRate": 0.125,
+      "top3Count": 5,
+      "top3Rate": 0.625
+    },
+    {
+      "name": "闹闹大河",
+      "matchCount": 3,
+      "averageRank": 3.3333333333333335,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "阿离猫",
+      "matchCount": 3,
+      "averageRank": 3.3333333333333335,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "香香",
+      "matchCount": 6,
+      "averageRank": 3.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 3,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "姜导韩信",
+      "matchCount": 2,
+      "averageRank": 3.5,
+      "winCount": 1,
+      "winRate": 0.5,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "安琪拉刘邦",
+      "matchCount": 2,
+      "averageRank": 3.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "阿离李信",
+      "matchCount": 3,
+      "averageRank": 3.6666666666666665,
+      "winCount": 1,
+      "winRate": 0.3333333333333333,
+      "top3Count": 1,
+      "top3Rate": 0.3333333333333333
+    },
+    {
+      "name": "嫦娥",
+      "matchCount": 20,
+      "averageRank": 3.75,
+      "winCount": 3,
+      "winRate": 0.15,
+      "top3Count": 8,
+      "top3Rate": 0.4
+    },
+    {
+      "name": "庄周无阵营",
+      "matchCount": 4,
+      "averageRank": 3.75,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "昭君75",
+      "matchCount": 9,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 5,
+      "top3Rate": 0.5555555555555556
+    },
+    {
+      "name": "乔汐",
+      "matchCount": 3,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.3333333333333333
+    },
+    {
+      "name": "武凤嬴政",
+      "matchCount": 2,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "闹闹逐鹿",
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "阿离海月",
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "马可低阶",
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "妲己蒙恬",
+      "matchCount": 3,
+      "averageRank": 4.333333333333333,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.3333333333333333
+    },
+    {
+      "name": "庄周花木兰",
+      "matchCount": 4,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.25
+    },
+    {
+      "name": "武凤花木兰",
+      "matchCount": 2,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "阿离狄仁杰",
+      "matchCount": 2,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "马可猪",
+      "matchCount": 7,
+      "averageRank": 4.857142857142857,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "小偷",
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "镜无阵营",
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "马可镜",
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "姜导嬴政",
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "孙膑三分",
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "阿离刘邦",
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "阿离玄策",
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
     }
   ]
 }

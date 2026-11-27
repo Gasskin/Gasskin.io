@@ -12,7 +12,8 @@
       "attack": 140.0,
       "survival": 17.0,
       "growth": 170.0,
-      "operation": 22.0
+      "operation": 22.0,
+      "lineup": "闹闹大河"
     },
     {
       "matchId": 2,
@@ -25,7 +26,8 @@
       "attack": 49.0,
       "survival": 15.0,
       "growth": 221.0,
-      "operation": 15.0
+      "operation": 15.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 3,
@@ -38,7 +40,8 @@
       "attack": 130.0,
       "survival": 15.0,
       "growth": 236.0,
-      "operation": 16.0
+      "operation": 16.0,
+      "lineup": "嬴政射"
     },
     {
       "matchId": 4,
@@ -51,7 +54,8 @@
       "attack": 86.0,
       "survival": 15.0,
       "growth": 217.0,
-      "operation": 35.0
+      "operation": 35.0,
+      "lineup": "姜导镜"
     },
     {
       "matchId": 5,
@@ -64,7 +68,8 @@
       "attack": 115.0,
       "survival": 16.0,
       "growth": 77.0,
-      "operation": 11.0
+      "operation": 11.0,
+      "lineup": "香香"
     },
     {
       "matchId": 6,
@@ -77,7 +82,8 @@
       "attack": 9.0,
       "survival": 11.0,
       "growth": 147.0,
-      "operation": 7.0
+      "operation": 7.0,
+      "lineup": "昭君75"
     },
     {
       "matchId": 7,
@@ -90,7 +96,8 @@
       "attack": 75.0,
       "survival": 16.0,
       "growth": 111.0,
-      "operation": 28.0
+      "operation": 28.0,
+      "lineup": "姜导镜"
     },
     {
       "matchId": 8,
@@ -103,7 +110,8 @@
       "attack": 108.0,
       "survival": 14.0,
       "growth": 550.0,
-      "operation": 37.0
+      "operation": 37.0,
+      "lineup": "镜三分"
     },
     {
       "matchId": 9,
@@ -116,7 +124,8 @@
       "attack": 59.0,
       "survival": 12.0,
       "growth": 75.0,
-      "operation": 20.0
+      "operation": 20.0,
+      "lineup": "香香"
     },
     {
       "matchId": 10,
@@ -129,7 +138,8 @@
       "attack": 34.0,
       "survival": 12.0,
       "growth": 64.0,
-      "operation": 23.0
+      "operation": 23.0,
+      "lineup": "庄周花木兰"
     },
     {
       "matchId": 11,
@@ -142,7 +152,8 @@
       "attack": 116.0,
       "survival": 17.0,
       "growth": 191.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "庄周无阵营"
     },
     {
       "matchId": 12,
@@ -155,7 +166,8 @@
       "attack": 98.0,
       "survival": 16.0,
       "growth": 153.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "香香"
     },
     {
       "matchId": 13,
@@ -181,7 +193,8 @@
       "attack": 12.0,
       "survival": 9.0,
       "growth": 86.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "姜导嬴政"
     },
     {
       "matchId": 15,
@@ -194,7 +207,8 @@
       "attack": 63.0,
       "survival": 13.0,
       "growth": 137.0,
-      "operation": 24.0
+      "operation": 24.0,
+      "lineup": "闹闹大河"
     },
     {
       "matchId": 16,
@@ -207,7 +221,8 @@
       "attack": 15.0,
       "survival": 9.0,
       "growth": 105.0,
-      "operation": 15.0
+      "operation": 15.0,
+      "lineup": "昭君75"
     },
     {
       "matchId": 17,
@@ -220,7 +235,8 @@
       "attack": 54.0,
       "survival": 15.0,
       "growth": 127.0,
-      "operation": 25.0
+      "operation": 25.0,
+      "lineup": "庄周花木兰"
     },
     {
       "matchId": 18,
@@ -233,7 +249,8 @@
       "attack": 100.0,
       "survival": 16.0,
       "growth": 213.0,
-      "operation": 19.0
+      "operation": 19.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 19,
@@ -246,7 +263,8 @@
       "attack": 101.0,
       "survival": 15.0,
       "growth": 127.0,
-      "operation": 22.0
+      "operation": 22.0,
+      "lineup": "嬴政射"
     },
     {
       "matchId": 20,
@@ -259,7 +277,8 @@
       "attack": 37.0,
       "survival": 13.0,
       "growth": 90.0,
-      "operation": 30.0
+      "operation": 30.0,
+      "lineup": "庄周花木兰"
     },
     {
       "matchId": 21,
@@ -272,7 +291,8 @@
       "attack": 68.0,
       "survival": 13.0,
       "growth": 235.0,
-      "operation": 26.0
+      "operation": 26.0,
+      "lineup": "镜三分"
     },
     {
       "matchId": 22,
@@ -285,7 +305,8 @@
       "attack": 75.0,
       "survival": 15.0,
       "growth": 188.0,
-      "operation": 24.0
+      "operation": 24.0,
+      "lineup": "镜日落海"
     },
     {
       "matchId": 23,
@@ -298,7 +319,8 @@
       "attack": 50.0,
       "survival": 16.0,
       "growth": 339.0,
-      "operation": 23.0
+      "operation": 23.0,
+      "lineup": "镜日落海"
     },
     {
       "matchId": 24,
@@ -311,7 +333,8 @@
       "attack": 92.0,
       "survival": 16.0,
       "growth": 476.0,
-      "operation": 16.0
+      "operation": 16.0,
+      "lineup": "昭君75"
     },
     {
       "matchId": 25,
@@ -324,7 +347,8 @@
       "attack": 89.0,
       "survival": 18.0,
       "growth": 102.0,
-      "operation": 29.0
+      "operation": 29.0,
+      "lineup": "嬴政嬴政"
     },
     {
       "matchId": 26,
@@ -337,7 +361,8 @@
       "attack": 57.0,
       "survival": 14.0,
       "growth": 197.0,
-      "operation": 22.0
+      "operation": 22.0,
+      "lineup": "嬴政花木兰"
     }
   ],
   "matchCount": 26,
@@ -356,5 +381,142 @@
     "survival": 14.307692307692308,
     "growth": 182.6153846153846,
     "operation": 22.076923076923077
-  }
+  },
+  "winCount": 2,
+  "winRate": 0.07692307692307693,
+  "top3Count": 16,
+  "top3Rate": 0.6153846153846154,
+  "lineupMatchCount": 25,
+  "lineups": [
+    {
+      "name": "香香",
+      "usageRate": 0.12,
+      "matchCount": 3,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 0.6666666666666666
+    },
+    {
+      "name": "庄周花木兰",
+      "usageRate": 0.12,
+      "matchCount": 3,
+      "averageRank": 4.666666666666667,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.3333333333333333
+    },
+    {
+      "name": "昭君75",
+      "usageRate": 0.12,
+      "matchCount": 3,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.3333333333333333
+    },
+    {
+      "name": "姜导镜",
+      "usageRate": 0.08,
+      "matchCount": 2,
+      "averageRank": 2.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "嫦娥",
+      "usageRate": 0.08,
+      "matchCount": 2,
+      "averageRank": 2.0,
+      "winCount": 1,
+      "winRate": 0.5,
+      "top3Count": 2,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "嬴政射",
+      "usageRate": 0.08,
+      "matchCount": 2,
+      "averageRank": 2.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 2,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "镜三分",
+      "usageRate": 0.08,
+      "matchCount": 2,
+      "averageRank": 2.5,
+      "winCount": 1,
+      "winRate": 0.5,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "镜日落海",
+      "usageRate": 0.08,
+      "matchCount": 2,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "闹闹大河",
+      "usageRate": 0.08,
+      "matchCount": 2,
+      "averageRank": 3.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "嬴政嬴政",
+      "usageRate": 0.04,
+      "matchCount": 1,
+      "averageRank": 2.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "庄周无阵营",
+      "usageRate": 0.04,
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "嬴政花木兰",
+      "usageRate": 0.04,
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "姜导嬴政",
+      "usageRate": 0.04,
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    }
+  ]
 }

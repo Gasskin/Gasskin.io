@@ -1,8 +1,13 @@
 const byId = id => document.getElementById(id);
 const format = value => Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatPercent = value => `${(Number(value) * 100).toLocaleString('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
 let index;
 let selectedId;
 let comparisonId = '';
+let activeView = 'players';
+let playerSort = 'averageRank';
+let lineupSort = 'averageRank';
 
 async function readJson(path) {
   const response = await fetch(path, { cache: 'no-store' });
@@ -17,11 +22,45 @@ function element(tag, className, text) {
   return node;
 }
 
+function compareText(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function comparePlayers(a, b, sortKey = playerSort) {
+  if (sortKey === 'winRate') {
+    return b.winRate - a.winRate || a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.id, b.id);
+  }
+  if (sortKey === 'top3Rate') {
+    return b.top3Rate - a.top3Rate || a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.id, b.id);
+  }
+  return a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.id, b.id);
+}
+
+function compareLineups(a, b, sortKey = lineupSort) {
+  if (sortKey === 'winRate') {
+    return b.winRate - a.winRate || a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.name, b.name);
+  }
+  if (sortKey === 'top3Rate') {
+    return b.top3Rate - a.top3Rate || a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.name, b.name);
+  }
+  if (sortKey === 'matchCount') {
+    return b.matchCount - a.matchCount || a.averageRank - b.averageRank || compareText(a.name, b.name);
+  }
+  return a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.name, b.name);
+}
+
+function sortedPlayers() {
+  return [...index.players].sort((a, b) => comparePlayers(a, b, playerSort));
+}
+
 function renderPlayers() {
   if (!index) return;
+  byId('player-sort').querySelectorAll('.sort-col').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.sort === playerSort));
+  });
   const query = byId('search').value.trim().toLocaleLowerCase();
   const fragment = document.createDocumentFragment();
-  index.players.forEach((player, position) => {
+  sortedPlayers().forEach((player, position) => {
     if (!player.id.toLocaleLowerCase().includes(query)) return;
     const button = element('button', 'player-button');
     button.type = 'button';
@@ -29,8 +68,14 @@ function renderPlayers() {
     button.setAttribute('aria-pressed', String(player.id === selectedId));
     button.title = player.id;
     const name = element('span');
-    name.append(element('span', 'list-name', player.id), element('span', 'list-count', `${player.matchCount} 场对局`));
-    button.append(element('span', 'position', String(position + 1).padStart(2, '0')), name, element('span', 'list-rank', format(player.averageRank)));
+    name.append(element('span', 'list-name', player.id), element('span', 'list-count', `${player.matchCount} 场`));
+    button.append(
+      element('span', 'position', String(position + 1).padStart(2, '0')),
+      name,
+      element('span', `list-metric${playerSort === 'averageRank' ? ' is-active' : ''}`, format(player.averageRank)),
+      element('span', `list-metric${playerSort === 'winRate' ? ' is-active' : ''}`, formatPercent(player.winRate)),
+      element('span', `list-metric${playerSort === 'top3Rate' ? ' is-active' : ''}`, formatPercent(player.top3Rate))
+    );
     button.addEventListener('click', () => selectPlayer(player));
     fragment.append(button);
   });
@@ -49,7 +94,7 @@ function drawRadar(player, comparison) {
   const chart = byId('radar');
   chart.replaceChildren(
     svgNode('title', { id: 'radar-title' }, `${player.id}与${comparison.name}的平均数据对比`),
-    svgNode('desc', { id: 'radar-description' }, `绿色实线代表${player.id}，黄色实线代表${comparison.name}。真实均值见平均数据表。`)
+    svgNode('desc', { id: 'radar-description' }, `绿色实线代表${player.id}，黄色实线代表${comparison.name}。`)
   );
   const point = (i, ratio) => {
     const angle = -Math.PI / 2 + i * 2 * Math.PI / index.metrics.length;
@@ -87,7 +132,7 @@ function drawRadar(player, comparison) {
 }
 
 function renderComparisonOptions() {
-  const candidates = index.players.filter(player => player.id !== selectedId);
+  const candidates = sortedPlayers().filter(player => player.id !== selectedId);
   if (!candidates.some(player => player.id === comparisonId)) comparisonId = '';
   const averageOption = element('option', '', '平均值');
   averageOption.value = '';
@@ -106,14 +151,28 @@ function renderComparison(player) {
     : { name: '所有玩家', averages: index.overall };
   byId('comparison-value').textContent = byId('comparison-target').selectedOptions[0].textContent;
   byId('comparison-legend').textContent = target ? target.id : '玩家均值';
-  byId('comparison-heading').textContent = comparison.name;
-  const rows = index.metrics.map(metric => {
+  drawRadar(player, comparison);
+}
+
+function renderPlayerLineups(player) {
+  const lineups = player.lineups || [];
+  byId('player-lineups-summary').textContent = lineups.length
+    ? `共 ${lineups.length} 套阵容 · ${player.lineupMatchCount} 场记录`
+    : '';
+  const rows = lineups.map(item => {
     const row = element('tr');
-    row.append(element('td', '', metric.label), element('td', '', format(player.averages[metric.key])), element('td', '', format(comparison.averages[metric.key])));
+    row.append(
+      element('td', '', item.name),
+      element('td', '', String(item.matchCount)),
+      element('td', 'metric-highlight', formatPercent(item.usageRate)),
+      element('td', '', format(item.averageRank)),
+      element('td', '', formatPercent(item.winRate)),
+      element('td', '', formatPercent(item.top3Rate))
+    );
     return row;
   });
-  byId('averages').replaceChildren(...rows);
-  drawRadar(player, comparison);
+  byId('player-lineups').replaceChildren(...rows);
+  byId('no-player-lineups').hidden = rows.length > 0;
 }
 
 function selectPlayer(player) {
@@ -122,19 +181,72 @@ function selectPlayer(player) {
   byId('player-name').textContent = player.id;
   byId('player-legend').textContent = player.id;
   byId('average-rank').textContent = format(player.averages.rank);
+  byId('win-rate').textContent = formatPercent(player.winRate);
+  byId('top3-rate').textContent = formatPercent(player.top3Rate);
   byId('match-count').textContent = player.matchCount;
   renderComparisonOptions();
   renderComparison(player);
+  renderPlayerLineups(player);
   byId('player-content').hidden = false;
   byId('player-status').textContent = '';
+}
+
+function renderLineups() {
+  if (!index) return;
+  byId('lineup-sort').querySelectorAll('.sort-col').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.sort === lineupSort));
+  });
+  const allLineups = index.lineups || [];
+  byId('lineup-total').textContent = allLineups.length
+    ? `共 ${allLineups.length} 套阵容 · ${index.lineupRecordCount} 条有效记录`
+    : '暂无阵容记录';
+  const query = byId('lineup-search').value.trim().toLocaleLowerCase();
+  const ordered = [...allLineups].sort((a, b) => compareLineups(a, b, lineupSort));
+  const fragment = document.createDocumentFragment();
+  ordered.forEach((item, position) => {
+    if (!item.name.toLocaleLowerCase().includes(query)) return;
+    const row = element('tr');
+    row.append(
+      element('td', '', String(position + 1).padStart(2, '0')),
+      element('td', '', item.name),
+      element('td', lineupSort === 'matchCount' ? 'metric-highlight' : '', String(item.matchCount)),
+      element('td', lineupSort === 'averageRank' ? 'metric-highlight' : '', format(item.averageRank)),
+      element('td', lineupSort === 'winRate' ? 'metric-highlight' : '', formatPercent(item.winRate)),
+      element('td', lineupSort === 'top3Rate' ? 'metric-highlight' : '', formatPercent(item.top3Rate))
+    );
+    fragment.append(row);
+  });
+  byId('lineup-list').replaceChildren(fragment);
+  byId('no-lineups').hidden = fragment.childElementCount > 0;
+}
+
+function setActiveView(view) {
+  activeView = view;
+  document.querySelectorAll('.view-tab').forEach(tab => {
+    tab.setAttribute('aria-selected', String(tab.dataset.view === view));
+  });
+  byId('players-view').hidden = view !== 'players';
+  byId('lineups-view').hidden = view !== 'lineups';
 }
 
 function normalizePlayers(summary) {
   const fields = ['rank', ...summary.metrics.map(metric => metric.key)];
   for (const player of summary.players) {
-    if (player.averages) continue;
-    if (!player.totals || !player.matchCount) throw new Error('请重新运行“生成数据.bat”更新数据');
-    player.averages = Object.fromEntries(fields.map(key => [key, player.totals[key] / player.matchCount]));
+    if (!player.averages) {
+      if (!player.totals || !player.matchCount) throw new Error('请重新运行“生成数据.bat”更新数据');
+      player.averages = Object.fromEntries(fields.map(key => [key, player.totals[key] / player.matchCount]));
+    }
+    if (player.winRate === undefined || player.top3Rate === undefined) {
+      throw new Error('请重新运行“生成数据.bat”更新胜率与阵容数据');
+    }
+    if (!Array.isArray(player.lineups)) player.lineups = [];
+    if (player.lineupMatchCount === undefined) {
+      player.lineupMatchCount = player.lineups.reduce((sum, item) => sum + item.matchCount, 0);
+    }
+  }
+  if (!Array.isArray(summary.lineups)) summary.lineups = [];
+  if (summary.lineupRecordCount === undefined) {
+    summary.lineupRecordCount = summary.lineups.reduce((sum, item) => sum + item.matchCount, 0);
   }
 }
 
@@ -144,14 +256,32 @@ async function init() {
     if (!index.players?.length) throw new Error('没有玩家记录');
     normalizePlayers(index);
     byId('dashboard').hidden = false;
+    document.querySelectorAll('.view-tab').forEach(tab => {
+      tab.addEventListener('click', () => setActiveView(tab.dataset.view));
+    });
+    byId('player-sort').addEventListener('click', event => {
+      const button = event.target.closest('.sort-col');
+      if (!button || !button.dataset.sort) return;
+      playerSort = button.dataset.sort;
+      renderPlayers();
+      renderComparisonOptions();
+    });
+    byId('lineup-sort').addEventListener('click', event => {
+      const button = event.target.closest('.sort-col');
+      if (!button || !button.dataset.sort) return;
+      lineupSort = button.dataset.sort;
+      renderLineups();
+    });
     byId('search').addEventListener('input', renderPlayers);
+    byId('lineup-search').addEventListener('input', renderLineups);
     byId('comparison-target').addEventListener('change', () => {
       if (!index) return;
       comparisonId = byId('comparison-target').value;
       renderComparison(index.players.find(player => player.id === selectedId));
     });
     renderPlayers();
-    selectPlayer(index.players[0]);
+    selectPlayer(sortedPlayers()[0]);
+    renderLineups();
   } catch (error) {
     byId('status').hidden = false;
     byId('status').textContent = location.protocol === 'file:'

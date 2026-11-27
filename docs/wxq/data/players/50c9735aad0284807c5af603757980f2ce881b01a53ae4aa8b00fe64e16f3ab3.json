@@ -12,7 +12,8 @@
       "attack": 33.0,
       "survival": 12.0,
       "growth": 142.0,
-      "operation": 24.0
+      "operation": 24.0,
+      "lineup": "阿离李信"
     },
     {
       "matchId": 7,
@@ -25,7 +26,8 @@
       "attack": 49.0,
       "survival": 15.0,
       "growth": 259.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 8,
@@ -38,7 +40,8 @@
       "attack": 65.0,
       "survival": 12.0,
       "growth": 127.0,
-      "operation": 29.0
+      "operation": 29.0,
+      "lineup": "武凤嬴政"
     },
     {
       "matchId": 9,
@@ -51,7 +54,8 @@
       "attack": 23.0,
       "survival": 11.0,
       "growth": 103.0,
-      "operation": 12.0
+      "operation": 12.0,
+      "lineup": "嫦娥"
     }
   ],
   "matchCount": 4,
@@ -70,5 +74,42 @@
     "survival": 12.5,
     "growth": 157.75,
     "operation": 20.75
-  }
+  },
+  "winCount": 0,
+  "winRate": 0.0,
+  "top3Count": 0,
+  "top3Rate": 0.0,
+  "lineupMatchCount": 4,
+  "lineups": [
+    {
+      "name": "嫦娥",
+      "usageRate": 0.5,
+      "matchCount": 2,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "武凤嬴政",
+      "usageRate": 0.25,
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "阿离李信",
+      "usageRate": 0.25,
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    }
+  ]
 }

@@ -12,7 +12,8 @@
       "attack": 81.0,
       "survival": 15.0,
       "growth": 180.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "阿离海月"
     },
     {
       "matchId": 2,
@@ -25,7 +26,8 @@
       "attack": 15.0,
       "survival": 12.0,
       "growth": 151.0,
-      "operation": 10.0
+      "operation": 10.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 3,
@@ -38,7 +40,8 @@
       "attack": 30.0,
       "survival": 12.0,
       "growth": 67.0,
-      "operation": 17.0
+      "operation": 17.0,
+      "lineup": "小明射"
     },
     {
       "matchId": 4,
@@ -51,7 +54,8 @@
       "attack": 23.0,
       "survival": 11.0,
       "growth": 196.0,
-      "operation": 27.0
+      "operation": 27.0,
+      "lineup": "白哥三分"
     },
     {
       "matchId": 5,
@@ -64,7 +68,8 @@
       "attack": 5.0,
       "survival": 9.0,
       "growth": 27.0,
-      "operation": 15.0
+      "operation": 15.0,
+      "lineup": "阿离猫"
     },
     {
       "matchId": 6,
@@ -77,7 +82,8 @@
       "attack": 54.0,
       "survival": 15.0,
       "growth": 208.0,
-      "operation": 19.0
+      "operation": 19.0,
+      "lineup": "阿离狄仁杰"
     },
     {
       "matchId": 7,
@@ -90,7 +96,8 @@
       "attack": 47.0,
       "survival": 15.0,
       "growth": 173.0,
-      "operation": 24.0
+      "operation": 24.0,
+      "lineup": "嬴政花木兰"
     },
     {
       "matchId": 8,
@@ -103,7 +110,8 @@
       "attack": 20.0,
       "survival": 10.0,
       "growth": 356.0,
-      "operation": 33.0
+      "operation": 33.0,
+      "lineup": "白哥三分"
     },
     {
       "matchId": 9,
@@ -116,7 +124,8 @@
       "attack": 0.0,
       "survival": 9.0,
       "growth": 107.0,
-      "operation": 31.0
+      "operation": 31.0,
+      "lineup": "嬴政花木兰"
     },
     {
       "matchId": 12,
@@ -129,7 +138,8 @@
       "attack": 31.0,
       "survival": 12.0,
       "growth": 241.0,
-      "operation": 13.0
+      "operation": 13.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 13,
@@ -142,7 +152,8 @@
       "attack": 28.0,
       "survival": 13.0,
       "growth": 100.0,
-      "operation": 14.0
+      "operation": 14.0,
+      "lineup": "阿离刘邦"
     },
     {
       "matchId": 14,
@@ -155,7 +166,8 @@
       "attack": 25.0,
       "survival": 11.0,
       "growth": 80.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "小偷"
     },
     {
       "matchId": 15,
@@ -168,7 +180,8 @@
       "attack": 17.0,
       "survival": 10.0,
       "growth": 196.0,
-      "operation": 30.0
+      "operation": 30.0,
+      "lineup": "马可猪"
     },
     {
       "matchId": 16,
@@ -181,7 +194,8 @@
       "attack": 85.0,
       "survival": 17.0,
       "growth": 84.0,
-      "operation": 17.0
+      "operation": 17.0,
+      "lineup": "乔汐"
     },
     {
       "matchId": 17,
@@ -194,7 +208,8 @@
       "attack": 0.0,
       "survival": 9.0,
       "growth": 43.0,
-      "operation": 24.0
+      "operation": 24.0,
+      "lineup": "马可猪"
     },
     {
       "matchId": 18,
@@ -207,7 +222,8 @@
       "attack": 75.0,
       "survival": 16.0,
       "growth": 85.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "阿离猫"
     },
     {
       "matchId": 19,
@@ -220,7 +236,8 @@
       "attack": 12.0,
       "survival": 11.0,
       "growth": 284.0,
-      "operation": 28.0
+      "operation": 28.0,
+      "lineup": "孙膑三分"
     },
     {
       "matchId": 20,
@@ -233,7 +250,8 @@
       "attack": 147.0,
       "survival": 18.0,
       "growth": 245.0,
-      "operation": 11.0
+      "operation": 11.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 21,
@@ -246,7 +264,8 @@
       "attack": 80.0,
       "survival": 14.0,
       "growth": 254.0,
-      "operation": 25.0
+      "operation": 25.0,
+      "lineup": "嬴政嬴政"
     },
     {
       "matchId": 22,
@@ -259,7 +278,8 @@
       "attack": 102.0,
       "survival": 15.0,
       "growth": 94.0,
-      "operation": 19.0
+      "operation": 19.0,
+      "lineup": "姜导李白"
     },
     {
       "matchId": 25,
@@ -272,7 +292,8 @@
       "attack": 7.0,
       "survival": 10.0,
       "growth": 40.0,
-      "operation": 7.0
+      "operation": 7.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 26,
@@ -285,7 +306,8 @@
       "attack": 40.0,
       "survival": 13.0,
       "growth": 107.0,
-      "operation": 20.0
+      "operation": 20.0,
+      "lineup": "乔汐"
     }
   ],
   "matchCount": 22,
@@ -304,5 +326,152 @@
     "survival": 12.590909090909092,
     "growth": 150.8181818181818,
     "operation": 19.90909090909091
-  }
+  },
+  "winCount": 2,
+  "winRate": 0.09090909090909091,
+  "top3Count": 7,
+  "top3Rate": 0.3181818181818182,
+  "lineupMatchCount": 22,
+  "lineups": [
+    {
+      "name": "嫦娥",
+      "usageRate": 0.18181818181818182,
+      "matchCount": 4,
+      "averageRank": 4.25,
+      "winCount": 1,
+      "winRate": 0.25,
+      "top3Count": 1,
+      "top3Rate": 0.25
+    },
+    {
+      "name": "乔汐",
+      "usageRate": 0.09090909090909091,
+      "matchCount": 2,
+      "averageRank": 3.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "阿离猫",
+      "usageRate": 0.09090909090909091,
+      "matchCount": 2,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "嬴政花木兰",
+      "usageRate": 0.09090909090909091,
+      "matchCount": 2,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "白哥三分",
+      "usageRate": 0.09090909090909091,
+      "matchCount": 2,
+      "averageRank": 5.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "马可猪",
+      "usageRate": 0.09090909090909091,
+      "matchCount": 2,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "姜导李白",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 1.0,
+      "winCount": 1,
+      "winRate": 1.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "嬴政嬴政",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 2.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "阿离狄仁杰",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "阿离海月",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "小偷",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "小明射",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "孙膑三分",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "阿离刘邦",
+      "usageRate": 0.045454545454545456,
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    }
+  ]
 }

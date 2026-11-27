@@ -12,7 +12,8 @@
       "attack": 6.0,
       "survival": 12.0,
       "growth": 127.0,
-      "operation": 14.0
+      "operation": 14.0,
+      "lineup": "姜导韩信"
     },
     {
       "matchId": 2,
@@ -25,7 +26,8 @@
       "attack": 25.0,
       "survival": 10.0,
       "growth": 120.0,
-      "operation": 26.0
+      "operation": 26.0,
+      "lineup": "白哥三分"
     },
     {
       "matchId": 3,
@@ -38,7 +40,8 @@
       "attack": 8.0,
       "survival": 10.0,
       "growth": 247.0,
-      "operation": 27.0
+      "operation": 27.0,
+      "lineup": "庄周无阵营"
     },
     {
       "matchId": 4,
@@ -51,7 +54,8 @@
       "attack": 60.0,
       "survival": 13.0,
       "growth": 73.0,
-      "operation": 19.0
+      "operation": 19.0,
+      "lineup": "安琪拉刘邦"
     },
     {
       "matchId": 5,
@@ -64,7 +68,8 @@
       "attack": 57.0,
       "survival": 14.0,
       "growth": 163.0,
-      "operation": 47.0
+      "operation": 47.0,
+      "lineup": "马可猪"
     },
     {
       "matchId": 6,
@@ -77,7 +82,8 @@
       "attack": 60.0,
       "survival": 15.0,
       "growth": 139.0,
-      "operation": 33.0
+      "operation": 33.0,
+      "lineup": "马可低阶"
     },
     {
       "matchId": 7,
@@ -90,7 +96,8 @@
       "attack": 25.0,
       "survival": 13.0,
       "growth": 52.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "阿离狄仁杰"
     },
     {
       "matchId": 8,
@@ -103,7 +110,8 @@
       "attack": 70.0,
       "survival": 13.0,
       "growth": 128.0,
-      "operation": 23.0
+      "operation": 23.0,
+      "lineup": "闹闹大河"
     },
     {
       "matchId": 9,
@@ -116,7 +124,8 @@
       "attack": 19.0,
       "survival": 13.0,
       "growth": 254.0,
-      "operation": 12.0
+      "operation": 12.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 10,
@@ -129,7 +138,8 @@
       "attack": 69.0,
       "survival": 14.0,
       "growth": 89.0,
-      "operation": 19.0
+      "operation": 19.0,
+      "lineup": "香香"
     },
     {
       "matchId": 11,
@@ -168,7 +178,8 @@
       "attack": 53.0,
       "survival": 14.0,
       "growth": 68.0,
-      "operation": 17.0
+      "operation": 17.0,
+      "lineup": "安琪拉刘邦"
     },
     {
       "matchId": 14,
@@ -181,7 +192,8 @@
       "attack": 101.0,
       "survival": 17.0,
       "growth": 237.0,
-      "operation": 17.0
+      "operation": 17.0,
+      "lineup": "庄周无阵营"
     },
     {
       "matchId": 15,
@@ -194,7 +206,8 @@
       "attack": 28.0,
       "survival": 13.0,
       "growth": 198.0,
-      "operation": 22.0
+      "operation": 22.0,
+      "lineup": "庄周无阵营"
     },
     {
       "matchId": 16,
@@ -207,7 +220,8 @@
       "attack": 109.0,
       "survival": 16.0,
       "growth": 283.0,
-      "operation": 30.0
+      "operation": 30.0,
+      "lineup": "白哥三分"
     },
     {
       "matchId": 17,
@@ -220,7 +234,8 @@
       "attack": 46.0,
       "survival": 14.0,
       "growth": 56.0,
-      "operation": 20.0
+      "operation": 20.0,
+      "lineup": "闹闹逐鹿"
     },
     {
       "matchId": 18,
@@ -233,7 +248,8 @@
       "attack": 36.0,
       "survival": 13.0,
       "growth": 67.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "香香"
     },
     {
       "matchId": 19,
@@ -246,7 +262,8 @@
       "attack": 41.0,
       "survival": 12.0,
       "growth": 98.0,
-      "operation": 16.0
+      "operation": 16.0,
+      "lineup": "乔汐"
     },
     {
       "matchId": 20,
@@ -259,7 +276,8 @@
       "attack": 83.0,
       "survival": 18.0,
       "growth": 40.0,
-      "operation": 18.0
+      "operation": 18.0,
+      "lineup": "阿离猫"
     },
     {
       "matchId": 21,
@@ -272,7 +290,8 @@
       "attack": 32.0,
       "survival": 12.0,
       "growth": 105.0,
-      "operation": 14.0
+      "operation": 14.0,
+      "lineup": "姜导镜"
     },
     {
       "matchId": 22,
@@ -285,7 +304,8 @@
       "attack": 33.0,
       "survival": 12.0,
       "growth": 69.0,
-      "operation": 20.0
+      "operation": 20.0,
+      "lineup": "庄周花木兰"
     },
     {
       "matchId": 23,
@@ -298,7 +318,8 @@
       "attack": 75.0,
       "survival": 17.0,
       "growth": 75.0,
-      "operation": 22.0
+      "operation": 22.0,
+      "lineup": "姜导狄仁杰"
     },
     {
       "matchId": 24,
@@ -311,7 +332,8 @@
       "attack": 75.0,
       "survival": 17.0,
       "growth": 137.0,
-      "operation": 24.0
+      "operation": 24.0,
+      "lineup": "瑶妹"
     },
     {
       "matchId": 25,
@@ -324,7 +346,8 @@
       "attack": 15.0,
       "survival": 12.0,
       "growth": 158.0,
-      "operation": 16.0
+      "operation": 16.0,
+      "lineup": "嫦娥"
     },
     {
       "matchId": 26,
@@ -337,7 +360,8 @@
       "attack": 15.0,
       "survival": 10.0,
       "growth": 93.0,
-      "operation": 19.0
+      "operation": 19.0,
+      "lineup": "阿离玄策"
     }
   ],
   "matchCount": 26,
@@ -356,5 +380,192 @@
     "survival": 13.384615384615385,
     "growth": 130.23076923076923,
     "operation": 21.153846153846153
-  }
+  },
+  "winCount": 0,
+  "winRate": 0.0,
+  "top3Count": 8,
+  "top3Rate": 0.3076923076923077,
+  "lineupMatchCount": 24,
+  "lineups": [
+    {
+      "name": "庄周无阵营",
+      "usageRate": 0.125,
+      "matchCount": 3,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.3333333333333333
+    },
+    {
+      "name": "嫦娥",
+      "usageRate": 0.08333333333333333,
+      "matchCount": 2,
+      "averageRank": 3.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "安琪拉刘邦",
+      "usageRate": 0.08333333333333333,
+      "matchCount": 2,
+      "averageRank": 3.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "白哥三分",
+      "usageRate": 0.08333333333333333,
+      "matchCount": 2,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.5
+    },
+    {
+      "name": "香香",
+      "usageRate": 0.08333333333333333,
+      "matchCount": 2,
+      "averageRank": 4.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "瑶妹",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 2.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "阿离猫",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 2.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "姜导狄仁杰",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "闹闹大河",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 3.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 1.0
+    },
+    {
+      "name": "庄周花木兰",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "闹闹逐鹿",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "马可低阶",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "马可猪",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 4.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "乔汐",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "姜导镜",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 5.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "姜导韩信",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "阿离狄仁杰",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    },
+    {
+      "name": "阿离玄策",
+      "usageRate": 0.041666666666666664,
+      "matchCount": 1,
+      "averageRank": 6.0,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 0,
+      "top3Rate": 0.0
+    }
+  ]
 }

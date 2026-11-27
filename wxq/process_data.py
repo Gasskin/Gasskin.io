@@ -29,31 +29,48 @@ def text(value):
     return "" if value is None else str(value).strip()
 
 
+def summarize_ranks(ranks):
+    count = len(ranks)
+    win_count = sum(1 for rank in ranks if rank == 1)
+    top3_count = sum(1 for rank in ranks if rank <= 3)
+    return {
+        "matchCount": count,
+        "averageRank": math.fsum(ranks) / count,
+        "winCount": win_count,
+        "winRate": win_count / count,
+        "top3Count": top3_count,
+        "top3Rate": top3_count / count,
+    }
+
+
 def aggregate(sheets):
     """Accept (sheet name, rows) pairs; validate everything before exporting."""
     players = {}
     match_count = 0
     sheet_count = 0
+    expected_base = ["ID", "排名", *(label for _, label in METRICS)]
     for sheet_name, rows in sheets:
         if sheet_name.startswith("##"):
             continue
         sheet_count += 1
         header_row = None
+        has_lineup_column = False
         match_in_sheet = 0
         seen = {}
         for row_number, values in enumerate(rows, 1):
-            row = list(values[:7])
-            row += [None] * (7 - len(row))
+            row = list(values[:8])
+            row += [None] * (8 - len(row))
             if all(not text(value) for value in row):
                 continue
             location = f"Sheet「{sheet_name}」第 {row_number} 行"
             if text(row[0]) == "ID":
                 labels = [text(value).rsplit("/", 1)[-1].strip() for value in row]
-                if labels != ["ID", "排名", *(label for _, label in METRICS)]:
-                    raise ValueError(f"{location}：表头应为 ID、排名、经济、攻击、生存、成长、操作（指标可带 / 前缀）。")
+                if labels[:7] != expected_base or labels[7] not in ("", "阵容"):
+                    raise ValueError(f"{location}：表头应为 ID、排名、经济、攻击、生存、成长、操作（可选第 8 列：阵容；指标可带 / 前缀）。")
                 if header_row is not None and not seen:
                     raise ValueError(f"Sheet「{sheet_name}」第 {header_row} 行：该场对局没有玩家数据。")
                 header_row = row_number
+                has_lineup_column = labels[7] == "阵容"
                 match_in_sheet += 1
                 match_count += 1
                 seen = {}
@@ -80,12 +97,16 @@ def aggregate(sheets):
                 except (TypeError, ValueError, OverflowError):
                     raise ValueError(f"{location}：{label}必须是{'正整数' if key == 'rank' else '非负有限数值'}，当前为 {value!r}；公式单元格请先在 Excel 中计算并保存。") from None
                 stats[key] = number
-            player = players.setdefault(player_id, {"id": player_id, "matches": []})
-            player["matches"].append({
+            match_record = {
                 "matchId": match_count, "sheet": sheet_name,
                 "matchInSheet": match_in_sheet, "headerRow": header_row,
                 "row": row_number, **stats,
-            })
+            }
+            lineup = text(row[7]) if has_lineup_column else ""
+            if lineup:
+                match_record["lineup"] = lineup
+            player = players.setdefault(player_id, {"id": player_id, "matches": []})
+            player["matches"].append(match_record)
         if header_row is not None and not seen:
             raise ValueError(f"Sheet「{sheet_name}」第 {header_row} 行：该场对局没有玩家数据。")
     if not players:
@@ -94,18 +115,53 @@ def aggregate(sheets):
 
 
 def summarize(players, sheet_count, match_count):
-    """Compute rankings and equal-weight player averages across all matches."""
+    """Compute rankings, win/top3 rates, equal-weight player averages, and lineup stats."""
+    global_lineups = {}
     for player in players.values():
         player["matchCount"] = len(player["matches"])
         player["totals"] = {key: math.fsum(match[key] for match in player["matches"]) for key in FIELDS}
         player["averages"] = {key: player["totals"][key] / player["matchCount"] for key in FIELDS}
+        rank_stats = summarize_ranks([match["rank"] for match in player["matches"]])
+        player["winCount"] = rank_stats["winCount"]
+        player["winRate"] = rank_stats["winRate"]
+        player["top3Count"] = rank_stats["top3Count"]
+        player["top3Rate"] = rank_stats["top3Rate"]
+        player_lineups = {}
+        for match in player["matches"]:
+            lineup = match.get("lineup")
+            if not lineup:
+                continue
+            player_lineups.setdefault(lineup, []).append(match["rank"])
+            global_lineups.setdefault(lineup, []).append(match["rank"])
+        lineup_match_count = sum(len(ranks) for ranks in player_lineups.values())
+        player["lineupMatchCount"] = lineup_match_count
+        player["lineups"] = sorted(
+            (
+                {
+                    "name": name,
+                    "usageRate": len(ranks) / lineup_match_count,
+                    **summarize_ranks(ranks),
+                }
+                for name, ranks in player_lineups.items()
+            ),
+            key=lambda item: (-item["matchCount"], item["averageRank"], item["name"]),
+        )
     ordered = sorted(players.values(), key=lambda p: (p["averages"]["rank"], -p["matchCount"], p["id"]))
+    lineups = sorted(
+        (
+            {"name": name, **summarize_ranks(ranks)}
+            for name, ranks in global_lineups.items()
+        ),
+        key=lambda item: (item["averageRank"], -item["matchCount"], item["name"]),
+    )
     index = {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "sheetCount": sheet_count,
         "matchCount": match_count,
         "playerCount": len(players),
         "recordCount": sum(p["matchCount"] for p in ordered),
+        "lineupCount": len(lineups),
+        "lineupRecordCount": sum(item["matchCount"] for item in lineups),
         "averageMethod": "player_equal_weight",
         "overall": {key: math.fsum(p["averages"][key] for p in ordered) / len(players) for key in FIELDS},
         "metrics": [
@@ -113,13 +169,23 @@ def summarize(players, sheet_count, match_count):
             for key, label in METRICS
         ],
         "players": [],
+        "lineups": lineups,
     }
     for player in ordered:
         filename = hashlib.sha256(player["id"].encode("utf-8")).hexdigest() + ".json"
         index["players"].append({
-            "id": player["id"], "averageRank": player["averages"]["rank"],
-            "matchCount": player["matchCount"], "file": f"players/{filename}",
-            "totals": player["totals"], "averages": player["averages"],
+            "id": player["id"],
+            "averageRank": player["averages"]["rank"],
+            "matchCount": player["matchCount"],
+            "winCount": player["winCount"],
+            "winRate": player["winRate"],
+            "top3Count": player["top3Count"],
+            "top3Rate": player["top3Rate"],
+            "lineupMatchCount": player["lineupMatchCount"],
+            "file": f"players/{filename}",
+            "totals": player["totals"],
+            "averages": player["averages"],
+            "lineups": player["lineups"],
         })
     return index, ordered
 
@@ -168,7 +234,7 @@ def main():
     except Exception as error:
         print(f"生成失败：{error}", file=sys.stderr)
         return 1
-    print(f"生成成功：{result['sheetCount']} 个分页，{result['matchCount']} 场对局，{result['playerCount']} 位玩家。")
+    print(f"生成成功：{result['sheetCount']} 个分页，{result['matchCount']} 场对局，{result['playerCount']} 位玩家，{result['lineupCount']} 个阵容。")
     print(f"JSON：{args.output.resolve()}")
     return 0
 

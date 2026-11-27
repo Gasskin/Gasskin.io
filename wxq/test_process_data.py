@@ -11,10 +11,12 @@ from process_data import METRICS, aggregate, generate, write_json
 
 
 HEADER = ["ID", "排名", *(f"原始字段/{label}" for _, label in METRICS)]
+HEADER_WITH_LINEUP = [*HEADER, "阵容"]
 
 
-def row(name, rank, value):
-    return [name, rank, value, value, value, value, value]
+def row(name, rank, value, lineup=None):
+    base = [name, rank, value, value, value, value, value]
+    return base if lineup is None else [*base, lineup]
 
 
 class StatisticsTests(unittest.TestCase):
@@ -77,7 +79,14 @@ class StatisticsTests(unittest.TestCase):
         self.assertRegex(index["players"][0]["file"], r"^players/[0-9a-f]{64}\.json$")
 
     def test_missing_header_bad_header_empty_match_and_blank_id(self):
-        cases = ([row("甲", 1, 10)], [["ID", "错误"]], [HEADER], [HEADER, HEADER], [HEADER, row(" ", 1, 10)])
+        cases = (
+            [row("甲", 1, 10)],
+            [["ID", "错误"]],
+            [[*HEADER, "错误列"]],
+            [HEADER],
+            [HEADER, HEADER],
+            [HEADER, row(" ", 1, 10)],
+        )
         for rows in cases:
             with self.subTest(rows=rows), self.assertRaises(ValueError):
                 aggregate([("测试", rows)])
@@ -170,17 +179,91 @@ class StatisticsTests(unittest.TestCase):
                     generate(Path("unused.xlsx"), output)
             self.assertEqual(before, {p.relative_to(output): p.read_bytes() for p in output.rglob("*.json")})
 
+    def test_win_top3_rates_and_lineup_stats_ignore_empty_cells(self):
+        index, players = aggregate([
+            ("第一天", [
+                HEADER_WITH_LINEUP,
+                row("甲", 1, 100, " 嫦娥 "),
+                row("乙", 3, 90, "白哥三分"),
+                row("丙", 4, 80, ""),
+                HEADER_WITH_LINEUP,
+                row("甲", 4, 110, "嫦娥"),
+                row("乙", 2, 95, "   "),
+                row("丙", 1, 85, "嫦娥"),
+            ]),
+            ("第二天", [
+                HEADER_WITH_LINEUP,
+                row("甲", 2, 120, "白哥三分"),
+                row("甲" + " ", 1, 130, "") if False else row("乙", 5, 70, "白哥三分"),
+                row("丙", 6, 60, None),
+            ]),
+        ])
+        by_id = {p["id"]: p for p in index["players"]}
+        # 甲: ranks [1, 4, 2] -> win=1/3, top3=2/3; lineups: 嫦娥(2), 白哥三分(1), total=3
+        self.assertEqual(by_id["甲"]["winCount"], 1)
+        self.assertAlmostEqual(by_id["甲"]["winRate"], 1 / 3)
+        self.assertEqual(by_id["甲"]["top3Count"], 2)
+        self.assertAlmostEqual(by_id["甲"]["top3Rate"], 2 / 3)
+        self.assertEqual(by_id["甲"]["lineupMatchCount"], 3)
+        self.assertEqual([c["name"] for c in by_id["甲"]["lineups"]], ["嫦娥", "白哥三分"])
+        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["usageRate"], 2 / 3)
+        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["averageRank"], 2.5)
+        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["winRate"], 0.5)
+        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["top3Rate"], 0.5)
+        # 乙: ranks [3, 2, 5] -> win=0, top3=2/3; empty lineup ignored, only 白哥三分(2) counted -> usageRate=1.0
+        self.assertEqual(by_id["乙"]["matchCount"], 3)
+        self.assertEqual(by_id["乙"]["winRate"], 0)
+        self.assertAlmostEqual(by_id["乙"]["top3Rate"], 2 / 3)
+        self.assertEqual(by_id["乙"]["lineupMatchCount"], 2)
+        self.assertEqual(len(by_id["乙"]["lineups"]), 1)
+        self.assertEqual(by_id["乙"]["lineups"][0]["name"], "白哥三分")
+        self.assertEqual(by_id["乙"]["lineups"][0]["matchCount"], 2)
+        self.assertEqual(by_id["乙"]["lineups"][0]["usageRate"], 1.0)
+        self.assertAlmostEqual(by_id["乙"]["lineups"][0]["averageRank"], 4.0)
+        # 丙: ranks [4, 1, 6] -> win=1/3, top3=1/3; only 嫦娥(1) recorded
+        self.assertEqual(by_id["丙"]["matchCount"], 3)
+        self.assertEqual(by_id["丙"]["lineupMatchCount"], 1)
+        self.assertEqual(by_id["丙"]["lineups"][0]["usageRate"], 1.0)
+        # Global lineups: 嫦娥 ranks [1, 4, 1] -> avg 2.0, win 2/3, top3 2/3; 白哥三分 ranks [3, 2, 5] -> avg 10/3, win 0, top3 2/3
+        self.assertEqual(index["lineupCount"], 2)
+        self.assertEqual(index["lineupRecordCount"], 6)
+        by_lineup = {c["name"]: c for c in index["lineups"]}
+        self.assertEqual([c["name"] for c in index["lineups"]], ["嫦娥", "白哥三分"])
+        self.assertAlmostEqual(by_lineup["嫦娥"]["averageRank"], 2.0)
+        self.assertAlmostEqual(by_lineup["嫦娥"]["winRate"], 2 / 3)
+        self.assertAlmostEqual(by_lineup["嫦娥"]["top3Rate"], 2 / 3)
+        self.assertAlmostEqual(by_lineup["白哥三分"]["averageRank"], 10 / 3)
+        self.assertEqual(by_lineup["白哥三分"]["winRate"], 0)
+        self.assertAlmostEqual(by_lineup["白哥三分"]["top3Rate"], 2 / 3)
+        # Player files also store win/top3 rates and lineups
+        player_a = next(p for p in players if p["id"] == "甲")
+        self.assertEqual(player_a["lineups"], by_id["甲"]["lineups"])
+
     @unittest.skipUnless(shutil.which("node"), "Node.js is needed to verify browser script")
-    def test_browser_uses_unified_index_without_event_filter(self):
+    def test_browser_uses_unified_index_sorting_and_lineups(self):
         html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
         self.assertNotIn("event-filter", html)
-        self.assertNotIn("event-all", html)
-        self.assertNotIn("event-options", html)
+        self.assertNotIn("平均数据", html)
+        self.assertIn("使用阵容", html)
+        self.assertIn("阵容数据", html)
+        self.assertIn('data-sort="winRate"', html)
+        self.assertIn('data-sort="top3Rate"', html)
 
         rows_by_sheet = {
-            "风云杯": [HEADER, row("甲", 1, 10), row("乙", 2, 100), HEADER, row("甲", 1, 30)],
-            "新人杯": [HEADER, row("甲", 3, 200), row("丙", 1, 80)],
-            "##散排": [HEADER, row("丁", 1, 900)],
+            "风云杯": [
+                HEADER_WITH_LINEUP,
+                row("甲", 1, 10, "嫦娥"),
+                row("乙", 2, 100, "白哥三分"),
+                HEADER_WITH_LINEUP,
+                row("甲", 4, 30, "嫦娥"),
+                row("乙", 3, 90, ""),
+            ],
+            "新人杯": [
+                HEADER_WITH_LINEUP,
+                row("甲", 3, 200, "白哥三分"),
+                row("丙", 1, 80, "玉环倒转"),
+            ],
+            "##散排": [HEADER_WITH_LINEUP, row("丁", 1, 900, "散排阵容")],
         }
         sheets = [SimpleNamespace(title=name, iter_rows=lambda rows=rows, **kwargs: iter(rows)) for name, rows in rows_by_sheet.items()]
         workbook = SimpleNamespace(worksheets=sheets, close=lambda: None)
@@ -199,13 +282,22 @@ vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), context);
 assert.equal(typeof context.mergeEvents, 'undefined');
 const root = JSON.parse(fs.readFileSync(path.join(process.argv[2], 'index.json'), 'utf8'));
 assert.equal(root.events, undefined);
-assert.equal(root.players.map(player => player.id).join(','), '丙,甲,乙');
+const byAvg = [...root.players].sort((a, b) => context.comparePlayers(a, b, 'averageRank')).map(p => p.id);
+const byWin = [...root.players].sort((a, b) => context.comparePlayers(a, b, 'winRate')).map(p => p.id);
+const byTop3 = [...root.players].sort((a, b) => context.comparePlayers(a, b, 'top3Rate')).map(p => p.id);
+assert.deepEqual(byAvg, ['丙', '乙', '甲']);
+assert.deepEqual(byWin, ['丙', '甲', '乙']);
+assert.deepEqual(byTop3, ['丙', '乙', '甲']);
+const lineupsByAvg = [...root.lineups].sort((a, b) => context.compareLineups(a, b, 'averageRank')).map(c => c.name);
+const lineupsByWin = [...root.lineups].sort((a, b) => context.compareLineups(a, b, 'winRate')).map(c => c.name);
+assert.deepEqual(lineupsByAvg, ['玉环倒转', '嫦娥', '白哥三分']);
+assert.deepEqual(lineupsByWin, ['玉环倒转', '嫦娥', '白哥三分']);
 const legacy = JSON.parse(JSON.stringify(root));
 for (const player of legacy.players) delete player.averages;
 context.normalizePlayers(legacy);
 assert.equal(legacy.players.find(p => p.id === '甲').averages.economy, 80);
 assert.throws(() => context.normalizePlayers({metrics: root.metrics, players: [{id: 'old', matchCount: 1}]}));
-console.log('Unified browser data handling verified');
+console.log('Unified browser sorting and lineup handling verified');
 '''
             result = subprocess.run(["node", "-e", script, str(Path(__file__).with_name("app.js")), str(output)], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
