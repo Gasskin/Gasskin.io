@@ -13,7 +13,8 @@
       "survival": 14.0,
       "growth": 189.0,
       "operation": 54.0,
-      "lineup": "白哥嬴政"
+      "hero": "白哥",
+      "lineup": "嬴政"
     },
     {
       "matchId": 11,
@@ -27,7 +28,8 @@
       "survival": 12.0,
       "growth": 104.0,
       "operation": 15.0,
-      "lineup": "马可猪"
+      "hero": "马可",
+      "lineup": "猪"
     }
   ],
   "matchCount": 2,
@@ -51,27 +53,53 @@
   "winRate": 0.0,
   "top3Count": 1,
   "top3Rate": 0.5,
-  "lineupMatchCount": 2,
-  "lineups": [
+  "heroMatchCount": 2,
+  "heroes": [
     {
-      "name": "白哥嬴政",
-      "usageRate": 0.5,
+      "name": "白哥",
       "matchCount": 1,
       "averageRank": 3.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 1,
-      "top3Rate": 1.0
+      "top3Rate": 1.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "嬴政",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.5
     },
     {
-      "name": "马可猪",
-      "usageRate": 0.5,
+      "name": "马可",
       "matchCount": 1,
       "averageRank": 5.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 0,
-      "top3Rate": 0.0
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "猪",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.5
     }
   ]
 }

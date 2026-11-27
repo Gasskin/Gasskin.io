@@ -11,12 +11,14 @@ from process_data import METRICS, aggregate, generate, write_json
 
 
 HEADER = ["ID", "排名", *(f"原始字段/{label}" for _, label in METRICS)]
-HEADER_WITH_LINEUP = [*HEADER, "阵容"]
+HEADER_WITH_HERO = [*HEADER, "棋手", "阵容"]
 
 
-def row(name, rank, value, lineup=None):
+def row(name, rank, value, hero=None, lineup=None):
     base = [name, rank, value, value, value, value, value]
-    return base if lineup is None else [*base, lineup]
+    if hero is None and lineup is None:
+        return base
+    return [*base, hero, lineup]
 
 
 class StatisticsTests(unittest.TestCase):
@@ -179,91 +181,97 @@ class StatisticsTests(unittest.TestCase):
                     generate(Path("unused.xlsx"), output)
             self.assertEqual(before, {p.relative_to(output): p.read_bytes() for p in output.rglob("*.json")})
 
-    def test_win_top3_rates_and_lineup_stats_ignore_empty_cells(self):
+    def test_win_top3_rates_and_hero_lineup_hierarchy(self):
         index, players = aggregate([
             ("第一天", [
-                HEADER_WITH_LINEUP,
-                row("甲", 1, 100, " 嫦娥 "),
-                row("乙", 3, 90, "白哥三分"),
-                row("丙", 4, 80, ""),
-                HEADER_WITH_LINEUP,
-                row("甲", 4, 110, "嫦娥"),
-                row("乙", 2, 95, "   "),
-                row("丙", 1, 85, "嫦娥"),
+                HEADER_WITH_HERO,
+                row("甲", 1, 100, " 嬴政 ", " 嬴政 "),
+                row("乙", 3, 90, "白哥", "三分"),
+                row("丙", 4, 80, "", "忽略"),
+                HEADER_WITH_HERO,
+                row("甲", 4, 110, "嬴政", "射"),
+                row("乙", 2, 95, "   ", ""),
+                row("丙", 1, 85, "嬴政", "嬴政"),
             ]),
             ("第二天", [
-                HEADER_WITH_LINEUP,
-                row("甲", 2, 120, "白哥三分"),
-                row("甲" + " ", 1, 130, "") if False else row("乙", 5, 70, "白哥三分"),
-                row("丙", 6, 60, None),
+                HEADER_WITH_HERO,
+                row("甲", 2, 120, "白哥", "三分"),
+                row("乙", 5, 70, "白哥", ""),
+                row("丙", 6, 60, None, None),
             ]),
         ])
         by_id = {p["id"]: p for p in index["players"]}
-        # 甲: ranks [1, 4, 2] -> win=1/3, top3=2/3; lineups: 嫦娥(2), 白哥三分(1), total=3
+        # 甲: ranks [1, 4, 2] -> win=1/3, top3=2/3; heroes: 嬴政(2: 嬴政1, 射1), 白哥(1: 三分1)
         self.assertEqual(by_id["甲"]["winCount"], 1)
         self.assertAlmostEqual(by_id["甲"]["winRate"], 1 / 3)
         self.assertEqual(by_id["甲"]["top3Count"], 2)
         self.assertAlmostEqual(by_id["甲"]["top3Rate"], 2 / 3)
-        self.assertEqual(by_id["甲"]["lineupMatchCount"], 3)
-        self.assertEqual([c["name"] for c in by_id["甲"]["lineups"]], ["嫦娥", "白哥三分"])
-        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["usageRate"], 2 / 3)
-        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["averageRank"], 2.5)
-        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["winRate"], 0.5)
-        self.assertAlmostEqual(by_id["甲"]["lineups"][0]["top3Rate"], 0.5)
-        # 乙: ranks [3, 2, 5] -> win=0, top3=2/3; empty lineup ignored, only 白哥三分(2) counted -> usageRate=1.0
+        self.assertEqual(by_id["甲"]["heroMatchCount"], 3)
+        self.assertEqual([h["name"] for h in by_id["甲"]["heroes"]], ["嬴政", "白哥"])
+        hero_yz = by_id["甲"]["heroes"][0]
+        self.assertAlmostEqual(hero_yz["usageRate"], 2 / 3)
+        self.assertAlmostEqual(hero_yz["averageRank"], 2.5)
+        self.assertAlmostEqual(hero_yz["winRate"], 0.5)
+        self.assertAlmostEqual(hero_yz["top3Rate"], 0.5)
+        self.assertEqual([c["name"] for c in hero_yz["lineups"]], ["嬴政", "射"])
+        self.assertAlmostEqual(hero_yz["lineups"][0]["usageRate"], 0.5)
+        self.assertEqual(hero_yz["lineups"][0]["winRate"], 1.0)
+        # 乙: ranks [3, 2, 5] -> win=0, top3=2/3; empty hero ignored, 白哥(2: 三分1, empty lineup ignored)
         self.assertEqual(by_id["乙"]["matchCount"], 3)
-        self.assertEqual(by_id["乙"]["winRate"], 0)
-        self.assertAlmostEqual(by_id["乙"]["top3Rate"], 2 / 3)
-        self.assertEqual(by_id["乙"]["lineupMatchCount"], 2)
-        self.assertEqual(len(by_id["乙"]["lineups"]), 1)
-        self.assertEqual(by_id["乙"]["lineups"][0]["name"], "白哥三分")
-        self.assertEqual(by_id["乙"]["lineups"][0]["matchCount"], 2)
-        self.assertEqual(by_id["乙"]["lineups"][0]["usageRate"], 1.0)
-        self.assertAlmostEqual(by_id["乙"]["lineups"][0]["averageRank"], 4.0)
-        # 丙: ranks [4, 1, 6] -> win=1/3, top3=1/3; only 嫦娥(1) recorded
-        self.assertEqual(by_id["丙"]["matchCount"], 3)
-        self.assertEqual(by_id["丙"]["lineupMatchCount"], 1)
-        self.assertEqual(by_id["丙"]["lineups"][0]["usageRate"], 1.0)
-        # Global lineups: 嫦娥 ranks [1, 4, 1] -> avg 2.0, win 2/3, top3 2/3; 白哥三分 ranks [3, 2, 5] -> avg 10/3, win 0, top3 2/3
-        self.assertEqual(index["lineupCount"], 2)
-        self.assertEqual(index["lineupRecordCount"], 6)
-        by_lineup = {c["name"]: c for c in index["lineups"]}
-        self.assertEqual([c["name"] for c in index["lineups"]], ["嫦娥", "白哥三分"])
-        self.assertAlmostEqual(by_lineup["嫦娥"]["averageRank"], 2.0)
-        self.assertAlmostEqual(by_lineup["嫦娥"]["winRate"], 2 / 3)
-        self.assertAlmostEqual(by_lineup["嫦娥"]["top3Rate"], 2 / 3)
-        self.assertAlmostEqual(by_lineup["白哥三分"]["averageRank"], 10 / 3)
-        self.assertEqual(by_lineup["白哥三分"]["winRate"], 0)
-        self.assertAlmostEqual(by_lineup["白哥三分"]["top3Rate"], 2 / 3)
-        # Player files also store win/top3 rates and lineups
+        self.assertEqual(by_id["乙"]["heroMatchCount"], 2)
+        self.assertEqual(len(by_id["乙"]["heroes"]), 1)
+        self.assertEqual(by_id["乙"]["heroes"][0]["name"], "白哥")
+        self.assertEqual(by_id["乙"]["heroes"][0]["matchCount"], 2)
+        self.assertEqual(by_id["乙"]["heroes"][0]["usageRate"], 1.0)
+        self.assertEqual(by_id["乙"]["heroes"][0]["lineupMatchCount"], 1)
+        self.assertEqual(by_id["乙"]["heroes"][0]["lineups"][0]["name"], "三分")
+        self.assertEqual(by_id["乙"]["heroes"][0]["lineups"][0]["usageRate"], 1.0)
+        # Global heroes: 嬴政 ranks [1, 4, 1] -> avg 2.0, win 2/3, top3 2/3; 白哥 ranks [3, 2, 5] -> avg 10/3
+        self.assertEqual(index["heroCount"], 2)
+        self.assertEqual(index["heroRecordCount"], 6)
+        by_hero = {h["name"]: h for h in index["heroes"]}
+        self.assertEqual([h["name"] for h in index["heroes"]], ["嬴政", "白哥"])
+        self.assertAlmostEqual(by_hero["嬴政"]["averageRank"], 2.0)
+        self.assertAlmostEqual(by_hero["嬴政"]["winRate"], 2 / 3)
+        self.assertAlmostEqual(by_hero["嬴政"]["top3Rate"], 2 / 3)
+        self.assertEqual([c["name"] for c in by_hero["嬴政"]["lineups"]], ["嬴政", "射"])
+        self.assertAlmostEqual(by_hero["嬴政"]["lineups"][0]["usageRate"], 2 / 3)
+        self.assertEqual(by_hero["嬴政"]["lineups"][0]["winRate"], 1.0)
+        self.assertAlmostEqual(by_hero["白哥"]["averageRank"], 10 / 3)
+        self.assertEqual(by_hero["白哥"]["winRate"], 0)
+        self.assertAlmostEqual(by_hero["白哥"]["top3Rate"], 2 / 3)
+        self.assertEqual(by_hero["白哥"]["lineupMatchCount"], 2)
+        self.assertEqual(by_hero["白哥"]["lineups"][0]["name"], "三分")
+        self.assertEqual(by_hero["白哥"]["lineups"][0]["usageRate"], 1.0)
+        # Player files also store hero/lineup hierarchy
         player_a = next(p for p in players if p["id"] == "甲")
-        self.assertEqual(player_a["lineups"], by_id["甲"]["lineups"])
+        self.assertEqual(player_a["heroes"], by_id["甲"]["heroes"])
 
     @unittest.skipUnless(shutil.which("node"), "Node.js is needed to verify browser script")
-    def test_browser_uses_unified_index_sorting_and_lineups(self):
+    def test_browser_uses_unified_index_sorting_and_heroes(self):
         html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
         self.assertNotIn("event-filter", html)
         self.assertNotIn("平均数据", html)
-        self.assertIn("使用阵容", html)
-        self.assertIn("阵容数据", html)
+        self.assertIn("使用棋手", html)
+        self.assertIn("棋手数据", html)
         self.assertIn('data-sort="winRate"', html)
         self.assertIn('data-sort="top3Rate"', html)
 
         rows_by_sheet = {
             "风云杯": [
-                HEADER_WITH_LINEUP,
-                row("甲", 1, 10, "嫦娥"),
-                row("乙", 2, 100, "白哥三分"),
-                HEADER_WITH_LINEUP,
-                row("甲", 4, 30, "嫦娥"),
-                row("乙", 3, 90, ""),
+                HEADER_WITH_HERO,
+                row("甲", 1, 10, "嬴政", "嬴政"),
+                row("乙", 2, 100, "白哥", "三分"),
+                HEADER_WITH_HERO,
+                row("甲", 4, 30, "嬴政", "射"),
+                row("乙", 3, 90, "", ""),
             ],
             "新人杯": [
-                HEADER_WITH_LINEUP,
-                row("甲", 3, 200, "白哥三分"),
-                row("丙", 1, 80, "玉环倒转"),
+                HEADER_WITH_HERO,
+                row("甲", 3, 200, "白哥", "三分"),
+                row("丙", 1, 80, "玉环", "倒转"),
             ],
-            "##散排": [HEADER_WITH_LINEUP, row("丁", 1, 900, "散排阵容")],
+            "##散排": [HEADER_WITH_HERO, row("丁", 1, 900, "散排棋手", "散排阵容")],
         }
         sheets = [SimpleNamespace(title=name, iter_rows=lambda rows=rows, **kwargs: iter(rows)) for name, rows in rows_by_sheet.items()]
         workbook = SimpleNamespace(worksheets=sheets, close=lambda: None)
@@ -288,16 +296,17 @@ const byTop3 = [...root.players].sort((a, b) => context.comparePlayers(a, b, 'to
 assert.deepEqual(byAvg, ['丙', '乙', '甲']);
 assert.deepEqual(byWin, ['丙', '甲', '乙']);
 assert.deepEqual(byTop3, ['丙', '乙', '甲']);
-const lineupsByAvg = [...root.lineups].sort((a, b) => context.compareLineups(a, b, 'averageRank')).map(c => c.name);
-const lineupsByWin = [...root.lineups].sort((a, b) => context.compareLineups(a, b, 'winRate')).map(c => c.name);
-assert.deepEqual(lineupsByAvg, ['玉环倒转', '嫦娥', '白哥三分']);
-assert.deepEqual(lineupsByWin, ['玉环倒转', '嫦娥', '白哥三分']);
+const heroesByAvg = [...root.heroes].sort((a, b) => context.compareHeroes(a, b, 'averageRank')).map(h => h.name);
+const heroesByWin = [...root.heroes].sort((a, b) => context.compareHeroes(a, b, 'winRate')).map(h => h.name);
+assert.deepEqual(heroesByAvg, ['玉环', '嬴政', '白哥']);
+assert.deepEqual(heroesByWin, ['玉环', '嬴政', '白哥']);
+assert.deepEqual(root.heroes.find(h => h.name === '嬴政').lineups.map(c => c.name), ['嬴政', '射']);
 const legacy = JSON.parse(JSON.stringify(root));
 for (const player of legacy.players) delete player.averages;
 context.normalizePlayers(legacy);
 assert.equal(legacy.players.find(p => p.id === '甲').averages.economy, 80);
 assert.throws(() => context.normalizePlayers({metrics: root.metrics, players: [{id: 'old', matchCount: 1}]}));
-console.log('Unified browser sorting and lineup handling verified');
+console.log('Unified browser sorting and hero-lineup handling verified');
 '''
             result = subprocess.run(["node", "-e", script, str(Path(__file__).with_name("app.js")), str(output)], capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

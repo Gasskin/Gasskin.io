@@ -7,7 +7,9 @@ let selectedId;
 let comparisonId = '';
 let activeView = 'players';
 let playerSort = 'averageRank';
-let lineupSort = 'averageRank';
+let heroSort = 'averageRank';
+const expandedHeroes = new Set();
+const expandedPlayerHeroes = new Set();
 
 async function readJson(path) {
   const response = await fetch(path, { cache: 'no-store' });
@@ -36,7 +38,7 @@ function comparePlayers(a, b, sortKey = playerSort) {
   return a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.id, b.id);
 }
 
-function compareLineups(a, b, sortKey = lineupSort) {
+function compareHeroes(a, b, sortKey = heroSort) {
   if (sortKey === 'winRate') {
     return b.winRate - a.winRate || a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.name, b.name);
   }
@@ -154,28 +156,80 @@ function renderComparison(player) {
   drawRadar(player, comparison);
 }
 
-function renderPlayerLineups(player) {
-  const lineups = player.lineups || [];
-  byId('player-lineups-summary').textContent = lineups.length
-    ? `共 ${lineups.length} 套阵容 · ${player.lineupMatchCount} 场记录`
-    : '';
-  const rows = lineups.map(item => {
-    const row = element('tr');
-    row.append(
-      element('td', '', item.name),
-      element('td', '', String(item.matchCount)),
-      element('td', 'metric-highlight', formatPercent(item.usageRate)),
-      element('td', '', format(item.averageRank)),
-      element('td', '', formatPercent(item.winRate)),
-      element('td', '', formatPercent(item.top3Rate))
-    );
-    return row;
+function heroNameCell(hero, expanded, onToggle) {
+  const cell = element('td');
+  const subCount = hero.lineups?.length || 0;
+  if (!subCount) {
+    cell.textContent = hero.name;
+    return cell;
+  }
+  const toggle = element('button', 'expand-toggle');
+  toggle.type = 'button';
+  toggle.setAttribute('aria-expanded', String(expanded));
+  toggle.append(
+    element('span', 'expand-chevron', '▸'),
+    element('span', '', hero.name),
+    element('span', 'hero-subcount', `${subCount} 套阵容`)
+  );
+  toggle.addEventListener('click', event => {
+    event.stopPropagation();
+    onToggle();
   });
-  byId('player-lineups').replaceChildren(...rows);
-  byId('no-player-lineups').hidden = rows.length > 0;
+  cell.append(toggle);
+  return cell;
+}
+
+function renderPlayerHeroes(player) {
+  const heroes = player.heroes || [];
+  byId('player-heroes-summary').textContent = heroes.length
+    ? `共 ${heroes.length} 位棋手 · ${player.heroMatchCount} 场记录`
+    : '';
+  const fragment = document.createDocumentFragment();
+  for (const hero of heroes) {
+    const hasLineups = (hero.lineups?.length || 0) > 0;
+    const expanded = hasLineups && expandedPlayerHeroes.has(hero.name);
+    const toggle = () => {
+      if (expandedPlayerHeroes.has(hero.name)) expandedPlayerHeroes.delete(hero.name);
+      else expandedPlayerHeroes.add(hero.name);
+      renderPlayerHeroes(player);
+    };
+    const row = element('tr', hasLineups ? 'expandable-row' : '');
+    if (hasLineups) {
+      row.setAttribute('aria-expanded', String(expanded));
+      row.addEventListener('click', toggle);
+    }
+    row.append(
+      heroNameCell(hero, expanded, toggle),
+      element('td', '', String(hero.matchCount)),
+      element('td', 'metric-highlight', formatPercent(hero.usageRate)),
+      element('td', '', format(hero.averageRank)),
+      element('td', '', formatPercent(hero.winRate)),
+      element('td', '', formatPercent(hero.top3Rate))
+    );
+    fragment.append(row);
+    if (expanded) {
+      for (const lineup of hero.lineups) {
+        const sub = element('tr', 'sub-row');
+        const nameCell = element('td');
+        nameCell.append(element('span', 'sub-name', lineup.name));
+        sub.append(
+          nameCell,
+          element('td', '', String(lineup.matchCount)),
+          element('td', '', formatPercent(lineup.usageRate)),
+          element('td', '', format(lineup.averageRank)),
+          element('td', '', formatPercent(lineup.winRate)),
+          element('td', '', formatPercent(lineup.top3Rate))
+        );
+        fragment.append(sub);
+      }
+    }
+  }
+  byId('player-heroes').replaceChildren(fragment);
+  byId('no-player-heroes').hidden = heroes.length > 0;
 }
 
 function selectPlayer(player) {
+  if (selectedId !== player.id) expandedPlayerHeroes.clear();
   selectedId = player.id;
   document.querySelectorAll('.player-button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.id === selectedId)));
   byId('player-name').textContent = player.id;
@@ -186,38 +240,73 @@ function selectPlayer(player) {
   byId('match-count').textContent = player.matchCount;
   renderComparisonOptions();
   renderComparison(player);
-  renderPlayerLineups(player);
+  renderPlayerHeroes(player);
   byId('player-content').hidden = false;
   byId('player-status').textContent = '';
 }
 
-function renderLineups() {
+function renderHeroes() {
   if (!index) return;
-  byId('lineup-sort').querySelectorAll('.sort-col').forEach(button => {
-    button.setAttribute('aria-pressed', String(button.dataset.sort === lineupSort));
+  byId('hero-sort').querySelectorAll('.sort-col').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.sort === heroSort));
   });
-  const allLineups = index.lineups || [];
-  byId('lineup-total').textContent = allLineups.length
-    ? `共 ${allLineups.length} 套阵容 · ${index.lineupRecordCount} 条有效记录`
-    : '暂无阵容记录';
-  const query = byId('lineup-search').value.trim().toLocaleLowerCase();
-  const ordered = [...allLineups].sort((a, b) => compareLineups(a, b, lineupSort));
+  const allHeroes = index.heroes || [];
+  byId('hero-total').textContent = allHeroes.length
+    ? `共 ${allHeroes.length} 位棋手 · ${index.heroRecordCount} 条有效记录`
+    : '暂无棋手记录';
+  const query = byId('hero-search').value.trim().toLocaleLowerCase();
+  const ordered = [...allHeroes].sort((a, b) => compareHeroes(a, b, heroSort));
   const fragment = document.createDocumentFragment();
-  ordered.forEach((item, position) => {
-    if (!item.name.toLocaleLowerCase().includes(query)) return;
-    const row = element('tr');
+  let visibleCount = 0;
+  ordered.forEach((hero, position) => {
+    const heroMatched = !query || hero.name.toLocaleLowerCase().includes(query);
+    const matchedLineups = (hero.lineups || []).filter(item => item.name.toLocaleLowerCase().includes(query));
+    if (!heroMatched && !matchedLineups.length) return;
+    visibleCount += 1;
+    const hasLineups = (hero.lineups?.length || 0) > 0;
+    const autoExpand = Boolean(query) && !heroMatched && matchedLineups.length > 0;
+    const expanded = hasLineups && (expandedHeroes.has(hero.name) || autoExpand);
+    const toggle = () => {
+      if (expandedHeroes.has(hero.name)) expandedHeroes.delete(hero.name);
+      else expandedHeroes.add(hero.name);
+      renderHeroes();
+    };
+    const row = element('tr', hasLineups ? 'expandable-row' : '');
+    if (hasLineups) {
+      row.setAttribute('aria-expanded', String(expanded));
+      row.addEventListener('click', toggle);
+    }
     row.append(
       element('td', '', String(position + 1).padStart(2, '0')),
-      element('td', '', item.name),
-      element('td', lineupSort === 'matchCount' ? 'metric-highlight' : '', String(item.matchCount)),
-      element('td', lineupSort === 'averageRank' ? 'metric-highlight' : '', format(item.averageRank)),
-      element('td', lineupSort === 'winRate' ? 'metric-highlight' : '', formatPercent(item.winRate)),
-      element('td', lineupSort === 'top3Rate' ? 'metric-highlight' : '', formatPercent(item.top3Rate))
+      heroNameCell(hero, expanded, toggle),
+      element('td', heroSort === 'matchCount' ? 'metric-highlight' : '', String(hero.matchCount)),
+      element('td', heroSort === 'averageRank' ? 'metric-highlight' : '', format(hero.averageRank)),
+      element('td', heroSort === 'winRate' ? 'metric-highlight' : '', formatPercent(hero.winRate)),
+      element('td', heroSort === 'top3Rate' ? 'metric-highlight' : '', formatPercent(hero.top3Rate))
     );
     fragment.append(row);
+    if (expanded) {
+      const subItems = [...(autoExpand ? matchedLineups : hero.lineups)].sort((a, b) => compareHeroes(a, b, heroSort));
+      for (const lineup of subItems) {
+        const sub = element('tr', 'sub-row');
+        const nameCell = element('td');
+        const subName = element('span', 'sub-name', lineup.name);
+        subName.append(element('span', 'sub-share', formatPercent(lineup.usageRate)));
+        nameCell.append(subName);
+        sub.append(
+          element('td', '', ''),
+          nameCell,
+          element('td', heroSort === 'matchCount' ? 'metric-highlight' : '', String(lineup.matchCount)),
+          element('td', heroSort === 'averageRank' ? 'metric-highlight' : '', format(lineup.averageRank)),
+          element('td', heroSort === 'winRate' ? 'metric-highlight' : '', formatPercent(lineup.winRate)),
+          element('td', heroSort === 'top3Rate' ? 'metric-highlight' : '', formatPercent(lineup.top3Rate))
+        );
+        fragment.append(sub);
+      }
+    }
   });
-  byId('lineup-list').replaceChildren(fragment);
-  byId('no-lineups').hidden = fragment.childElementCount > 0;
+  byId('hero-list').replaceChildren(fragment);
+  byId('no-heroes').hidden = visibleCount > 0;
 }
 
 function setActiveView(view) {
@@ -226,7 +315,7 @@ function setActiveView(view) {
     tab.setAttribute('aria-selected', String(tab.dataset.view === view));
   });
   byId('players-view').hidden = view !== 'players';
-  byId('lineups-view').hidden = view !== 'lineups';
+  byId('heroes-view').hidden = view !== 'heroes';
 }
 
 function normalizePlayers(summary) {
@@ -237,16 +326,16 @@ function normalizePlayers(summary) {
       player.averages = Object.fromEntries(fields.map(key => [key, player.totals[key] / player.matchCount]));
     }
     if (player.winRate === undefined || player.top3Rate === undefined) {
-      throw new Error('请重新运行“生成数据.bat”更新胜率与阵容数据');
+      throw new Error('请重新运行“生成数据.bat”更新胜率与棋手数据');
     }
-    if (!Array.isArray(player.lineups)) player.lineups = [];
-    if (player.lineupMatchCount === undefined) {
-      player.lineupMatchCount = player.lineups.reduce((sum, item) => sum + item.matchCount, 0);
+    if (!Array.isArray(player.heroes)) player.heroes = [];
+    if (player.heroMatchCount === undefined) {
+      player.heroMatchCount = player.heroes.reduce((sum, item) => sum + item.matchCount, 0);
     }
   }
-  if (!Array.isArray(summary.lineups)) summary.lineups = [];
-  if (summary.lineupRecordCount === undefined) {
-    summary.lineupRecordCount = summary.lineups.reduce((sum, item) => sum + item.matchCount, 0);
+  if (!Array.isArray(summary.heroes)) summary.heroes = [];
+  if (summary.heroRecordCount === undefined) {
+    summary.heroRecordCount = summary.heroes.reduce((sum, item) => sum + item.matchCount, 0);
   }
 }
 
@@ -266,14 +355,14 @@ async function init() {
       renderPlayers();
       renderComparisonOptions();
     });
-    byId('lineup-sort').addEventListener('click', event => {
+    byId('hero-sort').addEventListener('click', event => {
       const button = event.target.closest('.sort-col');
       if (!button || !button.dataset.sort) return;
-      lineupSort = button.dataset.sort;
-      renderLineups();
+      heroSort = button.dataset.sort;
+      renderHeroes();
     });
     byId('search').addEventListener('input', renderPlayers);
-    byId('lineup-search').addEventListener('input', renderLineups);
+    byId('hero-search').addEventListener('input', renderHeroes);
     byId('comparison-target').addEventListener('change', () => {
       if (!index) return;
       comparisonId = byId('comparison-target').value;
@@ -281,7 +370,7 @@ async function init() {
     });
     renderPlayers();
     selectPlayer(sortedPlayers()[0]);
-    renderLineups();
+    renderHeroes();
   } catch (error) {
     byId('status').hidden = false;
     byId('status').textContent = location.protocol === 'file:'

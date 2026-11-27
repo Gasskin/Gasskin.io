@@ -13,7 +13,8 @@
       "survival": 15.0,
       "growth": 155.0,
       "operation": 18.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 24,
@@ -27,7 +28,8 @@
       "survival": 15.0,
       "growth": 306.0,
       "operation": 23.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     }
   ],
   "matchCount": 2,
@@ -51,17 +53,30 @@
   "winRate": 0.0,
   "top3Count": 0,
   "top3Rate": 0.0,
-  "lineupMatchCount": 2,
-  "lineups": [
+  "heroMatchCount": 2,
+  "heroes": [
     {
       "name": "嫦娥",
-      "usageRate": 1.0,
       "matchCount": 2,
       "averageRank": 4.5,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 0,
-      "top3Rate": 0.0
+      "top3Rate": 0.0,
+      "lineupMatchCount": 2,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 1.0
     }
   ]
 }

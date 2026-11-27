@@ -12,7 +12,7 @@
   <div id="dashboard" class="app" hidden>
     <nav class="view-tabs" role="tablist" aria-label="数据视图">
       <button id="tab-players" class="view-tab" type="button" role="tab" data-view="players" aria-selected="true" aria-controls="players-view">玩家数据</button>
-      <button id="tab-lineups" class="view-tab" type="button" role="tab" data-view="lineups" aria-selected="false" aria-controls="lineups-view">阵容数据</button>
+      <button id="tab-heroes" class="view-tab" type="button" role="tab" data-view="heroes" aria-selected="false" aria-controls="heroes-view">棋手数据</button>
     </nav>
 
     <main id="players-view" class="dashboard" role="tabpanel" aria-labelledby="tab-players">
@@ -54,14 +54,14 @@
             </figure>
             <div class="values">
               <div class="section-heading">
-                <h3>使用阵容</h3>
-                <span id="player-lineups-summary" class="muted"></span>
+                <h3>使用棋手</h3>
+                <span id="player-heroes-summary" class="muted"></span>
               </div>
               <div class="table-wrap">
                 <table class="lineups-table">
                   <thead>
                     <tr>
-                      <th scope="col">阵容</th>
+                      <th scope="col">棋手 / 阵容</th>
                       <th scope="col">场数</th>
                       <th scope="col">使用率</th>
                       <th scope="col">平均排名</th>
@@ -69,10 +69,10 @@
                       <th scope="col">前三率</th>
                     </tr>
                   </thead>
-                  <tbody id="player-lineups"></tbody>
+                  <tbody id="player-heroes"></tbody>
                 </table>
               </div>
-              <p id="no-player-lineups" class="muted empty-table" hidden>暂无阵容记录</p>
+              <p id="no-player-heroes" class="muted empty-table" hidden>暂无棋手记录</p>
             </div>
           </div>
         </div>
@@ -80,29 +80,29 @@
       </section>
     </main>
 
-    <section id="lineups-view" class="lineups-panel" role="tabpanel" aria-labelledby="tab-lineups" hidden>
+    <section id="heroes-view" class="lineups-panel" role="tabpanel" aria-labelledby="tab-heroes" hidden>
       <div class="lineups-toolbar">
         <div class="lineups-title">
-          <h2>阵容数据</h2>
-          <span id="lineup-total" class="muted"></span>
+          <h2>棋手数据</h2>
+          <span id="hero-total" class="muted"></span>
         </div>
-        <label class="lineup-search"><span class="sr-only">搜索阵容</span><input id="lineup-search" type="search" placeholder="搜索阵容名称" autocomplete="off" /></label>
+        <label class="lineup-search"><span class="sr-only">搜索棋手或阵容</span><input id="hero-search" type="search" placeholder="搜索棋手或阵容" autocomplete="off" /></label>
       </div>
       <div class="table-scroll">
         <table class="lineups-table global-lineups-table">
-          <thead id="lineup-sort">
+          <thead id="hero-sort">
             <tr>
               <th scope="col">#</th>
-              <th scope="col">阵容</th>
+              <th scope="col">棋手 / 阵容</th>
               <th scope="col"><button type="button" class="sort-col" data-sort="matchCount" aria-pressed="false">出场次数<span class="sort-arrow" aria-hidden="true">↓</span></button></th>
               <th scope="col"><button type="button" class="sort-col" data-sort="averageRank" aria-pressed="true">平均排名<span class="sort-arrow" aria-hidden="true">↑</span></button></th>
               <th scope="col"><button type="button" class="sort-col" data-sort="winRate" aria-pressed="false">胜率<span class="sort-arrow" aria-hidden="true">↓</span></button></th>
               <th scope="col"><button type="button" class="sort-col" data-sort="top3Rate" aria-pressed="false">前三率<span class="sort-arrow" aria-hidden="true">↓</span></button></th>
             </tr>
           </thead>
-          <tbody id="lineup-list"></tbody>
+          <tbody id="hero-list"></tbody>
         </table>
-        <p id="no-lineups" class="muted empty-table" hidden>暂无匹配的阵容数据</p>
+        <p id="no-heroes" class="muted empty-table" hidden>暂无匹配的棋手数据</p>
       </div>
     </section>
   </div>

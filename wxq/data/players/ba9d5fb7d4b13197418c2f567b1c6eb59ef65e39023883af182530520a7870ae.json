@@ -13,7 +13,8 @@
       "survival": 14.0,
       "growth": 245.0,
       "operation": 17.0,
-      "lineup": "昭君75"
+      "hero": "昭君",
+      "lineup": "75"
     },
     {
       "matchId": 14,
@@ -27,7 +28,8 @@
       "survival": 14.0,
       "growth": 85.0,
       "operation": 21.0,
-      "lineup": "小明山鬼"
+      "hero": "小明",
+      "lineup": "山鬼"
     }
   ],
   "matchCount": 2,
@@ -51,27 +53,53 @@
   "winRate": 0.0,
   "top3Count": 1,
   "top3Rate": 0.5,
-  "lineupMatchCount": 2,
-  "lineups": [
+  "heroMatchCount": 2,
+  "heroes": [
     {
-      "name": "昭君75",
-      "usageRate": 0.5,
+      "name": "昭君",
       "matchCount": 1,
       "averageRank": 2.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 1,
-      "top3Rate": 1.0
+      "top3Rate": 1.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "75",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.5
     },
     {
-      "name": "小明山鬼",
-      "usageRate": 0.5,
+      "name": "小明",
       "matchCount": 1,
       "averageRank": 4.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 0,
-      "top3Rate": 0.0
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "山鬼",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.5
     }
   ]
 }

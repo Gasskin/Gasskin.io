@@ -13,7 +13,8 @@
       "survival": 17.0,
       "growth": 292.0,
       "operation": 45.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 2,
@@ -27,7 +28,8 @@
       "survival": 17.0,
       "growth": 206.0,
       "operation": 27.0,
-      "lineup": "小明射"
+      "hero": "小明",
+      "lineup": "射"
     },
     {
       "matchId": 3,
@@ -41,7 +43,8 @@
       "survival": 13.0,
       "growth": 183.0,
       "operation": 20.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 4,
@@ -55,7 +58,8 @@
       "survival": 15.0,
       "growth": 302.0,
       "operation": 20.0,
-      "lineup": "小明射"
+      "hero": "小明",
+      "lineup": "射"
     },
     {
       "matchId": 5,
@@ -69,7 +73,8 @@
       "survival": 16.0,
       "growth": 487.0,
       "operation": 40.0,
-      "lineup": "白哥三分"
+      "hero": "白哥",
+      "lineup": "三分"
     },
     {
       "matchId": 10,
@@ -83,7 +88,8 @@
       "survival": 15.0,
       "growth": 152.0,
       "operation": 52.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 11,
@@ -97,7 +103,8 @@
       "survival": 13.0,
       "growth": 156.0,
       "operation": 9.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 12,
@@ -111,7 +118,8 @@
       "survival": 17.0,
       "growth": 247.0,
       "operation": 20.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 13,
@@ -125,7 +133,8 @@
       "survival": 14.0,
       "growth": 383.0,
       "operation": 43.0,
-      "lineup": "白哥三分"
+      "hero": "白哥",
+      "lineup": "三分"
     },
     {
       "matchId": 14,
@@ -139,7 +148,8 @@
       "survival": 16.0,
       "growth": 190.0,
       "operation": 22.0,
-      "lineup": "香香"
+      "hero": "香香",
+      "lineup": "其他"
     },
     {
       "matchId": 15,
@@ -153,7 +163,8 @@
       "survival": 15.0,
       "growth": 407.0,
       "operation": 52.0,
-      "lineup": "白哥三分"
+      "hero": "白哥",
+      "lineup": "三分"
     },
     {
       "matchId": 16,
@@ -167,7 +178,8 @@
       "survival": 11.0,
       "growth": 33.0,
       "operation": 25.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 17,
@@ -181,7 +193,8 @@
       "survival": 16.0,
       "growth": 255.0,
       "operation": 51.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 18,
@@ -195,7 +208,8 @@
       "survival": 12.0,
       "growth": 161.0,
       "operation": 14.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 19,
@@ -209,7 +223,8 @@
       "survival": 15.0,
       "growth": 492.0,
       "operation": 47.0,
-      "lineup": "白哥三分"
+      "hero": "白哥",
+      "lineup": "三分"
     },
     {
       "matchId": 20,
@@ -223,7 +238,8 @@
       "survival": 14.0,
       "growth": 180.0,
       "operation": 41.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 21,
@@ -237,7 +253,8 @@
       "survival": 14.0,
       "growth": 187.0,
       "operation": 43.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 22,
@@ -251,7 +268,8 @@
       "survival": 15.0,
       "growth": 259.0,
       "operation": 47.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 23,
@@ -265,7 +283,8 @@
       "survival": 18.0,
       "growth": 88.0,
       "operation": 21.0,
-      "lineup": "小明山鬼"
+      "hero": "小明",
+      "lineup": "山鬼"
     },
     {
       "matchId": 24,
@@ -279,7 +298,8 @@
       "survival": 12.0,
       "growth": 152.0,
       "operation": 14.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 25,
@@ -293,7 +313,8 @@
       "survival": 12.0,
       "growth": 180.0,
       "operation": 40.0,
-      "lineup": "玉环倒转"
+      "hero": "玉环",
+      "lineup": "倒转"
     },
     {
       "matchId": 26,
@@ -307,7 +328,8 @@
       "survival": 16.0,
       "growth": 474.0,
       "operation": 41.0,
-      "lineup": "白哥三分"
+      "hero": "白哥",
+      "lineup": "三分"
     }
   ],
   "matchCount": 22,
@@ -331,67 +353,132 @@
   "winRate": 0.5,
   "top3Count": 15,
   "top3Rate": 0.6818181818181818,
-  "lineupMatchCount": 22,
-  "lineups": [
+  "heroMatchCount": 22,
+  "heroes": [
     {
-      "name": "玉环倒转",
-      "usageRate": 0.36363636363636365,
+      "name": "玉环",
       "matchCount": 8,
       "averageRank": 2.625,
       "winCount": 4,
       "winRate": 0.5,
       "top3Count": 5,
-      "top3Rate": 0.625
+      "top3Rate": 0.625,
+      "lineupMatchCount": 8,
+      "lineups": [
+        {
+          "name": "倒转",
+          "usageRate": 1.0,
+          "matchCount": 8,
+          "averageRank": 2.625,
+          "winCount": 4,
+          "winRate": 0.5,
+          "top3Count": 5,
+          "top3Rate": 0.625
+        }
+      ],
+      "usageRate": 0.36363636363636365
     },
     {
-      "name": "白哥三分",
-      "usageRate": 0.22727272727272727,
+      "name": "白哥",
       "matchCount": 5,
       "averageRank": 1.2,
       "winCount": 4,
       "winRate": 0.8,
       "top3Count": 5,
-      "top3Rate": 1.0
+      "top3Rate": 1.0,
+      "lineupMatchCount": 5,
+      "lineups": [
+        {
+          "name": "三分",
+          "usageRate": 1.0,
+          "matchCount": 5,
+          "averageRank": 1.2,
+          "winCount": 4,
+          "winRate": 0.8,
+          "top3Count": 5,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.22727272727272727
     },
     {
       "name": "嫦娥",
-      "usageRate": 0.22727272727272727,
       "matchCount": 5,
       "averageRank": 4.2,
       "winCount": 1,
       "winRate": 0.2,
       "top3Count": 1,
-      "top3Rate": 0.2
+      "top3Rate": 0.2,
+      "lineupMatchCount": 5,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 5,
+          "averageRank": 4.2,
+          "winCount": 1,
+          "winRate": 0.2,
+          "top3Count": 1,
+          "top3Rate": 0.2
+        }
+      ],
+      "usageRate": 0.22727272727272727
     },
     {
-      "name": "小明射",
-      "usageRate": 0.09090909090909091,
-      "matchCount": 2,
-      "averageRank": 1.5,
-      "winCount": 1,
-      "winRate": 0.5,
-      "top3Count": 2,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "小明山鬼",
-      "usageRate": 0.045454545454545456,
-      "matchCount": 1,
-      "averageRank": 1.0,
-      "winCount": 1,
-      "winRate": 1.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
+      "name": "小明",
+      "matchCount": 3,
+      "averageRank": 1.3333333333333333,
+      "winCount": 2,
+      "winRate": 0.6666666666666666,
+      "top3Count": 3,
+      "top3Rate": 1.0,
+      "lineupMatchCount": 3,
+      "lineups": [
+        {
+          "name": "射",
+          "usageRate": 0.6666666666666666,
+          "matchCount": 2,
+          "averageRank": 1.5,
+          "winCount": 1,
+          "winRate": 0.5,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "山鬼",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.13636363636363635
     },
     {
       "name": "香香",
-      "usageRate": 0.045454545454545456,
       "matchCount": 1,
       "averageRank": 3.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 1,
-      "top3Rate": 1.0
+      "top3Rate": 1.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.045454545454545456
     }
   ]
 }

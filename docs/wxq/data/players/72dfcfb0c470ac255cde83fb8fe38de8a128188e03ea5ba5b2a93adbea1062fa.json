@@ -13,7 +13,8 @@
       "survival": 13.0,
       "growth": 159.0,
       "operation": 55.0,
-      "lineup": "马可镜"
+      "hero": "马可",
+      "lineup": "镜"
     },
     {
       "matchId": 2,
@@ -27,7 +28,8 @@
       "survival": 13.0,
       "growth": 172.0,
       "operation": 29.0,
-      "lineup": "马可猪"
+      "hero": "马可",
+      "lineup": "猪"
     },
     {
       "matchId": 3,
@@ -41,7 +43,8 @@
       "survival": 13.0,
       "growth": 261.0,
       "operation": 19.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 4,
@@ -55,7 +58,8 @@
       "survival": 8.0,
       "growth": 31.0,
       "operation": 22.0,
-      "lineup": "嬴政嬴政"
+      "hero": "嬴政",
+      "lineup": "嬴政"
     },
     {
       "matchId": 5,
@@ -68,7 +72,9 @@
       "attack": 14.0,
       "survival": 10.0,
       "growth": 83.0,
-      "operation": 14.0
+      "operation": 14.0,
+      "hero": "嬴政",
+      "lineup": "其他"
     },
     {
       "matchId": 6,
@@ -82,7 +88,8 @@
       "survival": 16.0,
       "growth": 216.0,
       "operation": 12.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 7,
@@ -96,7 +103,8 @@
       "survival": 16.0,
       "growth": 98.0,
       "operation": 19.0,
-      "lineup": "姜导韩信"
+      "hero": "姜导",
+      "lineup": "韩信"
     },
     {
       "matchId": 8,
@@ -110,7 +118,8 @@
       "survival": 14.0,
       "growth": 226.0,
       "operation": 19.0,
-      "lineup": "昭君75"
+      "hero": "昭君",
+      "lineup": "75"
     },
     {
       "matchId": 9,
@@ -124,7 +133,8 @@
       "survival": 15.0,
       "growth": 253.0,
       "operation": 21.0,
-      "lineup": "嬴政射"
+      "hero": "嬴政",
+      "lineup": "射"
     },
     {
       "matchId": 10,
@@ -138,7 +148,8 @@
       "survival": 15.0,
       "growth": 232.0,
       "operation": 30.0,
-      "lineup": "镜日落海"
+      "hero": "镜",
+      "lineup": "日落海"
     },
     {
       "matchId": 11,
@@ -152,7 +163,8 @@
       "survival": 18.0,
       "growth": 124.0,
       "operation": 21.0,
-      "lineup": "嬴政花木兰"
+      "hero": "嬴政",
+      "lineup": "花木兰"
     },
     {
       "matchId": 12,
@@ -166,7 +178,8 @@
       "survival": 13.0,
       "growth": 81.0,
       "operation": 31.0,
-      "lineup": "嬴政嬴政"
+      "hero": "嬴政",
+      "lineup": "嬴政"
     },
     {
       "matchId": 15,
@@ -180,7 +193,8 @@
       "survival": 15.0,
       "growth": 452.0,
       "operation": 22.0,
-      "lineup": "昭君75"
+      "hero": "昭君",
+      "lineup": "75"
     },
     {
       "matchId": 16,
@@ -194,7 +208,8 @@
       "survival": 17.0,
       "growth": 119.0,
       "operation": 22.0,
-      "lineup": "姜导廉颇"
+      "hero": "姜导",
+      "lineup": "廉颇"
     },
     {
       "matchId": 17,
@@ -208,7 +223,8 @@
       "survival": 13.0,
       "growth": 387.0,
       "operation": 27.0,
-      "lineup": "白哥三分"
+      "hero": "白哥",
+      "lineup": "三分"
     },
     {
       "matchId": 18,
@@ -222,7 +238,8 @@
       "survival": 15.0,
       "growth": 82.0,
       "operation": 21.0,
-      "lineup": "姜导刘邦"
+      "hero": "姜导",
+      "lineup": "刘邦"
     },
     {
       "matchId": 19,
@@ -236,7 +253,8 @@
       "survival": 13.0,
       "growth": 212.0,
       "operation": 31.0,
-      "lineup": "马可猪"
+      "hero": "马可",
+      "lineup": "猪"
     },
     {
       "matchId": 20,
@@ -250,7 +268,8 @@
       "survival": 15.0,
       "growth": 176.0,
       "operation": 16.0,
-      "lineup": "小明泳池"
+      "hero": "小明",
+      "lineup": "泳池"
     },
     {
       "matchId": 21,
@@ -264,7 +283,8 @@
       "survival": 14.0,
       "growth": 230.0,
       "operation": 38.0,
-      "lineup": "马可三分"
+      "hero": "马可",
+      "lineup": "三分"
     },
     {
       "matchId": 22,
@@ -278,7 +298,8 @@
       "survival": 12.0,
       "growth": 122.0,
       "operation": 24.0,
-      "lineup": "镜无阵营"
+      "hero": "镜",
+      "lineup": "无阵营"
     },
     {
       "matchId": 23,
@@ -292,7 +313,8 @@
       "survival": 18.0,
       "growth": 341.0,
       "operation": 19.0,
-      "lineup": "嬴政射"
+      "hero": "嬴政",
+      "lineup": "射"
     },
     {
       "matchId": 24,
@@ -306,7 +328,8 @@
       "survival": 14.0,
       "growth": 106.0,
       "operation": 24.0,
-      "lineup": "马可猪"
+      "hero": "马可",
+      "lineup": "猪"
     },
     {
       "matchId": 25,
@@ -320,7 +343,8 @@
       "survival": 16.0,
       "growth": 265.0,
       "operation": 23.0,
-      "lineup": "昭君75"
+      "hero": "昭君",
+      "lineup": "75"
     },
     {
       "matchId": 26,
@@ -334,7 +358,8 @@
       "survival": 15.0,
       "growth": 516.0,
       "operation": 29.0,
-      "lineup": "镜三分"
+      "hero": "镜",
+      "lineup": "三分"
     }
   ],
   "matchCount": 24,
@@ -358,167 +383,281 @@
   "winRate": 0.08333333333333333,
   "top3Count": 15,
   "top3Rate": 0.625,
-  "lineupMatchCount": 23,
-  "lineups": [
+  "heroMatchCount": 24,
+  "heroes": [
     {
-      "name": "昭君75",
-      "usageRate": 0.13043478260869565,
+      "name": "嬴政",
+      "matchCount": 6,
+      "averageRank": 3.5,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 3,
+      "top3Rate": 0.5,
+      "lineupMatchCount": 6,
+      "lineups": [
+        {
+          "name": "射",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 2,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "嬴政",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 2,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "花木兰",
+          "usageRate": 0.16666666666666666,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "其他",
+          "usageRate": 0.16666666666666666,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.25
+    },
+    {
+      "name": "马可",
+      "matchCount": 5,
+      "averageRank": 4.2,
+      "winCount": 0,
+      "winRate": 0.0,
+      "top3Count": 1,
+      "top3Rate": 0.2,
+      "lineupMatchCount": 5,
+      "lineups": [
+        {
+          "name": "猪",
+          "usageRate": 0.6,
+          "matchCount": 3,
+          "averageRank": 4.333333333333333,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        },
+        {
+          "name": "三分",
+          "usageRate": 0.2,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "镜",
+          "usageRate": 0.2,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.20833333333333334
+    },
+    {
+      "name": "姜导",
+      "matchCount": 3,
+      "averageRank": 1.6666666666666667,
+      "winCount": 2,
+      "winRate": 0.6666666666666666,
+      "top3Count": 3,
+      "top3Rate": 1.0,
+      "lineupMatchCount": 3,
+      "lineups": [
+        {
+          "name": "廉颇",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "韩信",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 1.0,
+          "winCount": 1,
+          "winRate": 1.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "刘邦",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.125
+    },
+    {
+      "name": "昭君",
       "matchCount": 3,
       "averageRank": 2.3333333333333335,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 3,
-      "top3Rate": 1.0
+      "top3Rate": 1.0,
+      "lineupMatchCount": 3,
+      "lineups": [
+        {
+          "name": "75",
+          "usageRate": 1.0,
+          "matchCount": 3,
+          "averageRank": 2.3333333333333335,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 3,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.125
     },
     {
-      "name": "马可猪",
-      "usageRate": 0.13043478260869565,
+      "name": "镜",
       "matchCount": 3,
-      "averageRank": 4.333333333333333,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 0,
-      "top3Rate": 0.0
-    },
-    {
-      "name": "嬴政射",
-      "usageRate": 0.08695652173913043,
-      "matchCount": 2,
-      "averageRank": 2.0,
+      "averageRank": 3.3333333333333335,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 2,
-      "top3Rate": 1.0
+      "top3Rate": 0.6666666666666666,
+      "lineupMatchCount": 3,
+      "lineups": [
+        {
+          "name": "日落海",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 2.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "三分",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        },
+        {
+          "name": "无阵营",
+          "usageRate": 0.3333333333333333,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.125
     },
     {
       "name": "嫦娥",
-      "usageRate": 0.08695652173913043,
       "matchCount": 2,
       "averageRank": 2.5,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 2,
-      "top3Rate": 1.0
+      "top3Rate": 1.0,
+      "lineupMatchCount": 2,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 2,
+          "averageRank": 2.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 2,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.08333333333333333
     },
     {
-      "name": "嬴政嬴政",
-      "usageRate": 0.08695652173913043,
-      "matchCount": 2,
-      "averageRank": 5.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 0,
-      "top3Rate": 0.0
-    },
-    {
-      "name": "姜导廉颇",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 1.0,
-      "winCount": 1,
-      "winRate": 1.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "姜导韩信",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 1.0,
-      "winCount": 1,
-      "winRate": 1.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "嬴政花木兰",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 2.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "镜日落海",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 2.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "姜导刘邦",
-      "usageRate": 0.043478260869565216,
+      "name": "小明",
       "matchCount": 1,
       "averageRank": 3.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 1,
-      "top3Rate": 1.0
+      "top3Rate": 1.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "泳池",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 3.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 1,
+          "top3Rate": 1.0
+        }
+      ],
+      "usageRate": 0.041666666666666664
     },
     {
-      "name": "小明泳池",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 3.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "镜三分",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 3.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "马可三分",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 3.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 1,
-      "top3Rate": 1.0
-    },
-    {
-      "name": "白哥三分",
-      "usageRate": 0.043478260869565216,
+      "name": "白哥",
       "matchCount": 1,
       "averageRank": 5.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 0,
-      "top3Rate": 0.0
-    },
-    {
-      "name": "镜无阵营",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 5.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 0,
-      "top3Rate": 0.0
-    },
-    {
-      "name": "马可镜",
-      "usageRate": 0.043478260869565216,
-      "matchCount": 1,
-      "averageRank": 5.0,
-      "winCount": 0,
-      "winRate": 0.0,
-      "top3Count": 0,
-      "top3Rate": 0.0
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "三分",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.041666666666666664
     }
   ]
 }

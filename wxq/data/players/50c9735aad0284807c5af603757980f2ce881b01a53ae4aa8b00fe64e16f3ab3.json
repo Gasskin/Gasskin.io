@@ -13,7 +13,8 @@
       "survival": 12.0,
       "growth": 142.0,
       "operation": 24.0,
-      "lineup": "阿离李信"
+      "hero": "阿离",
+      "lineup": "李信"
     },
     {
       "matchId": 7,
@@ -27,7 +28,8 @@
       "survival": 15.0,
       "growth": 259.0,
       "operation": 18.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     },
     {
       "matchId": 8,
@@ -41,7 +43,8 @@
       "survival": 12.0,
       "growth": 127.0,
       "operation": 29.0,
-      "lineup": "武凤嬴政"
+      "hero": "武凤",
+      "lineup": "嬴政"
     },
     {
       "matchId": 9,
@@ -55,7 +58,8 @@
       "survival": 11.0,
       "growth": 103.0,
       "operation": 12.0,
-      "lineup": "嫦娥"
+      "hero": "嫦娥",
+      "lineup": "其他"
     }
   ],
   "matchCount": 4,
@@ -79,37 +83,76 @@
   "winRate": 0.0,
   "top3Count": 0,
   "top3Rate": 0.0,
-  "lineupMatchCount": 4,
-  "lineups": [
+  "heroMatchCount": 4,
+  "heroes": [
     {
       "name": "嫦娥",
-      "usageRate": 0.5,
       "matchCount": 2,
       "averageRank": 4.5,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 0,
-      "top3Rate": 0.0
+      "top3Rate": 0.0,
+      "lineupMatchCount": 2,
+      "lineups": [
+        {
+          "name": "其他",
+          "usageRate": 1.0,
+          "matchCount": 2,
+          "averageRank": 4.5,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.5
     },
     {
-      "name": "武凤嬴政",
-      "usageRate": 0.25,
+      "name": "武凤",
       "matchCount": 1,
       "averageRank": 4.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 0,
-      "top3Rate": 0.0
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "嬴政",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 4.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.25
     },
     {
-      "name": "阿离李信",
-      "usageRate": 0.25,
+      "name": "阿离",
       "matchCount": 1,
       "averageRank": 5.0,
       "winCount": 0,
       "winRate": 0.0,
       "top3Count": 0,
-      "top3Rate": 0.0
+      "top3Rate": 0.0,
+      "lineupMatchCount": 1,
+      "lineups": [
+        {
+          "name": "李信",
+          "usageRate": 1.0,
+          "matchCount": 1,
+          "averageRank": 5.0,
+          "winCount": 0,
+          "winRate": 0.0,
+          "top3Count": 0,
+          "top3Rate": 0.0
+        }
+      ],
+      "usageRate": 0.25
     }
   ]
 }
