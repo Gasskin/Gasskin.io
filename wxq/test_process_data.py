@@ -253,6 +253,8 @@ class StatisticsTests(unittest.TestCase):
         self.assertNotIn("event-filter", html)
         self.assertNotIn("平均数据", html)
         self.assertIn("使用棋手", html)
+        self.assertIn("player-hero-sort", html)
+        self.assertIn('data-sort="usageRate"', html)
         self.assertIn("棋手数据", html)
         self.assertIn('data-sort="winRate"', html)
         self.assertIn('data-sort="top3Rate"', html)
@@ -301,6 +303,10 @@ const heroesByWin = [...root.heroes].sort((a, b) => context.compareHeroes(a, b, 
 assert.deepEqual(heroesByAvg, ['玉环', '嬴政', '白哥']);
 assert.deepEqual(heroesByWin, ['玉环', '嬴政', '白哥']);
 assert.deepEqual(root.heroes.find(h => h.name === '嬴政').lineups.map(c => c.name), ['嬴政', '射']);
+const playerAHeroesByUsage = [...root.players.find(p => p.id === '甲').heroes].sort((a, b) => context.compareHeroes(a, b, 'usageRate')).map(h => h.name);
+const playerAHeroesByAvg = [...root.players.find(p => p.id === '甲').heroes].sort((a, b) => context.compareHeroes(a, b, 'averageRank')).map(h => h.name);
+assert.deepEqual(playerAHeroesByUsage, ['嬴政', '白哥']);
+assert.deepEqual(playerAHeroesByAvg, ['嬴政', '白哥']);
 const legacy = JSON.parse(JSON.stringify(root));
 for (const player of legacy.players) delete player.averages;
 context.normalizePlayers(legacy);

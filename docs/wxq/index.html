@@ -59,14 +59,14 @@
               </div>
               <div class="table-wrap">
                 <table class="lineups-table">
-                  <thead>
+                  <thead id="player-hero-sort">
                     <tr>
                       <th scope="col">棋手 / 阵容</th>
-                      <th scope="col">场数</th>
-                      <th scope="col">使用率</th>
-                      <th scope="col">平均排名</th>
-                      <th scope="col">胜率</th>
-                      <th scope="col">前三率</th>
+                      <th scope="col"><button type="button" class="sort-col" data-sort="matchCount" aria-pressed="false">场数<span class="sort-arrow" aria-hidden="true">↓</span></button></th>
+                      <th scope="col"><button type="button" class="sort-col" data-sort="usageRate" aria-pressed="true">使用率<span class="sort-arrow" aria-hidden="true">↓</span></button></th>
+                      <th scope="col"><button type="button" class="sort-col" data-sort="averageRank" aria-pressed="false">平均排名<span class="sort-arrow" aria-hidden="true">↑</span></button></th>
+                      <th scope="col"><button type="button" class="sort-col" data-sort="winRate" aria-pressed="false">胜率<span class="sort-arrow" aria-hidden="true">↓</span></button></th>
+                      <th scope="col"><button type="button" class="sort-col" data-sort="top3Rate" aria-pressed="false">前三率<span class="sort-arrow" aria-hidden="true">↓</span></button></th>
                     </tr>
                   </thead>
                   <tbody id="player-heroes"></tbody>

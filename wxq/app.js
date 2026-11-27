@@ -7,6 +7,7 @@ let selectedId;
 let comparisonId = '';
 let activeView = 'players';
 let playerSort = 'averageRank';
+let playerHeroSort = 'usageRate';
 let heroSort = 'averageRank';
 const expandedHeroes = new Set();
 const expandedPlayerHeroes = new Set();
@@ -39,6 +40,9 @@ function comparePlayers(a, b, sortKey = playerSort) {
 }
 
 function compareHeroes(a, b, sortKey = heroSort) {
+  if (sortKey === 'usageRate') {
+    return b.usageRate - a.usageRate || b.matchCount - a.matchCount || a.averageRank - b.averageRank || compareText(a.name, b.name);
+  }
   if (sortKey === 'winRate') {
     return b.winRate - a.winRate || a.averageRank - b.averageRank || b.matchCount - a.matchCount || compareText(a.name, b.name);
   }
@@ -180,7 +184,10 @@ function heroNameCell(hero, expanded, onToggle) {
 }
 
 function renderPlayerHeroes(player) {
-  const heroes = player.heroes || [];
+  byId('player-hero-sort').querySelectorAll('.sort-col').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.sort === playerHeroSort));
+  });
+  const heroes = [...(player.heroes || [])].sort((a, b) => compareHeroes(a, b, playerHeroSort));
   byId('player-heroes-summary').textContent = heroes.length
     ? `共 ${heroes.length} 位棋手 · ${player.heroMatchCount} 场记录`
     : '';
@@ -200,25 +207,26 @@ function renderPlayerHeroes(player) {
     }
     row.append(
       heroNameCell(hero, expanded, toggle),
-      element('td', '', String(hero.matchCount)),
-      element('td', 'metric-highlight', formatPercent(hero.usageRate)),
-      element('td', '', format(hero.averageRank)),
-      element('td', '', formatPercent(hero.winRate)),
-      element('td', '', formatPercent(hero.top3Rate))
+      element('td', playerHeroSort === 'matchCount' ? 'metric-highlight' : '', String(hero.matchCount)),
+      element('td', playerHeroSort === 'usageRate' ? 'metric-highlight' : '', formatPercent(hero.usageRate)),
+      element('td', playerHeroSort === 'averageRank' ? 'metric-highlight' : '', format(hero.averageRank)),
+      element('td', playerHeroSort === 'winRate' ? 'metric-highlight' : '', formatPercent(hero.winRate)),
+      element('td', playerHeroSort === 'top3Rate' ? 'metric-highlight' : '', formatPercent(hero.top3Rate))
     );
     fragment.append(row);
     if (expanded) {
-      for (const lineup of hero.lineups) {
+      const subItems = [...hero.lineups].sort((a, b) => compareHeroes(a, b, playerHeroSort));
+      for (const lineup of subItems) {
         const sub = element('tr', 'sub-row');
         const nameCell = element('td');
         nameCell.append(element('span', 'sub-name', lineup.name));
         sub.append(
           nameCell,
-          element('td', '', String(lineup.matchCount)),
-          element('td', '', formatPercent(lineup.usageRate)),
-          element('td', '', format(lineup.averageRank)),
-          element('td', '', formatPercent(lineup.winRate)),
-          element('td', '', formatPercent(lineup.top3Rate))
+          element('td', playerHeroSort === 'matchCount' ? 'metric-highlight' : '', String(lineup.matchCount)),
+          element('td', playerHeroSort === 'usageRate' ? 'metric-highlight' : '', formatPercent(lineup.usageRate)),
+          element('td', playerHeroSort === 'averageRank' ? 'metric-highlight' : '', format(lineup.averageRank)),
+          element('td', playerHeroSort === 'winRate' ? 'metric-highlight' : '', formatPercent(lineup.winRate)),
+          element('td', playerHeroSort === 'top3Rate' ? 'metric-highlight' : '', formatPercent(lineup.top3Rate))
         );
         fragment.append(sub);
       }
@@ -354,6 +362,13 @@ async function init() {
       playerSort = button.dataset.sort;
       renderPlayers();
       renderComparisonOptions();
+    });
+    byId('player-hero-sort').addEventListener('click', event => {
+      const button = event.target.closest('.sort-col');
+      if (!button || !button.dataset.sort || !index) return;
+      playerHeroSort = button.dataset.sort;
+      const current = index.players.find(player => player.id === selectedId);
+      if (current) renderPlayerHeroes(current);
     });
     byId('hero-sort').addEventListener('click', event => {
       const button = event.target.closest('.sort-col');
